@@ -1,0 +1,22 @@
+# ===== Unity 自动生成目录(不入库) =====
+unity/**/Library/
+unity/**/Temp/
+unity/**/Logs/
+unity/**/UserSettings/
+unity/**/obj/
+unity/**/Build/
+unity/**/Builds/
+unity/**/[Ll]ibrary/
+unity/**/[Tt]emp/
+
+# ===== 本地工具状态 =====
+.grok/
+
+# ===== 测试资源(1.4GB,含 172MB 压缩包,超过 GitHub 单文件 100MB 限制) =====
+unity/game/测试资源，确认后进入项目/
+
+# ===== 系统文件 =====
+Thumbs.db
+Desktop.ini
+*.user
+*.suo

@@ -1,0 +1,293 @@
+using NUnit.Framework;
+using UnityEngine;
+using Game.Runtime.Core;
+
+namespace Game.Tests.EditMode
+{
+    public sealed class SliceLoopTests
+    {
+        const float Dt = 0.02f;
+
+        [Test]
+        public void ForkSupport_SplitsProjectileOnHit()
+        {
+            var sim = NewSliceSim();
+            string err;
+            Assert.IsTrue(sim.Session.TrySetSupport(SkillId.Projectile, 0, SupportId.Fork, out err), err);
+            Assert.Greater(sim.Session.ForkCount(SkillId.Projectile), 0);
+            sim.Dummies.SpawnAt(0f, 2.4f);
+            sim.Tick(Dt, PlayerCommand.CastAt(SkillId.Projectile, 0, 0f, 2.4f));
+            TickNone(sim, SkillCatalog.Get(SkillId.Projectile).Windup);
+            Assert.Greater(sim.Projectiles.AliveCount, 0);
+
+            for (int i = 0; i < 40 && sim.Session.ForkSpawns == 0; i++)
+                sim.Tick(Dt, PlayerCommand.None());
+
+            Assert.AreEqual(2, sim.Session.ForkSpawns);
+            Assert.GreaterOrEqual(sim.Projectiles.AliveCount, 2);
+            int forks = 0;
+            for (int i = 0; i < sim.Projectiles.Items.Length; i++)
+            {
+                if (sim.Projectiles.Items[i].Alive && sim.Projectiles.Items[i].FromFork)
+                    forks++;
+            }
+
+            Assert.AreEqual(2, forks);
+        }
+
+        [Test]
+        public void InMap_BuildChangeFails_DeathRespecUnlocks()
+        {
+            var sim = NewSliceSim();
+            string err;
+            Assert.IsTrue(sim.Session.TryEnterMap(sim, out err), err);
+            Assert.IsTrue(sim.Session.BuildLocked);
+            Assert.IsFalse(sim.Session.TrySetSupport(SkillId.Projectile, 0, SupportId.Fork, out err));
+            Assert.AreEqual(SliceCopy.LockFail, err);
+            Assert.IsFalse(sim.Session.TryEquip(0, out err));
+            Assert.AreEqual(SliceCopy.LockFail, err);
+            Assert.IsFalse(sim.Session.TryAllocate(1, out err));
+            Assert.AreEqual(SliceCopy.LockFail, err);
+            Assert.IsFalse(sim.Session.TryRandomCraft(0, out err));
+            Assert.IsFalse(sim.Session.TryDirectedCraft(0, AffixId.Life, out err));
+
+            sim.Session.ExitMap(sim, true);
+            Assert.IsTrue(sim.Session.Alive);
+            Assert.AreEqual(CastPhase.Idle, sim.Caster.Phase);
+            Assert.IsFalse(sim.Session.BuildLocked);
+            Assert.IsFalse(sim.Session.Allocated[1]);
+            Assert.IsTrue(sim.Session.TryAllocate(1, out err), err);
+            Assert.IsTrue(sim.Session.TrySetSupport(SkillId.Projectile, 0, SupportId.Fork, out err), err);
+        }
+
+        [Test]
+        public void DropAndCraft_SameSeed_Reproducible()
+        {
+            ItemInstance a = RollWith(42u, 7u);
+            ItemInstance b = RollWith(42u, 7u);
+            Assert.AreEqual(a.Rarity, b.Rarity);
+            Assert.AreEqual(a.AffixCount, b.AffixCount);
+            Assert.AreEqual(a.Affix0, b.Affix0);
+            Assert.AreEqual(a.Value0, b.Value0, 0.0001f);
+            Assert.AreEqual(a.Affix1, b.Affix1);
+            Assert.AreEqual(a.Value1, b.Value1, 0.0001f);
+            Assert.AreEqual(a.Affix2, b.Affix2);
+            Assert.AreEqual(a.Value2, b.Value2, 0.0001f);
+
+            ItemInstance c = CraftRandomWith(11u, 3u);
+            ItemInstance d = CraftRandomWith(11u, 3u);
+            Assert.AreEqual(c.Affix0, d.Affix0);
+            Assert.AreEqual(c.Value0, d.Value0, 0.0001f);
+            Assert.AreEqual(c.Affix1, d.Affix1);
+            Assert.AreEqual(c.Value1, d.Value1, 0.0001f);
+        }
+
+        [Test]
+        public void MapLayout_SameSeedAndAffixes_Stable()
+        {
+            var simA = NewSliceSim();
+            var simB = NewSliceSim();
+            simA.Session.MapAffixOn[0] = true;
+            simA.Session.MapAffixOn[2] = true;
+            simB.Session.MapAffixOn[0] = true;
+            simB.Session.MapAffixOn[2] = true;
+            string err;
+            Assert.IsTrue(simA.Session.TryEnterMap(simA, out err), err);
+            Assert.IsTrue(simB.Session.TryEnterMap(simB, out err), err);
+            Assert.AreEqual(simA.Dummies.AliveCount, simB.Dummies.AliveCount);
+            Assert.Greater(simA.Dummies.AliveCount, 10);
+            for (int i = 0; i < simA.Dummies.Items.Length; i++)
+            {
+                Assert.AreEqual(simA.Dummies.Items[i].Occupied, simB.Dummies.Items[i].Occupied);
+                if (!simA.Dummies.Items[i].Occupied)
+                    continue;
+                Assert.AreEqual(simA.Dummies.Items[i].Kind, simB.Dummies.Items[i].Kind);
+                Assert.AreEqual(simA.Dummies.Items[i].X, simB.Dummies.Items[i].X, 0.0001f);
+                Assert.AreEqual(simA.Dummies.Items[i].Z, simB.Dummies.Items[i].Z, 0.0001f);
+            }
+
+            Assert.AreEqual(simA.Session.Stability, simB.Session.Stability);
+            Assert.AreEqual(simA.Session.RewardMultiplier, simB.Session.RewardMultiplier, 0.0001f);
+            Assert.Greater(simA.Session.RewardMultiplier, 1.8f);
+        }
+
+        [Test]
+        public void Concentrated_ShrinksAreaRadius()
+        {
+            var sim = NewSliceSim();
+            float before = sim.Caster.Def(SkillId.Area).AreaRadius;
+            string err;
+            Assert.IsTrue(sim.Session.TrySetSupport(SkillId.Area, 0, SupportId.Concentrated, out err), err);
+            float after = sim.Caster.Def(SkillId.Area).AreaRadius;
+            Assert.Less(after, before * 0.8f);
+        }
+
+        [Test]
+        public void RewardUiReadable_FromAffixes()
+        {
+            var s = new SliceSession();
+            s.ToggleMapAffix(0);
+            s.ToggleMapAffix(1);
+            s.ToggleMapAffix(2);
+            Assert.AreEqual(40, s.Stability);
+            Assert.AreEqual(2.30f, s.RewardMultiplier, 0.001f);
+        }
+
+        [Test]
+        public void ItemName_RarityAppearsOnce()
+        {
+            ItemInstance it = default;
+            it.Slot = EquipSlot.Weapon;
+            it.Rarity = Rarity.Rare;
+            it.BaseName = "Rare Weapon";
+            it.SocketCount = 3;
+            it.AffixCount = 0;
+            string d = SliceSession.DescribeItem(it);
+            Assert.IsFalse(d.Contains("稀有 稀有"), d);
+            Assert.IsTrue(d.StartsWith("稀有 "), d);
+            Assert.AreEqual("铁盔", SliceSession.ItemBaseName(EquipSlot.Helmet));
+            Assert.AreEqual("Weapon", SliceSession.CleanBaseName("Rare Weapon"));
+            Assert.AreEqual("铁盔", SliceSession.CleanBaseName("普通 铁盔"));
+        }
+
+        [Test]
+        public void SkillHud_UsesDisplayNameNotRepeatedKey()
+        {
+            Assert.AreEqual("近战", SliceSession.SkillDisplayName(SkillId.Melee));
+            Assert.AreEqual("弹道", SliceSession.SkillDisplayName(SkillId.Projectile));
+            Assert.AreEqual("范围", SliceSession.SkillDisplayName(SkillId.Area));
+            Assert.AreEqual("Q", SliceSession.SkillHotkey(SkillId.Melee));
+            Assert.AreNotEqual(SliceSession.SkillDisplayName(SkillId.Melee), SliceSession.SkillHotkey(SkillId.Melee));
+            string label = new SliceSession().SupportLabel(SkillId.Melee);
+            Assert.IsFalse(label.StartsWith("Q Q"), label);
+            Assert.IsTrue(label.StartsWith("近战"), label);
+        }
+
+        [Test]
+        public void Cleared_UnlocksBuild_PrimaryExit()
+        {
+            var sim = NewSliceSim();
+            string err;
+            Assert.IsTrue(sim.Session.TryEnterMap(sim, out err), err);
+            Assert.IsTrue(sim.Session.BuildLocked);
+            Assert.AreEqual(SliceCopy.CombatLocked, sim.Session.StatusCopy);
+            sim.Session.State = MapState.Cleared;
+            sim.Session.Snapshot.Locked = false;
+            Assert.IsFalse(sim.Session.BuildLocked);
+            Assert.IsTrue(sim.Session.OnMap);
+            Assert.AreEqual(SliceCopy.Cleared, sim.Session.StatusCopy);
+            Assert.IsTrue(sim.Session.TrySetSupport(SkillId.Projectile, 0, SupportId.Fork, out err), err);
+            Assert.IsFalse(sim.Session.TryEnterMap(sim, out err));
+            Assert.AreEqual(SliceCopy.ExitFirst, err);
+            sim.Session.ExitMap(sim, false);
+            Assert.IsFalse(sim.Session.OnMap);
+            Assert.AreEqual(SliceCopy.TownFree, sim.Session.StatusCopy);
+        }
+
+        [Test]
+        public void StatusCopy_FourStates()
+        {
+            var s = new SliceSession();
+            Assert.AreEqual(SliceCopy.TownFree, s.StatusCopy);
+            s.State = MapState.InMap;
+            Assert.AreEqual(SliceCopy.CombatLocked, s.StatusCopy);
+            s.State = MapState.Cleared;
+            Assert.AreEqual(SliceCopy.Cleared, s.StatusCopy);
+            s.State = MapState.Dead;
+            Assert.AreEqual(SliceCopy.DeadRespec, s.StatusCopy);
+        }
+
+        [Test]
+        public void Death_UnsticksPlayer_AndLowersStability()
+        {
+            var sim = NewSliceSim();
+            sim.Session.ToggleMapAffix(0);
+            sim.Session.ToggleMapAffix(1);
+            sim.Session.ToggleMapAffix(2);
+            Assert.AreEqual(40, sim.Session.Stability);
+            string err;
+            Assert.IsTrue(sim.Session.TryEnterMap(sim, out err), err);
+            sim.Tick(Dt, PlayerCommand.CastAt(SkillId.Melee, -1, 0f, 2f));
+            Assert.AreEqual(CastPhase.Windup, sim.Caster.Phase);
+
+            HitResult kill = default;
+            kill.TotalTaken = 9999;
+            sim.Session.ApplyPlayerHit(kill);
+            Assert.IsFalse(sim.Session.Alive);
+            sim.Tick(Dt, PlayerCommand.None());
+
+            Assert.IsTrue(sim.Session.Alive);
+            Assert.AreEqual(MapState.Dead, sim.Session.State);
+            Assert.AreEqual(CastPhase.Idle, sim.Caster.Phase);
+            Assert.AreEqual(AnimState.Idle, sim.Player.Anim);
+            Assert.Less(sim.Session.Stability, 40);
+            Assert.AreEqual(15, sim.Session.Stability);
+
+            sim.Tick(Dt, PlayerCommand.MoveTo(4f, 0f));
+            Assert.IsTrue(sim.Player.HasDest);
+            for (int i = 0; i < 40; i++)
+                sim.Tick(Dt, PlayerCommand.None());
+            Assert.Greater(sim.Player.X, 1f);
+        }
+
+        [Test]
+        public void PlayerFacingText_IsChinese()
+        {
+            Assert.AreEqual("燃烧", SupportCatalog.Get(SupportId.AddedFire).Name);
+            Assert.AreEqual("分裂", SupportCatalog.Get(SupportId.Fork).Name);
+            Assert.AreEqual("烬心", PassiveCatalog.Get(13).Name);
+            Assert.AreEqual("壮硕", MapAffixCatalog.All[0].Name);
+            Assert.AreEqual("普通", SliceSession.RarityWord(Rarity.Ordinary));
+            Assert.AreEqual("稀有", SliceSession.RarityWord(Rarity.Rare));
+            Assert.AreEqual("铁刃", SliceSession.ItemBaseName(EquipSlot.Weapon));
+        }
+
+        [Test]
+        public void Qwe_StillShareCastPipeline_WithSession()
+        {
+            var sim = NewSliceSim();
+            SkillDef melee = sim.Caster.Def(SkillId.Melee);
+            sim.Tick(Dt, PlayerCommand.CastAt(SkillId.Melee, -1, 0f, 2f));
+            Assert.AreEqual(CastPhase.Windup, sim.Caster.Phase);
+            TickNone(sim, melee.Windup + melee.Active + melee.Recovery);
+            sim.Tick(Dt, PlayerCommand.CastAt(SkillId.Projectile, -1, 0f, 6f));
+            Assert.AreEqual(CastPhase.Windup, sim.Caster.Phase);
+            Assert.GreaterOrEqual(sim.CastEvents, 1);
+        }
+
+        static ItemInstance RollWith(uint sessionSeed, uint rollSeed)
+        {
+            var s = new SliceSession();
+            s.SessionSeed = sessionSeed;
+            return s.RollItem(EquipSlot.Weapon, Rarity.Rare, new SeededRng(rollSeed), 3, "Test");
+        }
+
+        static ItemInstance CraftRandomWith(uint lootSeed, uint baseSeed)
+        {
+            var s = new SliceSession();
+            s.LootRng = new SeededRng(lootSeed);
+            s.Scrap = 5;
+            ItemInstance rare = s.RollItem(EquipSlot.Body, Rarity.Rare, new SeededRng(baseSeed), 3, "RareBody");
+            int idx = s.AddItem(rare);
+            string err;
+            Assert.IsTrue(s.TryRandomCraft(idx, out err), err);
+            return s.Inventory[idx];
+        }
+
+        static ArenaSim NewSliceSim()
+        {
+            var sim = new ArenaSim();
+            sim.Reset();
+            sim.Session = new SliceSession();
+            sim.Caster.Defs = sim.Session.ResolveSkillDef;
+            return sim;
+        }
+
+        static void TickNone(ArenaSim sim, float seconds)
+        {
+            int n = (int)System.Math.Round(seconds / Dt);
+            for (int i = 0; i < n; i++)
+                sim.Tick(Dt, PlayerCommand.None());
+        }
+    }
+}

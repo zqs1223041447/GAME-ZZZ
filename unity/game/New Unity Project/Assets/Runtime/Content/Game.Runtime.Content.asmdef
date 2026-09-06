@@ -1,0 +1,16 @@
+{
+    "name": "Game.Runtime.Content",
+    "rootNamespace": "Game.Runtime.Content",
+    "references": [
+        "Game.Runtime.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
