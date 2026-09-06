@@ -1,0 +1,6 @@
+Unity：6000.3.23f1 URP
+分支 / commit：main，以 R 通知短信中的提交号为准（审阅包内容与代码行号以该提交为准）
+Arena 场景路径：unity/game/New Unity Project/Assets/Scenes/Arena.unity
+进 Arena 操作：打开 Arena.unity，直接按 Play（Bootstrap 不自动进 Arena；Play 后 ArenaDirector 运行时搭地面/玩家/Dummy 池）
+Player / Monster 的 Layer 编号：Player=6，Monster=7（CollisionLayers.cs，层名缺失时用 fallback 常量）
+Resources 加载名：Player/DarkKnight（与 EveView.TryMount 一致）

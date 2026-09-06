@@ -66,6 +66,8 @@ S1 技术已放行。输入、对象池、SeededRng、点地移动、Q/W/E 施�
 
 自制 Eve FBX / 预制体 / Mixamo 导出已从工程剔除（蒙皮损坏、双骨架、单位错误，不可用）。玩家暂回 S1 胶囊。换模等导演提供可用成品后再接。不改按住移动、QWE、结算、掉落。不上 HDRP / DOTS。
 
+2026-09-06 已接导演提供的测试成品：黑色沙漠 Dark Knight 包（`unity/game/测试资源，确认后进入项目`）。只取 `Dark Knight.FBX`（176 骨，BDO Biped）+ DDS 转 PNG 贴图 + 4 条动画 FBX。接入方式：Humanoid 重定向（`DarkKnightAvatar`），预制体 `Assets/Resources/Player/DarkKnight.prefab`，由 `EveView.TryMount` 优先加载（缺预制体回退胶囊视图）。动画只做视图层（Idle/Run/Attack/Cast 四状态控制器，`EveView.DriveEve` 驱动），不进逻辑状态机。401 个动画 FBX 中其余留档未导入。语音 ogg 留档后用（S1/S2 只有 Cast/Impact/Hit/Death 四事件）。
+
 ## 碰撞（锁定）
 
 - 玩家与怪物无碰撞，互相穿过，不推开。
