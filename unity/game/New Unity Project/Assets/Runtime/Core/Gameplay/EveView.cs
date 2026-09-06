@@ -7,16 +7,21 @@ namespace Game.Runtime.Core
     {
         public const string ResourcesName = "Player/Eve";
 
+        // 换模候选优先于旧 Eve 预制体；均未命中则回退胶囊视图
+        public const string ResourcesNameDarkKnight = "Player/DarkKnight";
+
         public const float TargetHeight = 1.16f;
 
         public static GameObject TryMount(Transform playerRoot)
         {
-            GameObject prefab = Resources.Load<GameObject>(ResourcesName);
+            GameObject prefab = Resources.Load<GameObject>(ResourcesNameDarkKnight);
+            if (prefab == null)
+                prefab = Resources.Load<GameObject>(ResourcesName);
             if (prefab == null)
                 return null;
 
             GameObject go = Object.Instantiate(prefab, playerRoot, false);
-            go.name = "Eve";
+            go.name = "DarkKnight";
             go.transform.localPosition = Vector3.zero;
             go.transform.localRotation = Quaternion.identity;
             go.transform.localScale = Vector3.one;
