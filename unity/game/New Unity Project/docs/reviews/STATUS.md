@@ -49,7 +49,7 @@
 ## 导演门控待输入
 
 - 表在 `docs/ROADMAP.md`「导演门控待输入」节（7 项，每项「无输入则不做」，不得当自动任务开工）。
-- **S3 规划已出**（`docs/reviews/s3/S3_PLAN.md`）、内容扩张仍关；开工口令=导演明说「开 S3」。
+- **S3 已开工（历史「开 S3」口令已于 2026-09-07 消费）**：Phase 1/2=COMPLETE；Phase 3 UI / 4 人声 / 5 精模=导演门控 GATED/NOT STARTED；**新一批内容（含第 8 Support/新词缀/新怪）不得自行启动**——需规划 AI/导演新立工作令；规划见 `docs/reviews/s3/S3_PLAN.md`（S3 整体未结束，不写成 COMPLETE）。
 
 ## 已对齐（本轮只改文档）
 

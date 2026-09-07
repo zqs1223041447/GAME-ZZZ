@@ -1,6 +1,14 @@
 # CONTENT_AUDIT_S3_CLOSEOUT
 
-生成：EditMode 测试 `ContentAuditS2Tests`（S3 阶段 1/2 收口，工作令 S3-P12-AUDIT-CLOSEOUT）。只覆盖现行切片：3 Active + 7 Support + 13 词缀 + 16 天赋 + 3 图词缀 + 5 怪。BATCH1/R2 报告保留历史。
+**当前 Content Audit snapshot（测试再生）**。文件名保留 CLOSEOUT 是因为它源自 S3 Phase 1/2 收口；**BATCH1 / R2 报告才是冻结历史 evidence**。
+
+生成：EditMode 测试 `ContentAuditS2Tests`，failure-safe 顺序 **Collect → Render → Persist → Assert**（S3-M3：报告先于测试断言落盘——测试红 ⇒ 本快照同轮红，不遗留上一轮 PASS）。只覆盖现行切片：3 Active + 7 Support + 13 词缀 + 16 天赋 + 3 图词缀 + 5 怪。
+
+## Verdict
+
+- Audit completed: YES
+- Verdict: PASS
+- Failure count: 0
 
 ## 总数
 
@@ -14,7 +22,7 @@
 | 怪 | 5（3 普通 + Elite 监守 + 木桩） |
 | Modifier 引用（Support+Passive） | 26 |
 
-内容数量护栏（测试断言，baseline 冻结）：Support=7 / 词缀=13 / StatId=28 / ModOp、Tag、Effect、Event、Condition、Skill、图词缀轴全部 +0。
+内容数量护栏（Collect 阶段核入「结构/契约问题」，baseline 冻结）：Support=7 / 词缀=13 / StatId=28 / ModOp、Tag、Effect、Event、Condition、Skill、图词缀轴全部 +0。
 
 ## 资源契约（真实加载验证，非声明文字）
 
@@ -57,6 +65,7 @@ Tagged Modifier 总数 4，可满足 4，不可满足 0（期望 0）。负向�
 
 | 项 | 条数 | 明细 |
 |---|---|---|
+| 结构/契约问题（目录条目 Name / 数量护栏 / FireConversion 契约 / 图连通 / 技能与怪参数 / MapAffix） | 0 | — |
 | StatId/ModOp 引用缺失或运行期未知 | 0 | — |
 | 非法 Tag | 0 | — |
 | Effect/Event 引用非法 | 0 | — |
