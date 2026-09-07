@@ -21,6 +21,13 @@ namespace Game.Runtime.Core
         bool _eveHasRun;
         bool _eveHasAttack;
         bool _eveHasCast;
+        bool _eveHasHit;
+        bool _eveHasDeath;
+        float _eveHitLen = 0.4f;
+        float _eveHitUntil;
+        bool _eveDead;
+        float _eveDeathFreezeAt;
+        float _lastPlayerFlash;
         GameObject[] _dummyGo;
         MeshRenderer[] _dummyRenderer;
         MeshFilter[] _dummyFilter;
@@ -715,6 +722,23 @@ namespace Game.Runtime.Core
             _eveHasRun = HasEveState("Run");
             _eveHasAttack = HasEveState("Attack");
             _eveHasCast = HasEveState("Cast");
+            _eveHasHit = HasEveState("Hit");
+            _eveHasDeath = HasEveState("Death");
+            _eveHitLen = EveClipLength("Hit", 0.4f);
+        }
+
+        float EveClipLength(string name, float fallback)
+        {
+            RuntimeAnimatorController ctrl = _eveAnimator != null ? _eveAnimator.runtimeAnimatorController : null;
+            if (ctrl == null || ctrl.animationClips == null)
+                return fallback;
+            for (int i = 0; i < ctrl.animationClips.Length; i++)
+            {
+                AnimationClip clip = ctrl.animationClips[i];
+                if (clip != null && clip.name == name)
+                    return Mathf.Max(0.05f, clip.length);
+            }
+            return fallback;
         }
 
         bool HasEveState(string name)
@@ -724,10 +748,52 @@ namespace Game.Runtime.Core
             return _eveAnimator.HasState(0, Animator.StringToHash(name));
         }
 
+        // 视图层驱动：Hit/Death 只挂现有受击/死亡信号（Session.HitFlash 上跳沿、MapState.Dead），逻辑状态机不扩
         void DriveEve(AnimState anim)
         {
             if (_eveAnimator == null || _eveAnimator.runtimeAnimatorController == null)
                 return;
+
+            float flash = Sim.Session != null ? Sim.Session.HitFlash : 0f;
+            bool dead = Sim.Session != null && Sim.Session.State == MapState.Dead;
+
+            if (dead)
+            {
+                if (!_eveDead)
+                {
+                    _eveDead = true;
+                    if (_eveHasDeath)
+                    {
+                        _eveAnimator.speed = 1f;
+                        _eveAnimator.Play("Death", 0, 0f);
+                        _eveDeathFreezeAt = Time.time + EveClipLength("Death", 1f);
+                    }
+                }
+                // 非循环状态播完会被采样绕回：到点即冻结，定格跪倒末帧
+                if (_eveDeathFreezeAt > 0f && Time.time >= _eveDeathFreezeAt)
+                {
+                    _eveAnimator.speed = 0f;
+                    _eveDeathFreezeAt = 0f;
+                }
+                _lastPlayerFlash = flash;
+                return;
+            }
+            _eveDead = false;
+            if (_eveAnimator.speed == 0f)
+                _eveAnimator.speed = 1f;
+
+            if (_eveHasHit && flash > 0.02f && _lastPlayerFlash <= 0.02f)
+            {
+                // 新的受击上跳沿即重播：高攻速下 Hit 可被下一击打断重来
+                _eveAnimator.Play("Hit", 0, 0f);
+                _eveHitUntil = Time.time + _eveHitLen;
+                _lastEveAnim = (AnimState)255; // Hit 播完后强制重放当前逻辑姿态
+            }
+            _lastPlayerFlash = flash;
+
+            if (Time.time < _eveHitUntil)
+                return;
+
             if (anim == _lastEveAnim)
                 return;
 

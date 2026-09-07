@@ -13,6 +13,7 @@ S0 锁定。后续阶段不得在未改本文的情况下推翻这些决定。
 - 非阻断残留：Eve 回退分支已删除（2026-09-07）——`TryMount` 只加载 `Player/DarkKnight`，缺失即回退胶囊并打日志；`EveView/DriveEve` 命名残留仍登记，不在本轮改名。
 - S3 最小底座（2026-09-07）：Art Bible 初稿路径 `docs/art/ART_BIBLE.md`；内容校验挂 EditMode（`ContentAuditS2Tests`），**只覆盖 S2 切片**（3 Active + 6 Support + 10 词缀 + 16 天赋 + 3 图词缀 + 5 怪），报告 `docs/reviews/s3/CONTENT_AUDIT_S2.md`；音频缺失为已知债不阻断。不加新内容。
 - 预留 Tag 钉死（2026-09-07）：Attack / Spell / Projectile / Hit / Physical / Fire / Duration 为**已声明预留**，当前 S2 切片未引用；**S3 内容扩张开启前不得当作「缺实现」去补系统或补技能**；「未使用 Tag ≠ 下一工作项」。
+- 玩家视图 Hit/Death 动画（2026-09-07）：自已留档的 401 动画库取 2 条——`pdw_01_01_def_shield_dam_00`（受击后仰，0.63s，全段）与 `pdw_01_01_def_shield_break_00`（裁至跪倒段 0.68s，掐掉恢复站立）；控制器加 Hit/Death 两状态（与 Idle/Run/Attack/Cast 同层）。`DriveEve` 只挂现有信号：`Session.HitFlash` 上跳沿=Hit（下一击重播即可打断），`MapState.Dead`=Death（播完 `animator.speed=0` 定格跪倒末帧，复活出图恢复）。逻辑状态机未扩、不接音频、命中/死亡公式未动。截图 `docs/reviews/images/07_hit.png`、`08_death.png`。
 
 ## 工作方式（导演 2026-09-07 追加）
 
