@@ -1,6 +1,6 @@
 # ROADMAP
 
-当前阶段：**S2P 技术收口已记录（2026-09-07），1440p/120 未结案**（S2 玩法循环已由导演确认，2026-09-06。自制 Eve FBX **已剔除**，换模 Dark Knight 技术放行。碰撞规则仍在。HUD **未完备**。I 不自放行）。
+当前阶段：**S2P 技术收口已完成（1080p 已证；1440p/120 已于 M7 在锁定硬件下 CLOSED，2026-09-08——结论只适用锁定硬件/canonical contract，非所有 Windows PC 保证 120FPS）；S3 Phase 1/2 = COMPLETE，Phase 3/4/5 = 导演门控 GATED / NOT STARTED**（S2 玩法循环已由导演确认，2026-09-06。自制 Eve FBX **已剔除**，换模 Dark Knight 技术放行。碰撞规则仍在。HUD **未完备**。I 不自放行）。
 
 ## 阶段
 
