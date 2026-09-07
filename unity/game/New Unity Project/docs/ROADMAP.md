@@ -10,7 +10,7 @@
 | S1 | 能打 + 能量测 | **已放行**（手感门 2026-09-07 导演复测关闭） |
 | S2 | 微循环能玩 | **已完成**（导演 2026-09-06 确认）；换模 Dark Knight 技术放行（贴地修正 ebbf782）；碰撞仍在（HUD 未完备） |
 | S2P | 真实系统密度报告 | **技术收口已记录**（Editor 基线 6e95c1b + 独立包 1080p b152610；1440p 被硬件钳制待补；120FPS@1440p 未宣布） |
-| S3 | 按队列扩内容 | **第一批已收口（复核 PASS + Runtime 兼容门）+ R2 已收口**：R2=转换型 Support 火焰转化（50% 物转火，零专用分支，golden 3×7 parity，`S3_R2_REVIEW.md` verdict=PASS）；仍禁：Unique / 大树 / Atlas / 完整 Craft / 新系统。1440p 补测不是 S3 前置阻断 |
+| S3 | 按队列扩内容 | **阶段 1（内容工厂）+ 阶段 2（R1/R2 组合增产）已收口（2026-09-07，工作令 S3-P12）**：资源路径级真实验证 + Tag 组合规则/golden + 兼容门 + 死内容扫描（`S3_PHASE2_CLOSEOUT.md`，Phase 1/2 = COMPLETE）；R1=3 组合词缀、R2=火焰转化均 PASS；**后续：阶段 3 UI=导演门控、阶段 4 人声=导演门控、阶段 5 精模=导演门控，后置系统仍关——S3 整体未结束**。1440p 补测不是 S3 前置阻断 |
 
 ## Gate S0
 
@@ -47,7 +47,7 @@
 
 ## 下一步
 
-S2P 技术收口已记录。**S3 最小底座已开工（2026-09-07）**：`docs/art/ART_BIBLE.md` 初稿 + 内容校验（`ContentAuditS2Tests`，EditMode）。**S3 第一批与 R2 均已提交并收口（2026-09-07）**：第一批=校验扩展 + R1 组合系词缀 3 条（灼燃/锐击/熔铸），报告 `docs/reviews/s3/CONTENT_AUDIT_S3_BATCH1.md`，复核 `S3_BATCH1_REVIEW.md` verdict=PASS，**Runtime Support 兼容门已接入**（TrySetSupport 拒绝非法组合、失败无半写入，golden 矩阵=独立 oracle）；R2=转换型 Support 火焰转化（50% 物转火，零专用分支），报告 `CONTENT_AUDIT_S3_R2.md`，复核 `S3_R2_REVIEW.md` verdict=PASS，与烬心共享转换轴（0.40+0.50=0.90 自然聚合）。**仍禁止**——大天赋树、Unique 库、Atlas、完整 Craft、新运行期系统。**未使用 Tag ≠ 下一工作项**。下一批等规划 AI 逐令；阶段 3-5 仍等导演输入（UI 过目 / 人声指认 / 精模点名）。
+S2P 技术收口已记录。**S3 最小底座已开工（2026-09-07）**：`docs/art/ART_BIBLE.md` 初稿 + 内容校验（`ContentAuditS2Tests`，EditMode）。**S3 内容工厂 Phase 1 + 组合增产 Phase 2 已完成（2026-09-07，工作令 S3-P12 收口）**：R1=3 组合系词缀（`S3_BATCH1_REVIEW.md` PASS）；R2=火焰转化 Support（`S3_R2_REVIEW.md` PASS）；Runtime Support 兼容门（golden=独立 oracle）；资源路径级真实验证（REQUIRED 缺失即红；人声=GATED 记录；VFX=无声明引用 N/A）+ Tag 组合规则/golden/死内容扫描（`CONTENT_AUDIT_S3_CLOSEOUT.md`、`S3_PHASE2_CLOSEOUT.md`）。**仍禁止**——大天赋树、Unique 库、Atlas、完整 Craft、新运行期系统。**未使用 Tag ≠ 下一工作项**。后续：**阶段 3 UI=导演门控、阶段 4 人声=导演门控、阶段 5 精模=导演门控（GATED / NOT STARTED，非阻塞）；后置系统仍关**——S3 整体未结束，下一步等规划 AI 逐令。
 
 ## 导演门控待输入
 

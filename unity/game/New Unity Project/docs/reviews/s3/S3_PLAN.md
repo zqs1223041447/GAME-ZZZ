@@ -9,11 +9,15 @@
 
 ## 阶段 1 · 内容工厂最小工具（现在可做，纯校验扩展）
 
+**状态：COMPLETE（2026-09-07，工作令 S3-P12 收口；证据 `docs/reviews/s3/S3_PHASE2_CLOSEOUT.md` + `CONTENT_AUDIT_S3_CLOSEOUT.md`——资源路径级真实验证 / Tag 组合规则+golden / 兼容矩阵 / 未用 Tag 持续记录 全部落地）**
+
 - 依托现有 `ContentAuditS2Tests` 扩展：①缺资源报告细化（VFX/预制体/音频路径级）②Tag 合法性细则（Tag 组合规则表）③**Support 兼容矩阵校验**（Q/W/E × Support 非法组合提前报）④未用 Tag 持续钉死。
 - 依赖：无（现有校验框架）。状态：**现在做**（导演点「开 S3」后第一批可含）。
 - 产出红线：只报问题不加内容；报告仍落 `docs/reviews/s3/`。
 
 ## 阶段 2 · 技能/词缀/怪「组合已有机制」增产（R1/R2 轮）
+
+**状态：COMPLETE（2026-09-07；R1=3 组合词缀 `S3_BATCH1_REVIEW.md` PASS，R2=火焰转化 `S3_R2_REVIEW.md` PASS；证据 `S3_PHASE2_CLOSEOUT.md`）**
 
 - 规则：**只用数据 + 已有 Effect/Trigger/Stat 组合**产新条目（如新词缀=现有 Modifier 组合、新怪=现有 Kind 换参数+现动画）；**禁止新 MonoBehaviour 堆系统**、禁止新 Effect 引擎路径。
 - 批次建议：R1=+少量 Affix（≤3 条，全部由既有 ModOp 组合）；R2=+1 Support 机制变体（复用现有 Support 框架字段）。

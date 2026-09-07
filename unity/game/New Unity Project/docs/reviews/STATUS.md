@@ -2,7 +2,7 @@
 
 日期：2026-09-07。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit：A=a3572f8（feat R2 火焰转化）+ b8a6e2a（docs R2 收口：REVIEW PASS + R2 审计报告）/ B=回填本行
+本轮 commit：A=（S3-P12 收口主体：资源真实验证 + Tag 规则 + 阶段 Closeout，由紧随的回填提交写入）/ B=回填本行
 
 ## 门状态
 
@@ -18,7 +18,7 @@
 | S2P 1080p | 已证 | b152610 独立包：p99 最高 2.508ms（预算 8.33ms） |
 | S2P 1440p@120 | 未结案 | 硬件钳制（本机 1080p 显示器）；不宣布 120FPS@1440p |
 | S3 最小底座 | 已开工 | c2689be ART_BIBLE+内容校验；8f2de35 预留 Tag 钉死 |
-| S3 内容扩张 | **第一批+R2 已收口** | A=ba87b8a 第一批；RCLOSE=复核 PASS + TrySetSupport 兼容门（golden=独立 oracle）；R2=火焰转化 50% 物转火（零专用分支，`S3_R2_REVIEW.md` PASS）；Unique / 大树 / Atlas / 完整 Craft / 新系统仍禁 |
+| S3 内容扩张 | **阶段 1+2 已收口（COMPLETE）** | 第一批/R1=PASS（`S3_BATCH1_REVIEW.md`）；R2 火焰转化=PASS（`S3_R2_REVIEW.md`）；兼容门+资源真实验证+Tag 规则（`S3_PHASE2_CLOSEOUT.md`）；**阶段 3-5=导演门控 GATED/NOT STARTED，后置系统仍关，S3 整体未结束** |
 
 ## 玩家视图
 
@@ -44,7 +44,7 @@
 
 ## 校验
 
-- EditMode 95/95、PlayMode 3/3（pipeline run_tests，运行中编辑器）。报告 **`CONTENT_AUDIT_S3_R2.md`**（测试再生；BATCH1 报告保留历史）：StatId/ModOp/运行期未知 Stat=0；非法 Tag=0；Effect-Event=0；链接=0；词缀行=0；Support×技能兼容矩阵=0（**3×7 golden，火焰转化列=近战✓弹道✓范围✗**，TrySetSupport 拒绝非法连接，parity 全 21 组合）。R2 独立复核 verdict=PASS（`S3_R2_REVIEW.md`，零专用分支审计=0）。音频已挂钩；未使用 Tag 4 个（Spell/Projectile/Fire/Duration）=预留，不是任务。
+- EditMode 96/96、PlayMode 3/3（pipeline run_tests，运行中编辑器）。报告 **`CONTENT_AUDIT_S3_CLOSEOUT.md`**（测试再生；BATCH1/R2 保留历史）：StatId/ModOp/运行期未知 Stat=0；非法 Tag=0；Effect-Event=0；链接=0；词缀行=0；兼容矩阵=0（3×7 parity 21 组合）；**Skill Tag golden parity=3/3**；**死 Tagged Modifier=0**（4 条全可达）；**资源契约=REQUIRED 6/6 真实加载 PASS（玩家预制体+5 SFX）、GATED 人声 3 键缺失如实记录、VFX 声明引用 0=N/A**。负向 Tag 规则测试通过。阶段 1/2 收口=`S3_PHASE2_CLOSEOUT.md`（Phase 1/2=COMPLETE）。未使用 Tag 4 个（Spell/Projectile/Fire/Duration）=预留，不是任务。
 
 ## 导演门控待输入
 
@@ -64,6 +64,7 @@
 
 | 日期 | HEAD | EditMode | PlayMode | 失败项 |
 |---|---|---|---|---|
+| 2026-09-07 | S3-P12（回填写入） | 96/96 | 3/3 | 无 |
 | 2026-09-07 | a3572f8+b8a6e2a | 95/95 | 3/3 | 无 |
 | 2026-09-07 | 3a45983 | 89/89 | 3/3 | 无 |
 | 2026-09-07 | ba87b8a | 83/83 | 3/3 | 无 |
