@@ -197,6 +197,8 @@ namespace Game.Tests.EditMode
             sb.AppendLine("");
             sb.AppendLine("## 未使用 Tag（已声明、当前内容未引用）");
             sb.AppendLine("");
+            sb.AppendLine("**预留 Tag 不是失败项**：以下 Tag 为已声明预留，当前 S2 切片未引用；S3 内容扩张开启前不得当作「缺实现」去补系统或补技能。");
+            sb.AppendLine("");
             sb.AppendLine(unusedTags.Count == 0 ? "无" : "- " + string.Join("\n- ", unusedTags));
             sb.AppendLine("");
             sb.AppendLine("## 音频（已知债，不阻断 S3 最小门）");

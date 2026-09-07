@@ -47,4 +47,4 @@
 
 ## 下一步
 
-S2P 技术收口已记录。**S3 最小底座已开工（2026-09-07）**：`docs/art/ART_BIBLE.md` 初稿 + 内容校验（`ContentAuditS2Tests`，EditMode，报告 `docs/reviews/s3/CONTENT_AUDIT_S2.md`）。**内容扩张仍关闭**——大天赋树、Unique 库、Atlas、完整 Craft 禁止。1440p 补测列为「硬件条件满足后的 S2P 补测」，非 S3 前置阻断。残留清理（Eve 回退）已清（bb0adde）。
+S2P 技术收口已记录。**S3 最小底座已开工（2026-09-07）**：`docs/art/ART_BIBLE.md` 初稿 + 内容校验（`ContentAuditS2Tests`，EditMode，报告 `docs/reviews/s3/CONTENT_AUDIT_S2.md`）。**内容扩张仍关闭**——大天赋树、Unique 库、Atlas、完整 Craft 禁止。1440p 补测列为「硬件条件满足后的 S2P 补测」，非 S3 前置阻断。残留清理（Eve 回退）已清（bb0adde）。**未使用 Tag ≠ 下一工作项**（预留见 DECISIONS / CONTENT_AUDIT_S2）。
