@@ -5,22 +5,26 @@
 #   Content Audit freshness + verdict -> XML parsing -> summary -> exit code
 #
 # Canonical usage (from Unity project root):
-#   .\tools\verify_unattended.ps1
+#   .\tools\verify_unattended.ps1                            # Quick Gate: EditMode + PlayMode + Audit
+#   .\tools\verify_unattended.ps1 -IncludeBuild              # Full Gate: Quick + StandaloneWindows64 Player Build
 #   .\tools\verify_unattended.ps1 -UnityPath "G:\Unity\Hub\Editor\6000.3.23f1\Editor\Unity.exe"
-#   .\tools\verify_unattended.ps1 -TimeoutMinutes 20
-#   .\tools\verify_unattended.ps1 -SelfTest          # no Unity launch, synthetic fixtures
+#   .\tools\verify_unattended.ps1 -TimeoutMinutes 20 -BuildTimeoutMinutes 30
+#   .\tools\verify_unattended.ps1 -SelfTest                  # no Unity launch, synthetic fixtures
 #
-# Exit codes: 0 = Gate PASS | 1 = Gate FAIL | 2 = Unity not resolved |
-#             3 = project already open (editor lock) | 4 = suite timeout
+# Exit codes: 0 = Gate PASS | 1 = Gate FAIL (tests/audit/player build/timeout) |
+#             2 = Unity not resolved | 3 = project already open (editor lock)
 # The gate verifies only; it never modifies STATUS/ROADMAP/catalogs/tests,
 # never runs git commands, and never kills Unity processes it did not start.
-# Allowed repo side effect: the formal EditMode run re-persists
+# Allowed repo side effects: the formal EditMode run re-persists
 # docs/reviews/s3/CONTENT_AUDIT_S3_CLOSEOUT.md (existing audit contract).
+# Player build output is ephemeral (temp only), never committed to the repo.
 # =====================================================================
 [CmdletBinding()]
 param(
     [string]$UnityPath = "",
     [int]$TimeoutMinutes = 20,
+    [int]$BuildTimeoutMinutes = 30,
+    [switch]$IncludeBuild,
     [switch]$SelfTest
 )
 
@@ -146,17 +150,37 @@ function Resolve-UnityEditorPath {
     return $null
 }
 
-function Invoke-TestSuite {
-    param([string]$UnityExe, [string]$Platform, [string]$ResultsXml, [string]$Log, [int]$TimeoutMin)
-    $argString = "-batchmode -projectPath `"$ProjectRoot`" -runTests -testPlatform $Platform -testResults `"$ResultsXml`" -logFile `"$Log`""
-    $p = Start-Process -FilePath $UnityExe -ArgumentList $argString -PassThru
+function Invoke-UnityChild {
+    param([string]$UnityExe, [string]$ArgumentString, [int]$TimeoutMin)
+    $p = Start-Process -FilePath $UnityExe -ArgumentList $ArgumentString -PassThru
     $exited = $p.WaitForExit($TimeoutMin * 60 * 1000)
     if (-not $exited) {
         try { $p.Kill() } catch { }
         try { $p.WaitForExit() | Out-Null } catch { }
-        return @{ ExitCode = $null; TimedOut = $true; ArgumentString = $argString }
+        return @{ ExitCode = $null; TimedOut = $true; ArgumentString = $ArgumentString }
     }
-    return @{ ExitCode = $p.ExitCode; TimedOut = $false; ArgumentString = $argString }
+    return @{ ExitCode = $p.ExitCode; TimedOut = $false; ArgumentString = $ArgumentString }
+}
+
+function Invoke-TestSuite {
+    param([string]$UnityExe, [string]$Platform, [string]$ResultsXml, [string]$Log, [int]$TimeoutMin)
+    $argString = "-batchmode -projectPath `"$ProjectRoot`" -runTests -testPlatform $Platform -testResults `"$ResultsXml`" -logFile `"$Log`""
+    return Invoke-UnityChild -UnityExe $UnityExe -ArgumentString $argString -TimeoutMin $TimeoutMin
+}
+
+function Test-PlayerArtifact {
+    param([string]$ExecutablePath)
+    $out = @{ ExecutableExists = $false; ExecutableBytes = 0; DataDirectoryExists = $false; DataFileCount = 0; DataDirectoryPath = $null }
+    if ([string]::IsNullOrEmpty($ExecutablePath) -or -not (Test-Path -LiteralPath $ExecutablePath -PathType Leaf)) { return $out }
+    $out.ExecutableExists = $true
+    $out.ExecutableBytes = (Get-Item -LiteralPath $ExecutablePath).Length
+    $dataDir = Join-Path (Split-Path -Parent $ExecutablePath) (([System.IO.Path]::GetFileNameWithoutExtension($ExecutablePath)) + '_Data')
+    $out.DataDirectoryPath = $dataDir
+    if (Test-Path -LiteralPath $dataDir -PathType Container) {
+        $out.DataDirectoryExists = $true
+        $out.DataFileCount = @((Get-ChildItem -LiteralPath $dataDir -Recurse -File -ErrorAction SilentlyContinue)).Count
+    }
+    return $out
 }
 
 function Get-SuiteSummary {
@@ -229,6 +253,44 @@ if ($SelfTest) {
     $a = [DateTime]::Parse('2026-09-08T10:07:00Z').ToUniversalTime()
     $ok = (Test-AuditFresh -BeforeUtc $b -AfterUtc $a -GateStartUtc $s) -and -not (Test-AuditFresh -BeforeUtc $b -AfterUtc $b -GateStartUtc $s)
     $results.Add("selftest.audit-freshness: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    # Build artifact validator (S3-M5)：有效=非空 exe + 非空 _Data 目录
+    $art = Join-Path $fx 'artifact'
+    $okDir = Join-Path $art 'ok'
+    New-Item -ItemType Directory -Path (Join-Path $okDir 'GAME-ZZZ_Data') -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $okDir 'GAME-ZZZ.exe') -Value 'MZ'
+    Set-Content -LiteralPath (Join-Path $okDir 'GAME-ZZZ_Data\level0') -Value 'x'
+    $v = Test-PlayerArtifact -ExecutablePath (Join-Path $okDir 'GAME-ZZZ.exe')
+    $ok = $v.ExecutableExists -and $v.ExecutableBytes -gt 0 -and $v.DataDirectoryExists -and $v.DataFileCount -gt 0
+    $results.Add("selftest.artifact-pass: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    $miss = Join-Path $art 'missingexe'
+    New-Item -ItemType Directory -Path (Join-Path $miss 'GAME-ZZZ_Data') -Force | Out-Null
+    $v = Test-PlayerArtifact -ExecutablePath (Join-Path $miss 'GAME-ZZZ.exe')
+    $ok = -not ($v.ExecutableExists -and $v.ExecutableBytes -gt 0 -and $v.DataDirectoryExists -and $v.DataFileCount -gt 0)
+    $results.Add("selftest.artifact-missing-exe: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    $zero = Join-Path $art 'zeroexe'
+    New-Item -ItemType Directory -Path (Join-Path $zero 'GAME-ZZZ_Data') -Force | Out-Null
+    [System.IO.File]::WriteAllBytes((Join-Path $zero 'GAME-ZZZ.exe'), @())
+    Set-Content -LiteralPath (Join-Path $zero 'GAME-ZZZ_Data\level0') -Value 'x'
+    $v = Test-PlayerArtifact -ExecutablePath (Join-Path $zero 'GAME-ZZZ.exe')
+    $ok = -not ($v.ExecutableExists -and $v.ExecutableBytes -gt 0 -and $v.DataDirectoryExists -and $v.DataFileCount -gt 0)
+    $results.Add("selftest.artifact-zero-byte-exe: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    $nodata = Join-Path $art 'nodata'
+    New-Item -ItemType Directory -Path $nodata -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $nodata 'GAME-ZZZ.exe') -Value 'MZ'
+    $v = Test-PlayerArtifact -ExecutablePath (Join-Path $nodata 'GAME-ZZZ.exe')
+    $ok = -not ($v.ExecutableExists -and $v.ExecutableBytes -gt 0 -and $v.DataDirectoryExists -and $v.DataFileCount -gt 0)
+    $results.Add("selftest.artifact-missing-data: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    $emptydata = Join-Path $art 'emptydata'
+    New-Item -ItemType Directory -Path (Join-Path $emptydata 'GAME-ZZZ_Data') -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $emptydata 'GAME-ZZZ.exe') -Value 'MZ'
+    $v = Test-PlayerArtifact -ExecutablePath (Join-Path $emptydata 'GAME-ZZZ.exe')
+    $ok = -not ($v.ExecutableExists -and $v.ExecutableBytes -gt 0 -and $v.DataDirectoryExists -and $v.DataFileCount -gt 0)
+    $results.Add("selftest.artifact-empty-data: $(@('FAIL', 'PASS')[[int]$ok])")
 
     $allPass = $true
     foreach ($line in $results) {
@@ -328,10 +390,43 @@ elseif ($audit.Completed -ne 'YES') { $Issues.Add("Content Audit completed=$($au
 elseif ($audit.Verdict -ne 'PASS') { $Issues.Add("Content Audit verdict=$($audit.Verdict)") }
 elseif ($audit.FailureCount -ne 0) { $Issues.Add("Content Audit failure count=$($audit.FailureCount)") }
 
-# 6) Finalize once: unified verdict + summary + exit code
+# 6) Player build (Full Gate only; reuses resolved Unity, lock, timeout, temp, summary infra)
+$buildStatus = 'SKIPPED'
+$buildRun = $null
+$artifact = $null
+$buildExe = Join-Path $TempRoot 'PlayerBuild\GAME-ZZZ.exe'
+$buildLog = Join-Path $TempRoot 'PlayerBuild.log'
+if (-not $IncludeBuild) {
+    # Quick Gate：不构建，也不谎称已验证 Player
+} elseif ($editInfra -or $playInfra) {
+    $buildStatus = 'NOT_RUN'
+    $Issues.Add('PlayerBuild NOT RUN / INFRA BLOCKED (suite infrastructure failure; no fake build PASS)')
+} else {
+    New-Item -ItemType Directory -Path (Split-Path -Parent $buildExe) -Force | Out-Null
+    $buildRun = Invoke-UnityChild -UnityExe $unityExe -ArgumentString "-batchmode -quit -projectPath `"$ProjectRoot`" -buildTarget win64 -buildWindows64Player `"$buildExe`" -logFile `"$buildLog`"" -TimeoutMin $BuildTimeoutMinutes
+    $artifact = Test-PlayerArtifact -ExecutablePath $buildExe
+    if ($buildRun.TimedOut) {
+        $buildStatus = 'FAIL'
+        $Issues.Add('PlayerBuild TIMEOUT (gate killed only its own child process)')
+    }
+    elseif ($buildRun.ExitCode -ne 0) {
+        $buildStatus = 'FAIL'
+        $Issues.Add("PlayerBuild Unity exit code $($buildRun.ExitCode)")
+    }
+    elseif (-not ($artifact.ExecutableExists -and $artifact.ExecutableBytes -gt 0 -and $artifact.DataDirectoryExists -and $artifact.DataFileCount -gt 0)) {
+        $buildStatus = 'FAIL'
+        $Issues.Add('PlayerBuild artifact invalid (exe missing/empty or Data folder missing/empty)')
+    }
+    else {
+        $buildStatus = 'PASS'
+    }
+}
+$buildOk = (-not $IncludeBuild) -or ($buildStatus -eq 'PASS')
+
+# 7) Finalize once: unified verdict + summary + exit code
 $editOk = (-not $editInfra) -and $editResult.Result -eq 'Passed' -and $editResult.Failed -eq 0
 $playOk = (-not $playInfra) -and $null -ne $playResult -and $playResult.Result -eq 'Passed' -and $playResult.Failed -eq 0
-$gatePass = $editOk -and $playOk -and $auditOk
+$gatePass = $editOk -and $playOk -and $auditOk -and $buildOk
 
 $editLine = 'EditMode: N/A'
 if ($null -ne $editResult) {
@@ -344,10 +439,18 @@ if ($null -ne $playResult) {
 $playSummary = Get-SuiteSummary -Result $playResult -Run $playRun -Ok $playOk -Infra $playInfra
 if ($playSkipped -and $null -eq $playRun) { $playSummary.status = 'SKIPPED' }
 $auditLine = "ContentAudit: $(@('FAIL', 'PASS')[[int]$auditOk]), fresh=$(@('NO', 'YES')[[int]$fresh]), failures=$($audit.FailureCount)"
+$buildLine = 'PlayerBuild: SKIPPED (use -IncludeBuild)'
+if ($IncludeBuild) {
+    $buildLine = "PlayerBuild: $buildStatus win64"
+    if ($null -ne $artifact -and $artifact.ExecutableExists) {
+        $buildLine += " (GAME-ZZZ.exe $($artifact.ExecutableBytes) bytes, Data files: $($artifact.DataFileCount))"
+    }
+}
 
 Write-Output $editLine
 Write-Output $playLine
 Write-Output $auditLine
+Write-Output $buildLine
 foreach ($issue in $Issues) { Write-Output "Issue: $issue" }
 Write-Output "Gate: $(@('FAIL', 'PASS')[[int]$gatePass])"
 Write-Output "Artifacts: $TempRoot"
@@ -360,6 +463,7 @@ Write-SummaryJson -Path (Join-Path $TempRoot 'verification-summary.json') -Data 
     editMode = (Get-SuiteSummary -Result $editResult -Run $editRun -Ok $editOk -Infra $editInfra)
     playMode = $playSummary
     contentAudit = @{ exists = $auditExists; fresh = $fresh; completed = $audit.Completed; verdict = $audit.Verdict; failureCount = $audit.FailureCount; beforeUtc = $auditBeforeUtc; afterUtc = $auditAfterUtc }
+    build = @{ requested = [bool]$IncludeBuild; status = $buildStatus; unityExitCode = $(if ($null -ne $buildRun) { $buildRun.ExitCode } else { $null }); timedOut = $(if ($null -ne $buildRun) { $buildRun.TimedOut } else { $false }); executablePath = $buildExe; executableExists = $(if ($null -ne $artifact) { $artifact.ExecutableExists } else { $false }); executableBytes = $(if ($null -ne $artifact) { $artifact.ExecutableBytes } else { 0 }); dataDirectoryExists = $(if ($null -ne $artifact) { $artifact.DataDirectoryExists } else { $false }); timeoutMinutes = $BuildTimeoutMinutes; logPath = $buildLog }
     gate = @{ verdict = $(@('FAIL', 'PASS')[[int]$gatePass]); startedUtc = $gateStartUtc; endedUtc = [DateTime]::UtcNow }
     issues = $Issues
 }
