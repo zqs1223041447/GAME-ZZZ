@@ -80,15 +80,15 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void EveFit_ScalesTinyMeshToCapsuleHeight()
+        public void DarkKnightFit_ScalesTinyMeshToCapsuleHeight()
         {
-            var root = new GameObject("EveFitRoot");
+            var root = new GameObject("DarkKnightFitRoot");
             var mesh = GameObject.CreatePrimitive(PrimitiveType.Cube);
             mesh.transform.SetParent(root.transform, false);
             mesh.transform.localScale = new Vector3(0.01f, 0.017f, 0.01f);
-            EveView.FitToCapsule(root, EveView.TargetHeight);
+            DarkKnightView.FitToCapsule(root, DarkKnightView.TargetHeight);
             Bounds b = mesh.GetComponent<Renderer>().bounds;
-            Assert.AreEqual(EveView.TargetHeight, b.size.y, 0.05f);
+            Assert.AreEqual(DarkKnightView.TargetHeight, b.size.y, 0.05f);
             Assert.AreEqual(0f, b.min.y, 0.05f);
             UnityEngine.Object.DestroyImmediate(root);
         }

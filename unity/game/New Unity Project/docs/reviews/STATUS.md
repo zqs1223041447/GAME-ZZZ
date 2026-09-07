@@ -25,7 +25,7 @@
 | 项 | 值 |
 |---|---|
 | 模型 | DarkKnight（BDO 包，预制体缩放 0.24，Humanoid 重定向） |
-| 贴地后身高 | ≈1.19（胶囊碰撞体 1.16 = `EveView.TargetHeight`；武器长刀不参与包围盒） |
+| 贴地后身高 | ≈1.19（胶囊碰撞体 1.16 = `DarkKnightView.TargetHeight`；武器长刀不参与包围盒） |
 | 动画 | 六态 Idle / Run / Attack / Cast / Hit / Death——Hit=受击 HitFlash 上跳沿（可被下一击打断重播）；Death=进入 `MapState.Dead` 播完冻结末帧（843011c） |
 | 相机 | 偏移 (0,10.6,-9.3)、注视斜距 14.1、注视 y 0.6、FOV 42（76381c0） |
 | 动画源 | 401 库两条：def_shield_dam（Hit 0.63s）/ def_shield_break 裁跪段（Death 0.68s）；截图 07_hit / 08_death / 09_camera |
@@ -53,7 +53,7 @@
 ## 已对齐（本轮只改文档）
 
 - `docs/art/ART_BIBLE.md` 相机行 (0,17,-15)→(0,10.6,-9.3)：76381c0 改跟拍后 ART_BIBLE 未同步——本页轮对齐。
-- 1.16 / 1.19 并存确认**非矛盾**：1.16=胶囊碰撞体高度（`EveView.TargetHeight`），1.19=贴地后可见身高；各文档口径一致（RUNTIME / DECISIONS / ART_BIBLE 同）。
+- 1.16 / 1.19 并存确认**非矛盾**：1.16=胶囊碰撞体高度（`DarkKnightView.TargetHeight`），1.19=贴地后可见身高；各文档口径一致（RUNTIME / DECISIONS / ART_BIBLE 同）。
 
 ## 残留
 

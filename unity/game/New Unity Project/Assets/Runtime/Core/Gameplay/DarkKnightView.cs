@@ -3,7 +3,7 @@ using UnityEngine.Rendering;
 
 namespace Game.Runtime.Core
 {
-    public static class EveView
+    public static class DarkKnightView
     {
         public const string ResourcesNameDarkKnight = "Player/DarkKnight";
 
@@ -14,7 +14,7 @@ namespace Game.Runtime.Core
             GameObject prefab = Resources.Load<GameObject>(ResourcesNameDarkKnight);
             if (prefab == null)
             {
-                // 旧 Eve 回退已删除：无 DarkKnight 预制体即回退胶囊视图（避免同名预制体复活已剔除旧模）
+                // 旧 Eve 回退已删除（曾用名）：无 DarkKnight 预制体即回退胶囊视图（避免同名预制体复活已剔除旧模）
                 GameLog.Info("Arena", "no DarkKnight prefab -> capsule visual");
                 return null;
             }
@@ -90,7 +90,7 @@ namespace Game.Runtime.Core
                 go.transform.position += new Vector3(0f, lift, 0f);
 
             GameLog.Info("Arena",
-                "Eve fitted body height " + targetHeight.ToString("0.00") +
+                "DarkKnight fitted body height " + targetHeight.ToString("0.00") +
                 " from " + height.ToString("0.000") +
                 " scale x" + scale.ToString("0.00"));
         }
@@ -150,13 +150,13 @@ namespace Game.Runtime.Core
             }
         }
 
-        public static Animator FindAnimator(GameObject eve)
+        public static Animator FindAnimator(GameObject dk)
         {
-            if (eve == null)
+            if (dk == null)
                 return null;
-            Animator anim = eve.GetComponent<Animator>();
+            Animator anim = dk.GetComponent<Animator>();
             if (anim == null)
-                anim = eve.GetComponentInChildren<Animator>();
+                anim = dk.GetComponentInChildren<Animator>();
             return anim;
         }
 

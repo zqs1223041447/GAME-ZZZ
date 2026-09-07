@@ -14,19 +14,19 @@ namespace Game.Runtime.Core
         Camera _camera;
         Transform _playerView;
         MeshRenderer _playerRenderer;
-        GameObject _eve;
-        Animator _eveAnimator;
-        AnimState _lastEveAnim = (AnimState)255;
-        bool _eveHasIdle;
-        bool _eveHasRun;
-        bool _eveHasAttack;
-        bool _eveHasCast;
-        bool _eveHasHit;
-        bool _eveHasDeath;
-        float _eveHitLen = 0.4f;
-        float _eveHitUntil;
-        bool _eveDead;
-        float _eveDeathFreezeAt;
+        GameObject _dk;
+        Animator _dkAnimator;
+        AnimState _lastDkAnim = (AnimState)255;
+        bool _dkHasIdle;
+        bool _dkHasRun;
+        bool _dkHasAttack;
+        bool _dkHasCast;
+        bool _dkHasHit;
+        bool _dkHasDeath;
+        float _dkHitLen = 0.4f;
+        float _dkHitUntil;
+        bool _dkDead;
+        float _dkDeathFreezeAt;
         float _lastPlayerFlash;
         GameObject[] _dummyGo;
         MeshRenderer[] _dummyRenderer;
@@ -389,13 +389,13 @@ namespace Game.Runtime.Core
             Vector3 playerPos = new Vector3(Sim.Player.X, 0f, Sim.Player.Z);
             _playerView.SetPositionAndRotation(playerPos, Quaternion.Euler(0f, Sim.Player.YawDeg, 0f));
             float playerFlash = Sim.Session != null ? Sim.Session.HitFlash : 0f;
-            if (_eve == null)
+            if (_dk == null)
                 ApplyPlayerVisual(_playerRenderer.transform, _playerRenderer, Sim.Player.Anim, PlayerColor, playerFlash);
             else
             {
                 _playerView.localScale = Vector3.one;
-                DriveEve(Sim.Player.Anim);
-                EveView.UpdateGround(_eve, playerPos.y);
+                DriveDarkKnight(Sim.Player.Anim);
+                DarkKnightView.UpdateGround(_dk, playerPos.y);
             }
 
             if (_camera != null)
@@ -704,32 +704,32 @@ namespace Game.Runtime.Core
             _playerView = root.transform;
             _playerRenderer = vis.GetComponent<MeshRenderer>();
 
-            _eve = EveView.TryMount(root.transform);
-            if (_eve != null)
+            _dk = DarkKnightView.TryMount(root.transform);
+            if (_dk != null)
             {
                 _playerRenderer.enabled = false;
-                _eveAnimator = EveView.FindAnimator(_eve);
-                CacheEveStates();
-                GameLog.Info("Arena", "Eve mounted under Player.");
+                _dkAnimator = DarkKnightView.FindAnimator(_dk);
+                CacheDarkKnightStates();
+                GameLog.Info("Arena", "DarkKnight mounted under Player.");
             }
             else
                 GameLog.Info("Arena", "capsule visual (no player mesh)");
         }
 
-        void CacheEveStates()
+        void CacheDarkKnightStates()
         {
-            _eveHasIdle = HasEveState("Idle");
-            _eveHasRun = HasEveState("Run");
-            _eveHasAttack = HasEveState("Attack");
-            _eveHasCast = HasEveState("Cast");
-            _eveHasHit = HasEveState("Hit");
-            _eveHasDeath = HasEveState("Death");
-            _eveHitLen = EveClipLength("Hit", 0.4f);
+            _dkHasIdle = HasDarkKnightState("Idle");
+            _dkHasRun = HasDarkKnightState("Run");
+            _dkHasAttack = HasDarkKnightState("Attack");
+            _dkHasCast = HasDarkKnightState("Cast");
+            _dkHasHit = HasDarkKnightState("Hit");
+            _dkHasDeath = HasDarkKnightState("Death");
+            _dkHitLen = DkClipLength("Hit", 0.4f);
         }
 
-        float EveClipLength(string name, float fallback)
+        float DkClipLength(string name, float fallback)
         {
-            RuntimeAnimatorController ctrl = _eveAnimator != null ? _eveAnimator.runtimeAnimatorController : null;
+            RuntimeAnimatorController ctrl = _dkAnimator != null ? _dkAnimator.runtimeAnimatorController : null;
             if (ctrl == null || ctrl.animationClips == null)
                 return fallback;
             for (int i = 0; i < ctrl.animationClips.Length; i++)
@@ -741,17 +741,17 @@ namespace Game.Runtime.Core
             return fallback;
         }
 
-        bool HasEveState(string name)
+        bool HasDarkKnightState(string name)
         {
-            if (_eveAnimator == null || _eveAnimator.runtimeAnimatorController == null)
+            if (_dkAnimator == null || _dkAnimator.runtimeAnimatorController == null)
                 return false;
-            return _eveAnimator.HasState(0, Animator.StringToHash(name));
+            return _dkAnimator.HasState(0, Animator.StringToHash(name));
         }
 
         // 视图层驱动：Hit/Death 只挂现有受击/死亡信号（Session.HitFlash 上跳沿、MapState.Dead），逻辑状态机不扩
-        void DriveEve(AnimState anim)
+        void DriveDarkKnight(AnimState anim)
         {
-            if (_eveAnimator == null || _eveAnimator.runtimeAnimatorController == null)
+            if (_dkAnimator == null || _dkAnimator.runtimeAnimatorController == null)
                 return;
 
             float flash = Sim.Session != null ? Sim.Session.HitFlash : 0f;
@@ -759,62 +759,62 @@ namespace Game.Runtime.Core
 
             if (dead)
             {
-                if (!_eveDead)
+                if (!_dkDead)
                 {
-                    _eveDead = true;
+                    _dkDead = true;
                     AudioEvents.Play(AudioEventId.Death);
-                    if (_eveHasDeath)
+                    if (_dkHasDeath)
                     {
-                        _eveAnimator.speed = 1f;
-                        _eveAnimator.Play("Death", 0, 0f);
-                        _eveDeathFreezeAt = Time.time + EveClipLength("Death", 1f);
+                        _dkAnimator.speed = 1f;
+                        _dkAnimator.Play("Death", 0, 0f);
+                        _dkDeathFreezeAt = Time.time + DkClipLength("Death", 1f);
                     }
                 }
                 // 非循环状态播完会被采样绕回：到点即冻结，定格跪倒末帧
-                if (_eveDeathFreezeAt > 0f && Time.time >= _eveDeathFreezeAt)
+                if (_dkDeathFreezeAt > 0f && Time.time >= _dkDeathFreezeAt)
                 {
-                    _eveAnimator.speed = 0f;
-                    _eveDeathFreezeAt = 0f;
+                    _dkAnimator.speed = 0f;
+                    _dkDeathFreezeAt = 0f;
                 }
                 _lastPlayerFlash = flash;
                 return;
             }
-            _eveDead = false;
-            if (_eveAnimator.speed == 0f)
-                _eveAnimator.speed = 1f;
+            _dkDead = false;
+            if (_dkAnimator.speed == 0f)
+                _dkAnimator.speed = 1f;
 
             bool hitEdge = flash > 0.02f && _lastPlayerFlash <= 0.02f;
             if (hitEdge)
                 AudioEvents.Play(AudioEventId.Hit); // 与 Hit 动画同一处：玩家受击上跳沿
-            if (_eveHasHit && hitEdge)
+            if (_dkHasHit && hitEdge)
             {
                 // 新的受击上跳沿即重播：高攻速下 Hit 可被下一击打断重来
-                _eveAnimator.Play("Hit", 0, 0f);
-                _eveHitUntil = Time.time + _eveHitLen;
-                _lastEveAnim = (AnimState)255; // Hit 播完后强制重放当前逻辑姿态
+                _dkAnimator.Play("Hit", 0, 0f);
+                _dkHitUntil = Time.time + _dkHitLen;
+                _lastDkAnim = (AnimState)255; // Hit 播完后强制重放当前逻辑姿态
             }
             _lastPlayerFlash = flash;
 
-            if (Time.time < _eveHitUntil)
+            if (Time.time < _dkHitUntil)
                 return;
 
-            if (anim == _lastEveAnim)
+            if (anim == _lastDkAnim)
                 return;
 
             string state = null;
-            if (anim == AnimState.Run && _eveHasRun)
+            if (anim == AnimState.Run && _dkHasRun)
                 state = "Run";
-            else if (anim == AnimState.Attack && _eveHasAttack)
+            else if (anim == AnimState.Attack && _dkHasAttack)
                 state = "Attack";
-            else if (anim == AnimState.Cast && _eveHasCast)
+            else if (anim == AnimState.Cast && _dkHasCast)
                 state = "Cast";
-            else if (_eveHasIdle)
+            else if (_dkHasIdle)
                 state = "Idle";
 
-            _lastEveAnim = anim;
+            _lastDkAnim = anim;
             if (state == null)
                 return;
-            _eveAnimator.Play(state, 0, 0f);
+            _dkAnimator.Play(state, 0, 0f);
         }
 
         GameObject BuildCapsule(string name, Color color, float radius, float height)

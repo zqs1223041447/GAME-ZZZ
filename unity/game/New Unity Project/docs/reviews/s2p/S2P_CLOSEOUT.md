@@ -31,7 +31,7 @@
 ## 阻塞与残留
 
 - **1440p 硬件阻塞**：本机显示器 1920×1080，全屏/窗口 2560×1440 均被钳回。待有 1440p 硬件后补测（不是 S3 前置阻断）。
-- 非阻断残留：代码名仍为 `EveView / DriveEve`（改名另开一轮）。`Player/Eve` 回退分支已删除（2026-09-07）——`TryMount` 只加载 `Player/DarkKnight`，缺失即回退胶囊并打日志；仓库内无 Player/Eve 预制体、无运行时 .blend 加载。
+- 非阻断残留（已清，2026-09-07 改名轮）：代码名已由曾用名 `EveView / DriveEve` 改为 `DarkKnightView / DriveDarkKnight`（历史 commit/记录保留曾用名）。`Player/Eve` 回退分支已删除（2026-09-07）——`TryMount` 只加载 `Player/DarkKnight`，缺失即回退胶囊并打日志；仓库内无 Player/Eve 预制体、无运行时 .blend 加载。
 
 ## 结论
 
