@@ -1,8 +1,17 @@
 # S2P 技术收口
 
-日期：2026-09-07。状态：**技术收口已记录**；S2P 的 1440p/120 目标**未结案**。
+日期：2026-09-07。状态：**技术收口已记录**；S2P 的 1440p/120 目标最初未结案，**2026-09-08（M7）已在锁定硬件上正式关闭**（见下方 M7 Final Closeout）。
 
 注（S3-M6 补记）：历史结果文件首行沿用早期「S2P 1440p harness」命名，**实际分辨率以每份文件的 `resolution=` 行为准**（该轮为 1920×1080）；历史数据文件保持原样不现代化（S3-M6 起新证据标题已中性化为 `# ArenaPerfHarness, density=<n>`）。
+
+## M7 1440p/120 Final Closeout（2026-09-08）
+
+**S2P 1440p/120 = CLOSED**：2026-09-08 已在 M7 锁定测试硬件（AMD Ryzen 7 5700X3D 8-Core / NVIDIA GeForce RTX 5070）、真实 StandaloneWindows64、真实 2560×1440、D3D12、PC Quality（vSync=0 / targetFrameRate=-1）环境通过 canonical 120FPS Performance Gate（预算 8.33ms）。
+
+- 证据：2 个 canonical Gate × 3 Run × 3 Density = 18 次测量全部 PASS；worst main avg=1.676ms / worst p99=2.388ms（预算的 28.7%）；cpu/gpu avg 全部 ≤8.33 且 >0；FrameTiming 18/18 available；alive 96.7%-100%（≥95%）；frames=600×18。完整冻结证据包见 `1440p-120-m7/`（SUMMARY.md + PERFORMANCE_GATE.json 快照 + gate-b/Run1-3 原始文件）。
+- contract：`docs/qa/PERFORMANCE_GATE.json`（机器可读唯一真相源）；预算语义：`docs/qa/PERFORMANCE_BUDGET.md`。
+- 边界：此结论仅适用于锁定硬件与 canonical 环境；其它机器需按 contract 显式更新硬件字段并重新建立 baseline，**不构成「所有 Windows PC 都保证 120FPS」**。
+- 历史 1080p 证据（`1440p/`）与本表三档数字保持原样（当时环境与当前环境不同，不互相覆盖）。
 
 ## 证据包
 
