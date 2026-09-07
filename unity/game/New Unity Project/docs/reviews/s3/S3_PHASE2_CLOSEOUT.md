@@ -51,7 +51,7 @@
 - `SupportCatalog.Count`/`_defs` 容量手工维护（护栏断言兜底，漏改即红）——低风险债。
 - `MechanicSkill` 当前仅表达单技能限制；多技能机制 Support 出现时需扩展。
 - 正式 UI / 人声映射 / 精模：**导演门控（GATED / NOT STARTED）**，非阻塞。
-- 1440p 补测：硬件挂起（非 S3 前置）。
+- 1440p 补测：硬件挂起（非 S3 前置）。（2026-09-07 当时状态；1440p/120 后由 M7 在锁定硬件下 CLOSED，见 `docs/reviews/STATUS.md`）
 - 资源契约与 Runtime 查找规则为「同源复制」（key/拼接方式在测试侧复刻）——Runtime 改路径时需同步契约（有 REQUIRED 加载失败兜底）。
 
 ## Verdict

@@ -1,6 +1,6 @@
 # UNATTENDED_VERIFICATION（无人值守验证 Gate · QA 操作契约）
 
-S3-M4 建立（Quick Gate）；S3-M5 扩展（Build Gate）；S3-M6 扩展（Player Runtime Gate）。本文是仓库内长期 QA 操作契约：**不需要任何聊天历史或外部工具知识，clone 仓库即可完成标准验证 Gate**。
+S3-M4 建立（Quick Gate）；S3-M5 扩展（Build Gate）；S3-M6 扩展（Player Runtime Gate）；S3-M7 扩展（Performance Gate）——四层齐备。本文是仓库内长期 QA 操作契约：**不需要任何聊天历史或外部工具知识，clone 仓库即可完成标准验证 Gate**。
 
 ## Canonical command
 
@@ -10,6 +10,7 @@ S3-M4 建立（Quick Gate）；S3-M5 扩展（Build Gate）；S3-M6 扩展（Pla
 .\tools\verify_unattended.ps1                    # Quick Gate：测试 + Audit
 .\tools\verify_unattended.ps1 -IncludeBuild      # Build Gate：Quick + StandaloneWindows64 Player Build
 .\tools\verify_unattended.ps1 -IncludePlayerRun  # Player Runtime Gate：Build Gate + 刚构建 Player 跑 Arena Harness
+.\tools\verify_unattended.ps1 -IncludePerformance  # Performance Gate：锁定环境 + 同一 Build 连续 3 次 + 8.33ms 硬预算（隐含全部）
 ```
 
 或指定编辑器路径：
@@ -36,6 +37,17 @@ S3-M4 建立（Quick Gate）；S3-M5 扩展（Build Gate）；S3-M6 扩展（Pla
 **Performance Gate**：contract 唯一真相源=`docs/qa/PERFORMANCE_GATE.json`（预算语义文档=`docs/qa/PERFORMANCE_BUDGET.md`）。锁定环境：真实 `Screen` 分辨率 2560×1440 / fullscreen / Direct3D12 / Quality=PC / vSync=0 / targetFrameRate=-1 / CPU+GPU 锁定（probe 实测回填；硬件变更需正式工作令显式更新，禁止自动学习）。同一 Build 连续 3 次独立 Player 运行（`-screen-width/-height/-fullscreen/-screen-quality/-force-d3d12 -arenaPerf -arenaPerfGate`），全部 PASS 才 PASS；硬指标：main avg+p99 ≤8.33、cpu/gpu avg >0 且 ≤8.33、frame_timing 必须 available（否则 EVIDENCE_INCOMPLETE）、alive≥95%、frames==600。Verdict 语义（PASS/FAIL/ENV_NOT_MET/EVIDENCE_INCOMPLETE/INFRA/NOT_EVALUATED）与 R3 内容冻结契约见 PERFORMANCE_BUDGET.md；只有 Performance 层允许输出 `PerformanceVerdict: PASS`。
 
 **什么时候要求更高层**：Runtime C#、Scene、ProjectSettings、Packages、Resources、build settings、player-facing asset 修改后默认要求 Player Runtime Gate（或更高，由工作令指定）；触及性能相关面（渲染/质量/工作负载/分辨率）默认 Performance 层；纯 docs / test-only / tooling-only 可 Quick，规划 AI 有权逐轮强制更高层。
+
+## Performance Evidence Capture（证据快照 operator）
+
+凡以「canonical Performance Gate」作为正式 closeout / revalidation 证据时，每个 Gate 的原始 run 证据必须完整冻结——**下一次 Gate 运行会清空 TempRoot，因此正式历史证据必须在本次 Gate 结束后、下一次运行前显式快照**。顺序固定：
+
+1. `.\tools\verify_unattended.ps1 -IncludePerformance` → 确认控制台 `PerformanceVerdict: PASS` 且 exit=0；
+2. `.\tools\snapshot_performance_evidence.ps1 -Destination "docs\reviews\s2p\<目录>\gate-a"` —— 从 TempRoot 复制 3 个 Run 的全部原始文件（`100/200/300.txt` + `PlayerRun.log` ×3）+ `verification-summary.json` + 契约快照，生成 `MANIFEST.json`（SHA-256 逐文件）；
+3. 再运行下一次 canonical Gate（其会清空 TempRoot）→ 对第二个 Gate 重复快照到 `...\gate-b`；
+4. `.\tools\snapshot_performance_evidence.ps1 -VerifyArchive "docs\reviews\s2p\<目录>\gate-a"` 只读校验归档完整性（manifest/文件存在/字节数/SHA-256/契约快照）。
+
+职责分离：`verify_unattended.ps1`（Verifier）只运行、测量、判定并输出 temp，**不直接写冻结历史证据目录**；`snapshot_performance_evidence.ps1`（Operator）只在显式调用时把当前 temp 的 **PASS** 结果复制为冻结证据——不运行 Unity、不修改性能结果、不判定新预算；非 PASS（FAIL/ENV_NOT_MET/EVIDENCE_INCOMPLETE/INFRA）与不完整 run、契约不匹配一律拒绝快照。
 
 ## Player Build（Build Gate 层）
 

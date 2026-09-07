@@ -51,12 +51,15 @@
 | Atlas | 完整 Craft 之后 |
 | 深度 Craft | 废料/蚀刻剂经济有实际循环数据 |
 | Boss 哲学（遭遇设计） | 精模 Boss 落地至少 1 只 |
-| 1440p@120 补测 | 导演提供 1440p 环境（当前挂起「以后再说」） |
+| 1440p@120 补测 | **已完成并 CLOSED（M7 locked hardware，2026-09-08）**——不再是待开启项（历史：导演曾裁定「以后再说」挂起；M7 后硬件/门条件变化并完成补测，证据 `docs/reviews/s2p/1440p-120-m7/`） |
 | DOTS/HDRP/FMOD | **永不上**（除非导演推翻 DECISIONS 基线） |
 
 ## 阶段 7 · 1440p@120（非本阶段前置）
 
-- 导演已裁定「以后再说」：维持挂起、不补测、不宣布 120@1440p。**不是任何 S3 阶段的前置**。
+- **状态：COMPLETE / CLOSED（M7 locked hardware，2026-09-08）**——真实 2560×1440/D3D12/PC/vSync=0/targetFps=-1 下 18 测量全 PASS（worst p99=2.388ms / 预算 8.33），证据 `docs/reviews/s2p/1440p-120-m7/`。
+- 历史演进：导演曾裁定「以后再说」（维持挂起、不补测、不宣布 120@1440p）；M7 建立锁定硬件 canonical Performance Gate 后条件变化，完成补测并收口。
+- **它仍不是 S3 Phase 3-5 的自动前置**：完成不自动启动 UI / 人声 / 精模（各自仍等导演立令）。
+- 锁定硬件边界不变：结论仅适用 M7 锁定 CPU/GPU + canonical 契约，其它机器须按 `docs/qa/PERFORMANCE_GATE.json` 显式更新并重建 baseline。
 
 ## 第一批 S3 开工允许清单（**历史开工范围 · 已执行**）
 
