@@ -2,7 +2,7 @@
 
 日期：2026-09-08。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit：A=acfd90d（tooling：Player Runtime Gate `-IncludePlayerRun`，隐含 Build）+ f14eed4（fix：Harness 证据中性化+删 enteredMap 假字段）+ dfb33bd（docs：QA 三层化 + M6 复核 PASS + DECISIONS 长期规则 + S2P 消歧注）/ B=回填本行
+本轮 commit：A=b3999cd（tooling：Performance Gate `-IncludePerformance` 第四层 + 硬件锁定契约 `docs/qa/PERFORMANCE_GATE.json` + Harness `-arenaPerfGate` 钉帧率与硬件证据行；健壮性修复 stale-lock 清理/playInfra 绑定/Depth8）+ 0eeeea8（docs：`PERFORMANCE_BUDGET.md` 预算语义 + QA 四层化 + DECISIONS M7 长期规则⑤-⑧）+ 422d356（docs：S2P 1440p/120 CLOSED + 冻结证据包 `1440p-120-m7/` + M7 复核 PASS）/ B=回填本行
 
 ## 门状态
 
@@ -16,7 +16,7 @@
 | S2 换模碰撞 | 技术放行 | f22862e / 239142e 换模；ebbf782 贴地修正；碰撞规则仍在 |
 | S2 外观「小于敌人」 | 已修正 | ebbf782——身体净高 ≈1.19，同框可辨 |
 | S2P 1080p | 已证 | b152610 独立包：p99 最高 2.508ms（预算 8.33ms） |
-| S2P 1440p@120 | 未结案 | 硬件钳制（本机 1080p 显示器）；不宣布 120FPS@1440p |
+| S2P 1440p@120 | **已证 / CLOSED（M7 locked hardware）** | 2026-09-08：AMD Ryzen 7 5700X3D / RTX 5070、真实 2560×1440、D3D12、PC Quality 通过 canonical 120FPS Gate（worst p99=2.388ms / 预算 8.33）；证据 `docs/reviews/s2p/1440p-120-m7/`；结论仅适用锁定硬件，其它机器需按 contract 显式更新 |
 | S3 最小底座 | 已开工 | c2689be ART_BIBLE+内容校验；8f2de35 预留 Tag 钉死 |
 | S3 内容扩张 | **阶段 1+2 已收口（COMPLETE）** | 第一批/R1=PASS（`S3_BATCH1_REVIEW.md`）；R2 火焰转化=PASS（`S3_R2_REVIEW.md`）；兼容门+资源真实验证+Tag 规则（`S3_PHASE2_CLOSEOUT.md`）；**阶段 3-5=导演门控 GATED/NOT STARTED，后置系统仍关，S3 整体未结束** |
 
@@ -44,7 +44,7 @@
 
 ## 校验
 
-- EditMode 115/115、PlayMode 3/3（canonical Gate `.\tools\verify_unattended.ps1`；M5 维护轮 +2 Build Settings 场景契约测试）。报告 **`CONTENT_AUDIT_S3_CLOSEOUT.md`**（测试再生；BATCH1/R2 保留历史）：**顶部 Verdict 块=Audit completed: YES / Verdict: PASS / Failure count: 0**；StatId/ModOp/运行期未知 Stat=0；非法 Tag=0；Effect-Event=0；链接=0；词缀行=0；兼容矩阵=0（3×7 parity 21 组合）；**Skill Tag golden parity=3/3**；**死 Tagged Modifier=0**（4 条全可达）；**结构/契约问题=0**；**资源契约=REQUIRED 6/6 真实加载 PASS（玩家预制体+5 SFX）、GATED 人声 3 键缺失如实记录、VFX 声明引用 0=N/A**。负向 Tag 规则测试通过。阶段 1/2 收口=`S3_PHASE2_CLOSEOUT.md`（Phase 1/2=COMPLETE）；M1 事实收敛（`S3_M1_REPO_TRUTH_REVIEW.md` PASS）；M2 资源路径单一真相源（`S3_M2_RESOURCE_CONTRACT_REVIEW.md` PASS）；M3 failure-safe 审计（`S3_M3_AUDIT_FAILSAFE_REVIEW.md` PASS）；M4 无人值守 Quick Gate（`S3_M4_UNATTENDED_GATE_REVIEW.md` PASS）；**M5 Full Integration Gate=Quick+win64 Player Build（`.\tools\verify_unattended.ps1 -IncludeBuild`；`-batchmode -quit -buildTarget win64 -buildWindows64Player` 实测；双证据判定；6 次运行全 PASS，exe 667136 bytes/Data 162 文件；Build Settings 场景契约锁定 Bootstrap=0/Arena=1；设置资产归一化收口+define 振荡根因修复 `submitAnalytics: 0`），复核=`S3_M5_WIN64_BUILD_GATE_REVIEW.md`（PASS）**；**M6 Player Runtime Gate=`-IncludePlayerRun`（隐含 Build；本轮刚构建 Player 以 `-arenaPerf` 启动三档跑完自退 exit=0；证据 QA golden 100/200/300+editor=False+实测分辨率一致+13 列可解析；无性能阈值恒输出 `PerformanceVerdict: NOT_EVALUATED`；Harness 证据标题中性化+删 enteredMap 假字段；实测分辨率 2560x1440/DX12 仅记录——**1440p/120 维持未结案、性能未判定**），复核=`S3_M6_PLAYER_RUNTIME_TRUTH_REVIEW.md`（PASS）**。未使用 Tag 4 个（Spell/Projectile/Fire/Duration）=预留，不是任务。
+- EditMode 115/115、PlayMode 3/3（canonical Gate `.\tools\verify_unattended.ps1`；M5 维护轮 +2 Build Settings 场景契约测试）。报告 **`CONTENT_AUDIT_S3_CLOSEOUT.md`**（测试再生；BATCH1/R2 保留历史）：**顶部 Verdict 块=Audit completed: YES / Verdict: PASS / Failure count: 0**；StatId/ModOp/运行期未知 Stat=0；非法 Tag=0；Effect-Event=0；链接=0；词缀行=0；兼容矩阵=0（3×7 parity 21 组合）；**Skill Tag golden parity=3/3**；**死 Tagged Modifier=0**（4 条全可达）；**结构/契约问题=0**；**资源契约=REQUIRED 6/6 真实加载 PASS（玩家预制体+5 SFX）、GATED 人声 3 键缺失如实记录、VFX 声明引用 0=N/A**。负向 Tag 规则测试通过。阶段 1/2 收口=`S3_PHASE2_CLOSEOUT.md`（Phase 1/2=COMPLETE）；M1 事实收敛（`S3_M1_REPO_TRUTH_REVIEW.md` PASS）；M2 资源路径单一真相源（`S3_M2_RESOURCE_CONTRACT_REVIEW.md` PASS）；M3 failure-safe 审计（`S3_M3_AUDIT_FAILSAFE_REVIEW.md` PASS）；M4 无人值守 Quick Gate（`S3_M4_UNATTENDED_GATE_REVIEW.md` PASS）；**M5 Full Integration Gate=Quick+win64 Player Build（`.\tools\verify_unattended.ps1 -IncludeBuild`；`-batchmode -quit -buildTarget win64 -buildWindows64Player` 实测；双证据判定；6 次运行全 PASS，exe 667136 bytes/Data 162 文件；Build Settings 场景契约锁定 Bootstrap=0/Arena=1；设置资产归一化收口+define 振荡根因修复 `submitAnalytics: 0`），复核=`S3_M5_WIN64_BUILD_GATE_REVIEW.md`（PASS）**；**M6 Player Runtime Gate=`-IncludePlayerRun`（隐含 Build；本轮刚构建 Player 以 `-arenaPerf` 启动三档跑完自退 exit=0；证据 QA golden 100/200/300+editor=False+实测分辨率一致+13 列可解析；无性能阈值恒输出 `PerformanceVerdict: NOT_EVALUATED`；Harness 证据标题中性化+删 enteredMap 假字段；实测分辨率 2560x1440/DX12 仅记录——**1440p/120 维持未结案、性能未判定**），复核=`S3_M6_PLAYER_RUNTIME_TRUTH_REVIEW.md`（PASS）**；**M7 Performance Gate=`-IncludePerformance`（contract=`docs/qa/PERFORMANCE_GATE.json` 锁 2560×1440/D3D12/PC/vSync0/targetFps-1/CPU+GPU；同一 Build 连续 3 次 Player 锁定环境运行；硬指标 main avg+p99≤8.33+cpu/gpu≤8.33+FrameTiming 必须+alive≥95%+frames=600；**2 个 canonical Gate ×3 Run×3 Density=18 测量全 PASS，worst p99=2.388ms=预算 28.7%→S2P 1440p/120 CLOSED（锁定硬件）**，冻结证据 `docs/reviews/s2p/1440p-120-m7/`；预算语义=`docs/qa/PERFORMANCE_BUDGET.md`），复核=`S3_M7_1440P_PERFORMANCE_GATE_REVIEW.md`（PASS）**。未使用 Tag 4 个（Spell/Projectile/Fire/Duration）=预留，不是任务。
 
 ## 导演门控待输入
 
@@ -64,6 +64,7 @@
 
 | 日期 | HEAD | EditMode | PlayMode | 失败项 |
 |---|---|---|---|---|
+| 2026-09-08 | b3999cd+0eeeea8+422d356（Performance Gate A+B：18 测量全 PASS，worst p99=2.388ms；S2P 1440p/120 CLOSED） | 115/115 | 3/3 | 无 |
 | 2026-09-08 | dfb33bd（Player Runtime Gate×2：115/115+3/3+build+PlayerRun PASS；性能=NOT_EVALUATED） | 115/115 | 3/3 | 无 |
 | 2026-09-08 | 938d697（Full Gate×6：115/115+3/3+win64 build PASS） | 115/115 | 3/3 | 无 |
 | 2026-09-08 | 58544a3+71601fd+61813ac（canonical Gate×3） | 113/113 | 3/3 | 无 |
