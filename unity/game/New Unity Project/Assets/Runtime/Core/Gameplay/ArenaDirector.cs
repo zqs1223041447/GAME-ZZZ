@@ -206,6 +206,10 @@ namespace Game.Runtime.Core
 
             Sim.SpawnDummies(8, CombatRules.ArenaSeed);
             GameLog.Info("Arena", "S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。");
+
+            // 测量钩子：默认无操作，仅独立包 -arenaPerf 参数或显式调用时启动
+            ArenaPerfHarness.InitFromArgs();
+            ArenaPerfHarness.TryStart(this);
         }
 
         PlayerCommand ReadInput(bool blockWorld)

@@ -1,0 +1,5 @@
+# S2P 1440p harness, density=100
+# resolution=1920x1080 fullscreen=True currentRes=1920x1080 editor=False dx=Direct3D12 enteredMap=false
+# density strategy: kill-then-refill (alive kept at nominal via SpawnAt top-up)
+dummy_count,alive,frames,main_ms_avg,main_ms_p95,main_ms_p99,main_ms_p999,main_ms_max,gc_alloc_bytes_avg,cpu_ms_avg,gpu_ms_avg,mem_total_mb,frame_timing_ok
+100,100,600,1.380,1.727,1.958,2.564,3.237,0.0,1.381,0.323,118.9,true
