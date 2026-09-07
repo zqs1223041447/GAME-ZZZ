@@ -18,6 +18,7 @@ S0 锁定。后续阶段不得在未改本文的情况下推翻这些决定。
 - 音频事件挂钩·无素材（2026-09-07）：单一入口 `AudioEvents.Play`（不进 FMOD/Wwise，不生产 wav/ogg）；查找表 `Resources/Audio/<事件名>` 预留 5 键（值可空），无资产=静音+限频日志（5s/键，禁每帧刷屏）。触发点：Cast=`ArenaSim.Resolve` 施放起手；Impact=`ArenaSim.PlayImpact` 技能命中；Hit=玩家受击 HitFlash 上跳沿（`ArenaDirector`，与 Hit 动画同帧；原怪物受击挂点已摘除）；Death=玩家进入 `MapState.Dead`（`ArenaDirector`，与 Death 动画同处；原怪物死亡挂点已摘除）；Loot=**掉落生成**（`SliceSession.DropGear`，AddItem 成功即触发——选生成非拾取，当前无独立拾取动作）。语音 ogg 仍不接；正式游玩路径缺音频不报错不卡死。
 - 导演门控待输入表（2026-09-07）：ROADMAP 增「导演门控待输入」节（ART_BIBLE 临时色 / 1440p 补测 / 正式 UI / 语音 ogg / EveView 改名 / 怪物独立 EnemyHit 事件 / 音频 clip 投资源）——每项「无输入则不做」，不得当自动任务开工。
 - 门状态总览（2026-09-07）：`docs/reviews/STATUS.md` 一页纸——11 门状态+玩家视图/碰撞/测量/音频/校验快照；总览见 STATUS.md。
+- 导演决策集·八项（2026-09-07 导演就位逐项裁定）：①三色**不定稿**——默认技能色维持，颜色最终由皮肤系统管理（归未来皮肤系统轮）；②1440p 补测**以后再说**（维持挂起、不宣布 120@1440p）；③**重做 UI，类 PoE/暗黑 3**（先出方案页给导演过目再实现）；④语音 ogg **全部事件接入**；⑤**批准** EveView/DriveEve 改名轮；⑥怪物独立 EnemyHit 事件**不做**；⑦5 个音频 clip——问 GPT 搜免费可用素材投放；⑧**其余解决后开启 S3**，开启前先问 GPT 要 S3 后续工作规划。门控表（ROADMAP）已同步裁定状态。
 
 ## 工作方式（导演 2026-09-07 追加）
 
