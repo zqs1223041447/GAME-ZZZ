@@ -2,7 +2,7 @@
 
 日期：2026-09-07。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit：A=3a45983（S3-B1-RCLOSE：独立复核 PASS + Runtime 兼容门 + 回归测试 6 项）/ B=回填本行
+本轮 commit：A=（S3-R2-FIRE-CONVERSION 主体：火焰转化 + 3×7 parity + 审计，由紧随的回填提交写入）/ B=回填本行
 
 ## 门状态
 
@@ -18,7 +18,7 @@
 | S2P 1080p | 已证 | b152610 独立包：p99 最高 2.508ms（预算 8.33ms） |
 | S2P 1440p@120 | 未结案 | 硬件钳制（本机 1080p 显示器）；不宣布 120FPS@1440p |
 | S3 最小底座 | 已开工 | c2689be ART_BIBLE+内容校验；8f2de35 预留 Tag 钉死 |
-| S3 内容扩张 | **第一批已收口（复核 PASS + Runtime 兼容门）** | A=ba87b8a 第一批；RCLOSE=独立复核 verdict=PASS（`S3_BATCH1_REVIEW.md`）+ TrySetSupport 兼容门接入（golden=独立 oracle）；Unique / 大树 / Atlas / 完整 Craft / 新系统仍禁 |
+| S3 内容扩张 | **第一批+R2 已收口** | A=ba87b8a 第一批；RCLOSE=复核 PASS + TrySetSupport 兼容门（golden=独立 oracle）；R2=火焰转化 50% 物转火（零专用分支，`S3_R2_REVIEW.md` PASS）；Unique / 大树 / Atlas / 完整 Craft / 新系统仍禁 |
 
 ## 玩家视图
 
@@ -44,7 +44,7 @@
 
 ## 校验
 
-- EditMode 89/89、PlayMode 3/3（pipeline run_tests，运行中编辑器）。报告 **`CONTENT_AUDIT_S3_BATCH1.md`**（测试再生）：StatId/ModOp/运行期未知 Stat=0；非法 Tag=0；Effect-Event=0；链接=0；词缀行=0；**Support×技能兼容矩阵=0**（集中×近战/弹道、分裂×近战/范围钉死不兼容）。**Runtime 兼容门已接入**（S3-B1-RCLOSE）：`TrySetSupport` 写入前拒绝非法连接；SupportGateTests 校验 Runtime 判定与 golden（独立 oracle）全 18 组合一致。独立复核 verdict=PASS（`S3_BATCH1_REVIEW.md`）。音频已挂钩；未使用 Tag 7 个=预留，不是任务。
+- EditMode 95/95、PlayMode 3/3（pipeline run_tests，运行中编辑器）。报告 **`CONTENT_AUDIT_S3_R2.md`**（测试再生；BATCH1 报告保留历史）：StatId/ModOp/运行期未知 Stat=0；非法 Tag=0；Effect-Event=0；链接=0；词缀行=0；Support×技能兼容矩阵=0（**3×7 golden，火焰转化列=近战✓弹道✓范围✗**，TrySetSupport 拒绝非法连接，parity 全 21 组合）。R2 独立复核 verdict=PASS（`S3_R2_REVIEW.md`，零专用分支审计=0）。音频已挂钩；未使用 Tag 4 个（Spell/Projectile/Fire/Duration）=预留，不是任务。
 
 ## 导演门控待输入
 
@@ -64,6 +64,7 @@
 
 | 日期 | HEAD | EditMode | PlayMode | 失败项 |
 |---|---|---|---|---|
+| 2026-09-07 | S3-R2（回填写入） | 95/95 | 3/3 | 无 |
 | 2026-09-07 | 3a45983 | 89/89 | 3/3 | 无 |
 | 2026-09-07 | ba87b8a | 83/83 | 3/3 | 无 |
 | 2026-09-07 | f35586c | 82/82 | 3/3 | 无 |

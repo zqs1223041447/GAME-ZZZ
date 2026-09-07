@@ -10,7 +10,7 @@
 | S1 | 能打 + 能量测 | **已放行**（手感门 2026-09-07 导演复测关闭） |
 | S2 | 微循环能玩 | **已完成**（导演 2026-09-06 确认）；换模 Dark Knight 技术放行（贴地修正 ebbf782）；碰撞仍在（HUD 未完备） |
 | S2P | 真实系统密度报告 | **技术收口已记录**（Editor 基线 6e95c1b + 独立包 1080p b152610；1440p 被硬件钳制待补；120FPS@1440p 未宣布） |
-| S3 | 按队列扩内容 | **第一批已开并收口（2026-09-07，导演口令「开 S3」→ 工作令 S3-B1-RCLOSE）**：校验扩展 + 3 条组合系词缀（灼燃/锐击/熔铸）；独立复核 verdict=PASS（`docs/reviews/s3/S3_BATCH1_REVIEW.md`）；**Runtime Support 兼容门已接入**（TrySetSupport 拒绝矩阵非法组合，golden=独立 oracle）；仍禁：Unique / 大树 / Atlas / 完整 Craft / 新系统。1440p 补测不是 S3 前置阻断 |
+| S3 | 按队列扩内容 | **第一批已收口（复核 PASS + Runtime 兼容门）+ R2 已收口**：R2=转换型 Support 火焰转化（50% 物转火，零专用分支，golden 3×7 parity，`S3_R2_REVIEW.md` verdict=PASS）；仍禁：Unique / 大树 / Atlas / 完整 Craft / 新系统。1440p 补测不是 S3 前置阻断 |
 
 ## Gate S0
 
@@ -47,7 +47,7 @@
 
 ## 下一步
 
-S2P 技术收口已记录。**S3 最小底座已开工（2026-09-07）**：`docs/art/ART_BIBLE.md` 初稿 + 内容校验（`ContentAuditS2Tests`，EditMode）。**S3 第一批已提交并收口（2026-09-07）**：校验扩展 + R1 组合系词缀 3 条（灼燃/锐击/熔铸），报告 `docs/reviews/s3/CONTENT_AUDIT_S3_BATCH1.md`；独立复核 verdict=PASS（`docs/reviews/s3/S3_BATCH1_REVIEW.md`）；**Runtime Support 兼容门已接入**——`TrySetSupport` 拒绝矩阵非法组合（失败无半写入），golden 矩阵（`SupportCompatGolden`）保持独立 oracle；细节见 DECISIONS。**仍禁止**——大天赋树、Unique 库、Atlas、完整 Craft、新运行期系统。**未使用 Tag ≠ 下一工作项**。下一批候选=**S3 R2：1 个 Support 机制变体**（等规划 AI 下达方向与边界）；阶段 3-5 仍等导演输入（UI 过目 / 人声指认 / 精模点名）。
+S2P 技术收口已记录。**S3 最小底座已开工（2026-09-07）**：`docs/art/ART_BIBLE.md` 初稿 + 内容校验（`ContentAuditS2Tests`，EditMode）。**S3 第一批与 R2 均已提交并收口（2026-09-07）**：第一批=校验扩展 + R1 组合系词缀 3 条（灼燃/锐击/熔铸），报告 `docs/reviews/s3/CONTENT_AUDIT_S3_BATCH1.md`，复核 `S3_BATCH1_REVIEW.md` verdict=PASS，**Runtime Support 兼容门已接入**（TrySetSupport 拒绝非法组合、失败无半写入，golden 矩阵=独立 oracle）；R2=转换型 Support 火焰转化（50% 物转火，零专用分支），报告 `CONTENT_AUDIT_S3_R2.md`，复核 `S3_R2_REVIEW.md` verdict=PASS，与烬心共享转换轴（0.40+0.50=0.90 自然聚合）。**仍禁止**——大天赋树、Unique 库、Atlas、完整 Craft、新运行期系统。**未使用 Tag ≠ 下一工作项**。下一批等规划 AI 逐令；阶段 3-5 仍等导演输入（UI 过目 / 人声指认 / 精模点名）。
 
 ## 导演门控待输入
 

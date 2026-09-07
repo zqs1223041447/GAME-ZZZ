@@ -17,6 +17,7 @@
 
 - 规则：**只用数据 + 已有 Effect/Trigger/Stat 组合**产新条目（如新词缀=现有 Modifier 组合、新怪=现有 Kind 换参数+现动画）；**禁止新 MonoBehaviour 堆系统**、禁止新 Effect 引擎路径。
 - 批次建议：R1=+少量 Affix（≤3 条，全部由既有 ModOp 组合）；R2=+1 Support 机制变体（复用现有 Support 框架字段）。
+- **执行状态（2026-09-07）**：R1 已落地（第一批 3 组合词缀 + 校验扩展，BATCH1 报告）；R2 已落地（工作令 S3-R2-FIRE-CONVERSION，方向由规划 AI 指定=物理转火：火焰转化，零专用分支，R2 报告 + `S3_R2_REVIEW.md` PASS）。
 - 依赖：阶段 1 校验先行；R2 另需导演点名变体方向。状态：**等导演「开 S3」口令**。
 - 每批次仍走 I/R 全流程 + CONTENT_AUDIT 再生。
 
