@@ -1,32 +1,41 @@
 # =====================================================================
-# GAME-ZZZ Unattended Verification Gate (S3-M4-UNATTENDED-VERIFY-GATE)
-# Repository-local canonical verification entry. One command runs:
-#   Unity resolution -> EditMode suite -> PlayMode suite ->
-#   Content Audit freshness + verdict -> XML parsing -> summary -> exit code
+# GAME-ZZZ Unattended Verification Gate (S3-M4 tests + S3-M5 build + S3-M6 player runtime)
+# Repository-local canonical verification entry. Three tiers:
+#   Quick Gate:            EditMode + PlayMode + Content Audit
+#   Build Gate (-IncludeBuild):      Quick + StandaloneWindows64 Player Build
+#   Player Runtime Gate (-IncludePlayerRun): Build Gate + launch the just-built player,
+#                                            run ArenaPerfHarness (-arenaPerf), verify
+#                                            100/200/300 evidence. NOT a performance verdict.
 #
 # Canonical usage (from Unity project root):
-#   .\tools\verify_unattended.ps1                            # Quick Gate: EditMode + PlayMode + Audit
-#   .\tools\verify_unattended.ps1 -IncludeBuild              # Full Gate: Quick + StandaloneWindows64 Player Build
+#   .\tools\verify_unattended.ps1                            # Quick Gate
+#   .\tools\verify_unattended.ps1 -IncludeBuild              # Build Gate
+#   .\tools\verify_unattended.ps1 -IncludePlayerRun          # Player Runtime Gate (implies -IncludeBuild)
 #   .\tools\verify_unattended.ps1 -UnityPath "G:\Unity\Hub\Editor\6000.3.23f1\Editor\Unity.exe"
-#   .\tools\verify_unattended.ps1 -TimeoutMinutes 20 -BuildTimeoutMinutes 30
+#   .\tools\verify_unattended.ps1 -TimeoutMinutes 20 -BuildTimeoutMinutes 30 -PlayerRunTimeoutMinutes 10
 #   .\tools\verify_unattended.ps1 -SelfTest                  # no Unity launch, synthetic fixtures
 #
-# Exit codes: 0 = Gate PASS | 1 = Gate FAIL (tests/audit/player build/timeout) |
+# Exit codes: 0 = Gate PASS | 1 = Gate FAIL (tests/audit/build/player-run/timeout) |
 #             2 = Unity not resolved | 3 = project already open (editor lock)
 # The gate verifies only; it never modifies STATUS/ROADMAP/catalogs/tests,
 # never runs git commands, and never kills Unity processes it did not start.
 # Allowed repo side effects: the formal EditMode run re-persists
 # docs/reviews/s3/CONTENT_AUDIT_S3_CLOSEOUT.md (existing audit contract).
-# Player build output is ephemeral (temp only), never committed to the repo.
+# Player build + player run outputs are ephemeral (temp only), never committed.
 # =====================================================================
 [CmdletBinding()]
 param(
     [string]$UnityPath = "",
     [int]$TimeoutMinutes = 20,
     [int]$BuildTimeoutMinutes = 30,
+    [int]$PlayerRunTimeoutMinutes = 10,
     [switch]$IncludeBuild,
+    [switch]$IncludePlayerRun,
     [switch]$SelfTest
 )
+
+# -IncludePlayerRun 自动隐含 -IncludeBuild（无需同时写两个 switch；同时提供也正常）
+if ($IncludePlayerRun) { $IncludeBuild = $true }
 
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
@@ -183,6 +192,106 @@ function Test-PlayerArtifact {
     return $out
 }
 
+# ---------------------------------------------------------------------
+# ArenaPerfHarness evidence parsers (S3-M6). Pure functions; -SelfTest fixtures only.
+# 文件 schema（ArenaPerfHarness.WriteRow）：
+#   L1: # ArenaPerfHarness, density=<n>
+#   L2: # resolution=WxH fullscreen=.. currentRes=.. editor=<bool> dx=<api>
+#   L3: # density strategy: ...
+#   L4: dummy_count,alive,frames,main_ms_avg,main_ms_p95,main_ms_p99,main_ms_p999,main_ms_max,gc_alloc_bytes_avg,cpu_ms_avg,gpu_ms_avg,mem_total_mb,frame_timing_ok
+#   L5: 恰一行数据
+# ---------------------------------------------------------------------
+
+function Read-HarnessResult {
+    param([string]$FilePath, [int]$ExpectedDensity)
+    $out = @{ Valid = $false; Reason = ''; Density = $ExpectedDensity; Resolution = ''; Editor = ''; GraphicsApi = ''
+        Alive = -1; Frames = -1; MainMsAvg = [double]::NaN; MainMsP99 = [double]::NaN; GpuMsAvg = [double]::NaN; FrameTimingOk = '' }
+    if ([string]::IsNullOrEmpty($FilePath) -or -not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
+        $out.Reason = 'missing file'
+        return $out
+    }
+    $lines = @(Get-Content -LiteralPath $FilePath)
+    $header = $null; $meta = $null; $csv = -1; $dataRows = @()
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $line = $lines[$i]
+        if ($null -eq $header -and $line -match '^#\s+.*density=(\d+)\s*$') { $header = $line; continue }
+        if ($null -eq $meta -and $line -match '^#\s+resolution=') { $meta = $line; continue }
+        if ($line -match '^dummy_count,alive,frames,') { $csv = $i; continue }
+        if ($csv -ge 0 -and $i -gt $csv -and $line -notmatch '^#' -and $line.Trim().Length -gt 0) { $dataRows += $line }
+    }
+    if ($null -eq $header) { $out.Reason = 'unrecognizable header'; return $out }
+    $headerDensity = [int]([regex]::Match($header, 'density=(\d+)').Groups[1].Value)
+    if ($headerDensity -ne $ExpectedDensity) { $out.Reason = "header density $headerDensity != expected $ExpectedDensity"; return $out }
+    if ($null -eq $meta) { $out.Reason = 'metadata line missing'; return $out }
+    $res = [regex]::Match($meta, 'resolution=(\d+)x(\d+)')
+    if (-not $res.Success -or [int]$res.Groups[1].Value -le 0 -or [int]$res.Groups[2].Value -le 0) {
+        $out.Reason = 'invalid resolution'
+        return $out
+    }
+    $out.Resolution = $res.Groups[1].Value + 'x' + $res.Groups[2].Value
+    $ed = [regex]::Match($meta, 'editor=(\S+)')
+    $out.Editor = $(if ($ed.Success) { $ed.Groups[1].Value } else { '' })
+    if ($out.Editor -ne 'False' -and $out.Editor -ne 'false') { $out.Reason = 'editor=True (not a standalone player run)'; return $out }
+    $dx = [regex]::Match($meta, 'dx=(\S+)')
+    $out.GraphicsApi = $(if ($dx.Success) { $dx.Groups[1].Value } else { '' })
+    if ([string]::IsNullOrEmpty($out.GraphicsApi)) { $out.Reason = 'graphics api missing'; return $out }
+    if ($csv -lt 0) { $out.Reason = 'csv header missing'; return $out }
+    if ($dataRows.Count -ne 1) { $out.Reason = "expected exactly 1 data row, got $($dataRows.Count)"; return $out }
+    $f = $dataRows[0].Split(',')
+    if ($f.Count -ne 13) { $out.Reason = "csv column count $($f.Count) != 13"; return $out }
+    $dummy = 0; $alive = 0; $frames = 0
+    if (-not [int]::TryParse($f[0], [ref]$dummy)) { $out.Reason = 'dummy_count not an integer'; return $out }
+    if (-not [int]::TryParse($f[1], [ref]$alive)) { $out.Reason = 'alive not an integer'; return $out }
+    if (-not [int]::TryParse($f[2], [ref]$frames)) { $out.Reason = 'frames not a positive integer'; return $out }
+    if ($dummy -ne $ExpectedDensity) { $out.Reason = "dummy_count $dummy != expected density $ExpectedDensity"; return $out }
+    if ($alive -le 0 -or $alive -gt $dummy) { $out.Reason = "alive $alive must be >0 and <=dummy_count $dummy"; return $out }
+    if ($frames -le 0) { $out.Reason = "frames $frames must be >0"; return $out }
+    $nums = @()
+    for ($i = 3; $i -le 10; $i++) {
+        $d = [double]0
+        if (-not [double]::TryParse($f[$i], [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$d)) {
+            $out.Reason = "csv column $i not a parseable number: $($f[$i])"
+            return $out
+        }
+        if ([double]::IsNaN($d) -or [double]::IsInfinity($d)) {
+            $out.Reason = "csv column $i is NaN/Infinity: $($f[$i])"
+            return $out
+        }
+        $nums += $d
+    }
+    $fto = $f[12]
+    if ($fto -ne 'true' -and $fto -ne 'false') { $out.Reason = "frame_timing_ok not a bool: $fto"; return $out }
+    $out.Alive = $alive
+    $out.Frames = $frames
+    $out.MainMsAvg = $nums[0]
+    $out.MainMsP99 = $nums[2]
+    $out.GpuMsAvg = $nums[7]
+    $out.FrameTimingOk = $fto
+    $out.Valid = $true
+    return $out
+}
+
+function Test-PlayerRunEvidence {
+    param([string]$OutputDir, [int[]]$ExpectedDensities)
+    $out = @{ Valid = $false; Reasons = @(); Results = @(); ActualResolution = ''; GraphicsApi = '' }
+    if ([string]::IsNullOrEmpty($OutputDir) -or -not (Test-Path -LiteralPath $OutputDir -PathType Container)) {
+        $out.Reasons = @("output dir missing: $OutputDir (fallback output elsewhere does not count)")
+        return $out
+    }
+    foreach ($d in $ExpectedDensities) {
+        $r = Read-HarnessResult -FilePath (Join-Path $OutputDir "$d.txt") -ExpectedDensity $d
+        $out.Results += $r
+        if (-not $r.Valid) { $out.Reasons += "density ${d}: $($r.Reason)" }
+    }
+    $resolutions = @($out.Results | ForEach-Object { $_.Resolution } | Where-Object { $_ -ne '' } | Sort-Object -Unique)
+    if ($resolutions.Count -gt 1) { $out.Reasons += "evidence unstable: resolution changed within one player run ($($resolutions -join ' / '))" }
+    $apis = @($out.Results | ForEach-Object { $_.GraphicsApi } | Where-Object { $_ -ne '' } | Sort-Object -Unique)
+    if ($apis.Count -eq 1) { $out.GraphicsApi = $apis[0] }
+    if ($resolutions.Count -eq 1) { $out.ActualResolution = $resolutions[0] }
+    $out.Valid = ($out.Reasons.Count -eq 0)
+    return $out
+}
+
 function Get-SuiteSummary {
     param($Result, $Run, [bool]$Ok, [bool]$Infra)
     $status = 'FAIL'
@@ -291,6 +400,87 @@ if ($SelfTest) {
     $v = Test-PlayerArtifact -ExecutablePath (Join-Path $emptydata 'GAME-ZZZ.exe')
     $ok = -not ($v.ExecutableExists -and $v.ExecutableBytes -gt 0 -and $v.DataDirectoryExists -and $v.DataFileCount -gt 0)
     $results.Add("selftest.artifact-empty-data: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    # ArenaPerfHarness 证据解析夹具（S3-M6）：schema 与 ArenaPerfHarness.WriteRow 对齐
+    $CsvHeader = 'dummy_count,alive,frames,main_ms_avg,main_ms_p95,main_ms_p99,main_ms_p999,main_ms_max,gc_alloc_bytes_avg,cpu_ms_avg,gpu_ms_avg,mem_total_mb,frame_timing_ok'
+    function Write-HarnessFixture {
+        param([string]$Dir, [int]$Density, [string]$Meta, [string]$Data)
+        Set-Content -LiteralPath (Join-Path $Dir "$Density.txt") -Encoding UTF8 -Value (
+            "# ArenaPerfHarness, density=$Density`n" + $Meta + "`n# density strategy: kill-then-refill`n" + $CsvHeader + "`n" + $Data + "`n")
+    }
+    $GoodMeta = '# resolution=1920x1080 fullscreen=True currentRes=1920x1080 editor=False dx=Direct3D12'
+    $pr = Join-Path $fx 'playerrun'
+    $good = Join-Path $pr 'good'
+    New-Item -ItemType Directory -Path $good -Force | Out-Null
+    Write-HarnessFixture -Dir $good -Density 100 -Meta $GoodMeta -Data '100,100,600,2.500,2.600,2.700,2.800,3.000,0.0,2.400,0.300,512.0,true'
+    Write-HarnessFixture -Dir $good -Density 200 -Meta $GoodMeta -Data '200,200,600,4.100,4.300,4.500,4.700,5.000,0.0,4.000,0.500,512.0,true'
+    Write-HarnessFixture -Dir $good -Density 300 -Meta $GoodMeta -Data '300,294,600,6.000,6.400,6.600,6.900,7.500,0.0,5.800,0.800,512.0,true'
+    $e = Test-PlayerRunEvidence -OutputDir $good -ExpectedDensities @(100, 200, 300)
+    $ok = $e.Valid -and $e.ActualResolution -eq '1920x1080' -and $e.GraphicsApi -eq 'Direct3D12' -and $e.Results[2].Alive -eq 294
+    $results.Add("selftest.playerrun-pass: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    $missing = Join-Path $pr 'missing'
+    New-Item -ItemType Directory -Path $missing -Force | Out-Null
+    Write-HarnessFixture -Dir $missing -Density 100 -Meta $GoodMeta -Data '100,100,600,2.5,2.6,2.7,2.8,3.0,0.0,2.4,0.3,512.0,true'
+    Write-HarnessFixture -Dir $missing -Density 300 -Meta $GoodMeta -Data '300,300,600,6.0,6.4,6.6,6.9,7.5,0.0,5.8,0.8,512.0,true'
+    $e = Test-PlayerRunEvidence -OutputDir $missing -ExpectedDensities @(100, 200, 300)
+    $ok = (-not $e.Valid) -and (($e.Reasons -join ' ') -match 'missing file')
+    $results.Add("selftest.playerrun-missing-density: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    $mismatch = Join-Path $pr 'mismatch'
+    New-Item -ItemType Directory -Path $mismatch -Force | Out-Null
+    Write-HarnessFixture -Dir $mismatch -Density 100 -Meta $GoodMeta -Data '200,200,600,2.5,2.6,2.7,2.8,3.0,0.0,2.4,0.3,512.0,true'
+    Write-HarnessFixture -Dir $mismatch -Density 200 -Meta $GoodMeta -Data '200,200,600,4.1,4.3,4.5,4.7,5.0,0.0,4.0,0.5,512.0,true'
+    Write-HarnessFixture -Dir $mismatch -Density 300 -Meta $GoodMeta -Data '300,300,600,6.0,6.4,6.6,6.9,7.5,0.0,5.8,0.8,512.0,true'
+    $e = Test-PlayerRunEvidence -OutputDir $mismatch -ExpectedDensities @(100, 200, 300)
+    $ok = (-not $e.Valid) -and (($e.Reasons -join ' ') -match 'expected density 100')
+    $results.Add("selftest.playerrun-density-mismatch: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    $malformed = Join-Path $pr 'malformed'
+    New-Item -ItemType Directory -Path $malformed -Force | Out-Null
+    Write-HarnessFixture -Dir $malformed -Density 100 -Meta $GoodMeta -Data '100,100,600'
+    Write-HarnessFixture -Dir $malformed -Density 200 -Meta $GoodMeta -Data '200,200,600,4.1,4.3,4.5,4.7,5.0,0.0,4.0,0.5,512.0,true'
+    Write-HarnessFixture -Dir $malformed -Density 300 -Meta $GoodMeta -Data '300,300,600,6.0,6.4,6.6,6.9,7.5,0.0,5.8,0.8,512.0,true'
+    $e = Test-PlayerRunEvidence -OutputDir $malformed -ExpectedDensities @(100, 200, 300)
+    $ok = (-not $e.Valid) -and (($e.Reasons -join ' ') -match 'column count')
+    $results.Add("selftest.playerrun-malformed-csv: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    $nan = Join-Path $pr 'nan'
+    New-Item -ItemType Directory -Path $nan -Force | Out-Null
+    Write-HarnessFixture -Dir $nan -Density 100 -Meta $GoodMeta -Data '100,100,600,NaN,2.6,2.7,2.8,3.0,0.0,2.4,0.3,512.0,true'
+    Write-HarnessFixture -Dir $nan -Density 200 -Meta $GoodMeta -Data '200,200,600,4.1,4.3,4.5,4.7,5.0,0.0,4.0,0.5,512.0,true'
+    Write-HarnessFixture -Dir $nan -Density 300 -Meta $GoodMeta -Data '300,300,600,6.0,6.4,6.6,6.9,7.5,0.0,5.8,0.8,512.0,true'
+    $e = Test-PlayerRunEvidence -OutputDir $nan -ExpectedDensities @(100, 200, 300)
+    $ok = (-not $e.Valid) -and (($e.Reasons -join ' ') -match 'NaN/Infinity')
+    $results.Add("selftest.playerrun-invalid-number: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    $editorTrue = Join-Path $pr 'editortrue'
+    New-Item -ItemType Directory -Path $editorTrue -Force | Out-Null
+    Write-HarnessFixture -Dir $editorTrue -Density 100 -Meta ($GoodMeta -replace 'editor=False', 'editor=True') -Data '100,100,600,2.5,2.6,2.7,2.8,3.0,0.0,2.4,0.3,512.0,true'
+    Write-HarnessFixture -Dir $editorTrue -Density 200 -Meta $GoodMeta -Data '200,200,600,4.1,4.3,4.5,4.7,5.0,0.0,4.0,0.5,512.0,true'
+    Write-HarnessFixture -Dir $editorTrue -Density 300 -Meta $GoodMeta -Data '300,300,600,6.0,6.4,6.6,6.9,7.5,0.0,5.8,0.8,512.0,true'
+    $e = Test-PlayerRunEvidence -OutputDir $editorTrue -ExpectedDensities @(100, 200, 300)
+    $ok = (-not $e.Valid) -and (($e.Reasons -join ' ') -match 'editor=True')
+    $results.Add("selftest.playerrun-editor-true: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    $zeroAlive = Join-Path $pr 'zeroalive'
+    New-Item -ItemType Directory -Path $zeroAlive -Force | Out-Null
+    Write-HarnessFixture -Dir $zeroAlive -Density 100 -Meta $GoodMeta -Data '100,0,600,2.5,2.6,2.7,2.8,3.0,0.0,2.4,0.3,512.0,true'
+    Write-HarnessFixture -Dir $zeroAlive -Density 200 -Meta $GoodMeta -Data '200,200,600,4.1,4.3,4.5,4.7,5.0,0.0,4.0,0.5,512.0,true'
+    Write-HarnessFixture -Dir $zeroAlive -Density 300 -Meta $GoodMeta -Data '300,300,600,6.0,6.4,6.6,6.9,7.5,0.0,5.8,0.8,512.0,true'
+    $e = Test-PlayerRunEvidence -OutputDir $zeroAlive -ExpectedDensities @(100, 200, 300)
+    $ok = (-not $e.Valid) -and (($e.Reasons -join ' ') -match 'alive 0')
+    $results.Add("selftest.playerrun-zero-alive: $(@('FAIL', 'PASS')[[int]$ok])")
+
+    $badRes = Join-Path $pr 'badres'
+    New-Item -ItemType Directory -Path $badRes -Force | Out-Null
+    $badMeta = '# resolution=0x0 fullscreen=True currentRes=0x0 editor=False dx=Direct3D12'
+    Write-HarnessFixture -Dir $badRes -Density 100 -Meta $badMeta -Data '100,100,600,2.5,2.6,2.7,2.8,3.0,0.0,2.4,0.3,512.0,true'
+    Write-HarnessFixture -Dir $badRes -Density 200 -Meta $badMeta -Data '200,200,600,4.1,4.3,4.5,4.7,5.0,0.0,4.0,0.5,512.0,true'
+    Write-HarnessFixture -Dir $badRes -Density 300 -Meta $badMeta -Data '300,300,600,6.0,6.4,6.6,6.9,7.5,0.0,5.8,0.8,512.0,true'
+    $e = Test-PlayerRunEvidence -OutputDir $badRes -ExpectedDensities @(100, 200, 300)
+    $ok = (-not $e.Valid) -and (($e.Reasons -join ' ') -match 'invalid resolution')
+    $results.Add("selftest.playerrun-invalid-resolution: $(@('FAIL', 'PASS')[[int]$ok])")
 
     $allPass = $true
     foreach ($line in $results) {
@@ -423,10 +613,44 @@ if (-not $IncludeBuild) {
 }
 $buildOk = (-not $IncludeBuild) -or ($buildStatus -eq 'PASS')
 
-# 7) Finalize once: unified verdict + summary + exit code
+# 7) Player Runtime (Player Runtime Gate only): 启动本轮刚构建的 Player 跑 -arenaPerf
+$playerRunStatus = 'SKIPPED'
+$playerRunRun = $null
+$playerRunEvidence = $null
+$playerRunDir = Join-Path $TempRoot 'PlayerRun'
+$playerRunLog = Join-Path $TempRoot 'PlayerRun.log'
+if (-not $IncludePlayerRun) {
+    # 未请求：不运行，也不谎称已验证 Player Runtime
+} elseif ($buildStatus -ne 'PASS') {
+    $playerRunStatus = 'NOT_RUN'
+    $Issues.Add('PlayerRun NOT RUN / INFRA BLOCKED (build did not produce a valid player)')
+} else {
+    New-Item -ItemType Directory -Path $playerRunDir -Force | Out-Null
+    Get-ChildItem -LiteralPath $playerRunDir -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
+    $playerRunRun = Invoke-UnityChild -UnityExe $buildExe -ArgumentString "-arenaPerf -arenaPerfOut `"$playerRunDir`" -logFile `"$playerRunLog`"" -TimeoutMin $PlayerRunTimeoutMinutes
+    $playerRunEvidence = Test-PlayerRunEvidence -OutputDir $playerRunDir -ExpectedDensities @(100, 200, 300)
+    if ($playerRunRun.TimedOut) {
+        $playerRunStatus = 'FAIL'
+        $Issues.Add('PlayerRun TIMEOUT (gate killed only its own child process)')
+    }
+    elseif ($playerRunRun.ExitCode -ne 0) {
+        $playerRunStatus = 'FAIL'
+        $Issues.Add("PlayerRun exit code $($playerRunRun.ExitCode)")
+    }
+    elseif (-not $playerRunEvidence.Valid) {
+        $playerRunStatus = 'FAIL'
+        $Issues.Add('PlayerRun evidence invalid: ' + ($playerRunEvidence.Reasons -join ' | '))
+    }
+    else {
+        $playerRunStatus = 'PASS'
+    }
+}
+$playerRunOk = (-not $IncludePlayerRun) -or ($playerRunStatus -eq 'PASS')
+
+# 8) Finalize once: unified verdict + summary + exit code
 $editOk = (-not $editInfra) -and $editResult.Result -eq 'Passed' -and $editResult.Failed -eq 0
 $playOk = (-not $playInfra) -and $null -ne $playResult -and $playResult.Result -eq 'Passed' -and $playResult.Failed -eq 0
-$gatePass = $editOk -and $playOk -and $auditOk -and $buildOk
+$gatePass = $editOk -and $playOk -and $auditOk -and $buildOk -and $playerRunOk
 
 $editLine = 'EditMode: N/A'
 if ($null -ne $editResult) {
@@ -446,11 +670,23 @@ if ($IncludeBuild) {
         $buildLine += " (GAME-ZZZ.exe $($artifact.ExecutableBytes) bytes, Data files: $($artifact.DataFileCount))"
     }
 }
+$playerRunLine = 'PlayerRun: SKIPPED (use -IncludePlayerRun)'
+if ($IncludePlayerRun) {
+    if ($playerRunStatus -eq 'PASS') {
+        $playerRunLine = "PlayerRun: PASS exit=$($playerRunRun.ExitCode) resolution=$($playerRunEvidence.ActualResolution) densities=100/200/300"
+    } elseif ($playerRunStatus -eq 'SKIPPED') {
+        $playerRunLine = 'PlayerRun: SKIPPED'
+    } else {
+        $playerRunLine = "PlayerRun: $playerRunStatus"
+    }
+}
 
 Write-Output $editLine
 Write-Output $playLine
 Write-Output $auditLine
 Write-Output $buildLine
+Write-Output $playerRunLine
+Write-Output 'PerformanceVerdict: NOT_EVALUATED'
 foreach ($issue in $Issues) { Write-Output "Issue: $issue" }
 Write-Output "Gate: $(@('FAIL', 'PASS')[[int]$gatePass])"
 Write-Output "Artifacts: $TempRoot"
@@ -464,6 +700,7 @@ Write-SummaryJson -Path (Join-Path $TempRoot 'verification-summary.json') -Data 
     playMode = $playSummary
     contentAudit = @{ exists = $auditExists; fresh = $fresh; completed = $audit.Completed; verdict = $audit.Verdict; failureCount = $audit.FailureCount; beforeUtc = $auditBeforeUtc; afterUtc = $auditAfterUtc }
     build = @{ requested = [bool]$IncludeBuild; status = $buildStatus; unityExitCode = $(if ($null -ne $buildRun) { $buildRun.ExitCode } else { $null }); timedOut = $(if ($null -ne $buildRun) { $buildRun.TimedOut } else { $false }); executablePath = $buildExe; executableExists = $(if ($null -ne $artifact) { $artifact.ExecutableExists } else { $false }); executableBytes = $(if ($null -ne $artifact) { $artifact.ExecutableBytes } else { 0 }); dataDirectoryExists = $(if ($null -ne $artifact) { $artifact.DataDirectoryExists } else { $false }); timeoutMinutes = $BuildTimeoutMinutes; logPath = $buildLog }
+    playerRun = @{ requested = [bool]$IncludePlayerRun; status = $playerRunStatus; exitCode = $(if ($null -ne $playerRunRun) { $playerRunRun.ExitCode } else { $null }); timedOut = $(if ($null -ne $playerRunRun) { $playerRunRun.TimedOut } else { $false }); timeoutMinutes = $PlayerRunTimeoutMinutes; logPath = $playerRunLog; outputPath = $playerRunDir; actualResolution = $(if ($null -ne $playerRunEvidence) { $playerRunEvidence.ActualResolution } else { '' }); graphicsApi = $(if ($null -ne $playerRunEvidence) { $playerRunEvidence.GraphicsApi } else { '' }); densities = $(if ($null -ne $playerRunEvidence) { @($playerRunEvidence.Results | ForEach-Object { @{ density = $_.Density; alive = $_.Alive; frames = $_.Frames; mainMsAvg = $_.MainMsAvg; mainMsP99 = $_.MainMsP99; gpuMsAvg = $_.GpuMsAvg; frameTimingAvailable = $_.FrameTimingOk } }) } else { @() }) }
     gate = @{ verdict = $(@('FAIL', 'PASS')[[int]$gatePass]); startedUtc = $gateStartUtc; endedUtc = [DateTime]::UtcNow }
     issues = $Issues
 }
