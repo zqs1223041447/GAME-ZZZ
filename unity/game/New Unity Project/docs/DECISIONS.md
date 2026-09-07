@@ -17,6 +17,7 @@ S0 锁定。后续阶段不得在未改本文的情况下推翻这些决定。
 - 相机跟拍收一帧（2026-09-07）：跟拍按贴地后身高 ≈1.19 重取景——偏移 `(0,17,-15)`→`(0,10.6,-9.3)`（注视点距离 22.7→14.1，俯角不变 ≈48.6°），注视高度 `CamLookY 0.5→0.6`（胸口/身体包围盒中心近似，不锁武器尖），FOV 42 不变。人物约占画面高 1/9（改前约 1/24），全身可辨+近怪在框（截图 `docs/reviews/images/09_camera.png`）。只动常量，无平滑、无新镜头系统；相机恒在地面 y=0 上方 11.2，不穿地；死亡冻帧/进出图无新增摆动源。
 - 音频事件挂钩·无素材（2026-09-07）：单一入口 `AudioEvents.Play`（不进 FMOD/Wwise，不生产 wav/ogg）；查找表 `Resources/Audio/<事件名>` 预留 5 键（值可空），无资产=静音+限频日志（5s/键，禁每帧刷屏）。触发点：Cast=`ArenaSim.Resolve` 施放起手；Impact=`ArenaSim.PlayImpact` 技能命中；Hit=玩家受击 HitFlash 上跳沿（`ArenaDirector`，与 Hit 动画同帧；原怪物受击挂点已摘除）；Death=玩家进入 `MapState.Dead`（`ArenaDirector`，与 Death 动画同处；原怪物死亡挂点已摘除）；Loot=**掉落生成**（`SliceSession.DropGear`，AddItem 成功即触发——选生成非拾取，当前无独立拾取动作）。语音 ogg 仍不接；正式游玩路径缺音频不报错不卡死。
 - 导演门控待输入表（2026-09-07）：ROADMAP 增「导演门控待输入」节（ART_BIBLE 临时色 / 1440p 补测 / 正式 UI / 语音 ogg / EveView 改名 / 怪物独立 EnemyHit 事件 / 音频 clip 投资源）——每项「无输入则不做」，不得当自动任务开工。
+- 门状态总览（2026-09-07）：`docs/reviews/STATUS.md` 一页纸——11 门状态+玩家视图/碰撞/测量/音频/校验快照；总览见 STATUS.md。
 
 ## 工作方式（导演 2026-09-07 追加）
 
