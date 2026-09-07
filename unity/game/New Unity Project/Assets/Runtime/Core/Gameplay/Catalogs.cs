@@ -8,7 +8,9 @@ namespace Game.Runtime.Core
         Concentrated = 3,
         Faster = 4,
         Combustion = 5,
-        Fork = 6
+        Fork = 6,
+        // S3 R2（工作令 S3-R2-FIRE-CONVERSION）：机制型转换 Support，复用 ConvertPhysToFire，无新 Effect/Stat
+        FireConversion = 7
     }
 
     public enum AffixId : byte
@@ -249,14 +251,14 @@ namespace Game.Runtime.Core
 
         public static int Count
         {
-            get { return 6; }
+            get { return 7; }
         }
 
         static void Ensure()
         {
             if (_defs != null)
                 return;
-            _defs = new SupportDef[7];
+            _defs = new SupportDef[8];
             _defs[(int)SupportId.AddedFire] = new SupportDef
             {
                 Id = SupportId.AddedFire,
@@ -314,6 +316,15 @@ namespace Game.Runtime.Core
                 TriggerEvent = EventId.OnHit,
                 TriggerDepth = 1,
                 MechanicSkill = SkillId.Projectile
+            };
+            _defs[(int)SupportId.FireConversion] = new SupportDef
+            {
+                Id = SupportId.FireConversion,
+                Name = "火焰转化",
+                Desc = "50% 物理伤害转换为火焰伤害",
+                ChangesMechanism = true,
+                // 唯一核心 Modifier：转换走既有 ConvertPhysToFire 轴；RequiredTags 让兼容性由 Tag 路径自然推导（近战/弹道可接，范围=Spell 无 Attack 不可接）
+                Mods = new[] { Modifier.Tagged(StatId.ConvertPhysToFire, ModOp.Flat, 0.50f, Tag.Attack | Tag.Hit | Tag.Physical) }
             };
         }
     }

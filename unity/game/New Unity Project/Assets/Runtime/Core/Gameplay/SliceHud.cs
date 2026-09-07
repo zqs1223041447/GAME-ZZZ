@@ -303,12 +303,12 @@ namespace Game.Runtime.Core
 
         void DrawSupportTray(SliceSession s)
         {
-            _tray = new Rect(12, Screen.height - 118, 210, 104);
+            _tray = new Rect(12, Screen.height - 146, 210, 132);
             Fill(_tray, SlicePalette.Panel);
             Bar(_tray.x, _tray.y, _tray.width, 3, SlicePalette.PanelEdge);
             Label(new Rect(_tray.x + 8, _tray.y + 6, 194, 16), "辅助", _small);
             int n = 0;
-            for (int i = 1; i <= 6; i++)
+            for (int i = 1; i <= SupportCatalog.Count; i++)
             {
                 int col = n % 2;
                 int row = n / 2;

@@ -19,7 +19,9 @@ namespace Game.Tests.EditMode
             { SupportId.Concentrated, new[] { SkillId.Area } },
             { SupportId.Faster, new[] { SkillId.Melee, SkillId.Projectile, SkillId.Area } },
             { SupportId.Combustion, new[] { SkillId.Melee, SkillId.Projectile, SkillId.Area } },
-            { SupportId.Fork, new[] { SkillId.Projectile } }
+            { SupportId.Fork, new[] { SkillId.Projectile } },
+            // S3 R2（S3-R2-FIRE-CONVERSION）：RequiredTags=Attack|Hit|Physical——近战/弹道满足，范围=Spell 无 Attack 不满足
+            { SupportId.FireConversion, new[] { SkillId.Melee, SkillId.Projectile } }
         };
 
         public static bool Contains(SupportId support, SkillId skill)

@@ -8,10 +8,10 @@ using Game.Runtime.Core;
 namespace Game.Tests.EditMode
 {
     /// <summary>
-    /// S3 第一批内容校验（在 ContentAuditS2Tests 上扩展，类名保留以维持文档指向）。
-    /// 只扫现行切片：3 Active + 6 Support + 13 词缀（含本批 3 条组合系）+ 16 天赋 + 3 图词缀 + 怪表。
-    /// 本批新增失败条件：①Support×技能兼容矩阵违规 ②词缀行引用运行期未知 Stat / 非法 ModOp ③新词缀 &gt; 3 条。
-    /// 未使用 Tag 仍为预留记录，不得当作失败项。报告写入 docs/reviews/s3/CONTENT_AUDIT_S3_BATCH1.md。
+    /// S3 R2 内容校验（在 ContentAuditS2Tests 上扩展，类名保留以维持文档指向）。
+    /// 只扫现行切片：3 Active + 7 Support（含 R2 火焰转化）+ 13 词缀（含第一批 3 条组合系）+ 16 天赋 + 3 图词缀 + 怪表。
+    /// 失败条件：①Support×技能兼容矩阵违规 ②词缀/Mod 行引用运行期未知 Stat / 非法 ModOp ③内容数量护栏（仅 Support +1）
+    /// ④新词缀 &gt; 3 条。未使用 Tag 仍为预留记录，不得当作失败项。报告写入 docs/reviews/s3/CONTENT_AUDIT_S3_R2.md。
     /// </summary>
     public sealed class ContentAuditS2Tests
     {
@@ -21,6 +21,9 @@ namespace Game.Tests.EditMode
 
         /// <summary>S2 收口时词缀池基线（10 条）。S3 第一批新增 = AffixId.Count - 基线，必须 ≤3。</summary>
         const int S2BaselineAffixCount = 10;
+
+        /// <summary>S2 收口时 Support 基线（6 条）。R2 新增 = SupportCatalog.Count - 基线，工作令要求恰好 1（火焰转化）。</summary>
+        const int S2BaselineSupportCount = 6;
 
         /// <summary>
         /// 运行期真正消费的 Stat（读取点见注释）。内容引用白名单之外的 Stat = 「报告绿但运行期未知 Stat」，必须失败。
@@ -52,7 +55,7 @@ namespace Game.Tests.EditMode
 
         static string ReportPath
         {
-            get { return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "docs/reviews/s3/CONTENT_AUDIT_S3_BATCH1.md")); }
+            get { return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "docs/reviews/s3/CONTENT_AUDIT_S3_R2.md")); }
         }
 
         [Test]
@@ -135,6 +138,30 @@ namespace Game.Tests.EditMode
             int newAffixes = (int)AffixId.Count - S2BaselineAffixCount;
             Assert.GreaterOrEqual(newAffixes, 0, "S3 第一批词缀池缩水：AffixId.Count < " + S2BaselineAffixCount);
             Assert.LessOrEqual(newAffixes, 3, "S3 第一批新增词缀必须 ≤3：当前 " + newAffixes);
+
+            // S3-R2 内容数量护栏：本轮仅 Support +1（火焰转化），其余内容轴全部不变（每轮内容扩张须显式更新本护栏）
+            Assert.AreEqual(S2BaselineSupportCount + 1, SupportCatalog.Count, "R2 仅允许新增 1 个 Support（火焰转化）");
+            Assert.AreEqual(10 + 3, (int)AffixId.Count, "词缀轴应保持 S2 基线 10 + 第一批 3");
+            Assert.AreEqual(28, (int)StatId.Count, "不得新增 StatId");
+            Assert.AreEqual(4, (int)ModOp.Override, "不得新增 ModOp（最大仍为 Override=4）");
+            Assert.AreEqual(256u, (uint)Tag.Duration, "不得新增 Tag（最大仍为 Duration=1<<8）");
+            Assert.AreEqual(2, (int)EffectId.ApplyIgnite, "不得新增 EffectId（最大仍为 ApplyIgnite=2）");
+            Assert.AreEqual(4, (int)EventId.Count, "不得新增 EventId");
+            Assert.AreEqual(4, (int)ConditionId.IsSpell, "不得新增 ConditionId（最大仍为 IsSpell=4）");
+            Assert.AreEqual(3, (int)SkillId.Area, "Active 技能不得新增");
+            Assert.AreEqual(3, MapAffixCatalog.All.Length, "图词缀不得新增");
+            // 新 Support 定义契约（S3-R2-FIRE-CONVERSION）
+            SupportDef fc = SupportCatalog.Get(SupportId.FireConversion);
+            Assert.AreEqual(SupportId.FireConversion, fc.Id, "FireConversion Id 必须有效");
+            Assert.IsTrue(fc.ChangesMechanism, "火焰转化必须 ChangesMechanism=true");
+            Assert.AreEqual(SkillId.None, fc.MechanicSkill, "火焰转化兼容性必须完全由 Tag 路径推导，不得绑死技能");
+            Assert.AreEqual(EffectId.None, fc.TriggerEffect, "火焰转化不得使用 Trigger Effect");
+            Assert.IsNotNull(fc.Mods);
+            Assert.AreEqual(1, fc.Mods.Length, "火焰转化只允许 1 条核心 Modifier");
+            Assert.AreEqual(StatId.ConvertPhysToFire, fc.Mods[0].Stat);
+            Assert.AreEqual(ModOp.Flat, fc.Mods[0].Op);
+            Assert.AreEqual(0.50f, fc.Mods[0].Value, 0.0001f);
+            Assert.AreEqual(Tag.Attack | Tag.Hit | Tag.Physical, fc.Mods[0].RequiredTags);
 
             // Passives（16）+ 链接对称与连通
             Assert.AreEqual(SliceRules.PassiveCount, PassiveCatalog.Count);
@@ -309,16 +336,16 @@ namespace Game.Tests.EditMode
             List<string> unusedTags, List<string> missingAudio)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("# CONTENT_AUDIT_S3_BATCH1");
+            sb.AppendLine("# CONTENT_AUDIT_S3_R2");
             sb.AppendLine("");
-            sb.AppendLine("生成：EditMode 测试 `ContentAuditS2Tests`（S3 第一批扩展，导演口令「开 S3」）。只覆盖现行切片：3 Active + 6 Support + 13 词缀（S2 基线 10 + 本批 3 组合系）+ 16 天赋 + 3 图词缀 + 5 怪。");
+            sb.AppendLine("生成：EditMode 测试 `ContentAuditS2Tests`（S3 R2 扩展，工作令 S3-R2-FIRE-CONVERSION）。只覆盖现行切片：3 Active + " + SupportCatalog.Count + " Support（S2 基线 6 + R2 1 火焰转化）+ " + AffixCatalog.Count + " 词缀（S2 基线 10 + 第一批 3 组合系）+ 16 天赋 + 3 图词缀 + 5 怪。");
             sb.AppendLine("");
             sb.AppendLine("## 总数");
             sb.AppendLine("");
             sb.AppendLine("| 类别 | 数量 |");
             sb.AppendLine("|---|---|");
             sb.AppendLine("| Active 技能 | 3 |");
-            sb.AppendLine("| Support | 6 |");
+            sb.AppendLine("| Support | " + SupportCatalog.Count + "（S2 基线 6 + R2 1） |");
             sb.AppendLine("| 词缀 | " + AffixCatalog.Count + "（S2 基线 10 + S3 第一批 " + newAffixes + "） |");
             sb.AppendLine("| 天赋节点 | 16（含 2 Notable + 1 机制烬心） |");
             sb.AppendLine("| 图词缀 | 3 |");
@@ -349,7 +376,24 @@ namespace Game.Tests.EditMode
                 sb.AppendLine("| " + def.Name + " | " + Mark(skills, SkillId.Melee) + " | " + Mark(skills, SkillId.Projectile) + " | " + Mark(skills, SkillId.Area) + " |");
             }
             sb.AppendLine("");
-            sb.AppendLine("已知不兼容（钉死，不得放宽）：集中×近战、集中×弹道（Tag.Area 仅范围技能满足）；分裂×近战、分裂×范围（ForkProjectiles 只进弹道结算）。");
+            sb.AppendLine("已知不兼容（钉死，不得放宽）：集中×近战、集中×弹道（Tag.Area 仅范围技能满足）；分裂×近战、分裂×范围（ForkProjectiles 只进弹道结算）；火焰转化×范围（RequiredTags=Attack|Hit|Physical，范围=Spell 无 Attack）。");
+            sb.AppendLine("");
+            sb.AppendLine("## S3 R2 新增 Support（工作令 S3-R2-FIRE-CONVERSION）");
+            sb.AppendLine("");
+            sb.AppendLine("机制型转换 Support：无新 Effect/Trigger/Stat/ModOp/Tag，无 Support 专用 Runtime 分支（Reviewer 零分支审计见 `S3_R2_REVIEW.md`）；Runtime parity 由 SupportGateTests 按 golden 3×7 全 21 组合校验。");
+            sb.AppendLine("");
+            sb.AppendLine("| ID | 名称 | Modifier | RequiredTags | ChangesMechanism | MechanicSkill | Trigger |");
+            sb.AppendLine("|---|---|---|---|---|---|---|");
+            for (int i = S2BaselineSupportCount + 1; i <= SupportCatalog.Count; i++)
+            {
+                SupportDef def = SupportCatalog.Get((SupportId)i);
+                sb.AppendLine("| " + def.Id + " | " + def.Name + " | " + JoinMods(def.Mods) + " | " + TagsText(def.Mods) + " | " +
+                             (def.ChangesMechanism ? "true" : "false") + " | " + (def.MechanicSkill == SkillId.None ? "无（Tag 路径推导）" : def.MechanicSkill.ToString()) + " | " +
+                             (def.TriggerEffect == EffectId.None ? "无" : def.TriggerEffect.ToString()) + " |");
+            }
+            sb.AppendLine("");
+            sb.AppendLine("内容数量护栏（测试断言）：Support=7（+1）；词缀=13；StatId=28；ModOp/Tag/Effect/Event/Condition/Skill/图词缀轴全部 +0。");
+            sb.AppendLine("");
             sb.AppendLine("");
             sb.AppendLine("## 本批新增词缀（S3 第一批）");
             sb.AppendLine("");
@@ -389,6 +433,26 @@ namespace Game.Tests.EditMode
         static string Mark(SkillId[] skills, SkillId skill)
         {
             return ContainsSkill(skills, skill) ? "✓" : "✗";
+        }
+
+        static string JoinMods(Modifier[] mods)
+        {
+            if (mods == null)
+                return "—";
+            var parts = new List<string>();
+            for (int i = 0; i < mods.Length; i++)
+                parts.Add(mods[i].Stat + " " + ModOpName(mods[i].Op) + " " + mods[i].Value.ToString("0.##"));
+            return string.Join("；", parts.ToArray());
+        }
+
+        static string TagsText(Modifier[] mods)
+        {
+            if (mods == null)
+                return "—";
+            uint merged = 0;
+            for (int i = 0; i < mods.Length; i++)
+                merged |= (uint)mods[i].RequiredTags;
+            return ((Tag)merged).ToString();
         }
 
         static string ModOpName(ModOp op)
