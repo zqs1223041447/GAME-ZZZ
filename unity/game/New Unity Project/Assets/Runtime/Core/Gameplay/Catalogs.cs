@@ -10,7 +10,10 @@ namespace Game.Runtime.Core
         Combustion = 5,
         Fork = 6,
         // S3 R2（工作令 S3-R2-FIRE-CONVERSION）：机制型转换 Support，复用 ConvertPhysToFire，无新 Effect/Stat
-        FireConversion = 7
+        FireConversion = 7,
+        // Sentinel（S3-M1-REPO-TRUTH-CATALOG）：真实 Support 数 = (int)Count - 1（None 不算内容）；
+        // 仅作目录容量/Count 真相源，不进 UI/golden/审计内容清单，不计作内容 +1
+        Count = 8
     }
 
     public enum AffixId : byte
@@ -251,14 +254,14 @@ namespace Game.Runtime.Core
 
         public static int Count
         {
-            get { return 7; }
+            get { return (int)SupportId.Count - 1; } // sentinel 派生：真实 Support 数（None 不算内容）
         }
 
         static void Ensure()
         {
             if (_defs != null)
                 return;
-            _defs = new SupportDef[8];
+            _defs = new SupportDef[(int)SupportId.Count];
             _defs[(int)SupportId.AddedFire] = new SupportDef
             {
                 Id = SupportId.AddedFire,
