@@ -14,6 +14,7 @@ S0 锁定。后续阶段不得在未改本文的情况下推翻这些决定。
 - S3 最小底座（2026-09-07）：Art Bible 初稿路径 `docs/art/ART_BIBLE.md`；内容校验挂 EditMode（`ContentAuditS2Tests`），**只覆盖 S2 切片**（3 Active + 6 Support + 10 词缀 + 16 天赋 + 3 图词缀 + 5 怪），报告 `docs/reviews/s3/CONTENT_AUDIT_S2.md`；音频缺失为已知债不阻断。不加新内容。
 - 预留 Tag 钉死（2026-09-07）：Attack / Spell / Projectile / Hit / Physical / Fire / Duration 为**已声明预留**，当前 S2 切片未引用；**S3 内容扩张开启前不得当作「缺实现」去补系统或补技能**；「未使用 Tag ≠ 下一工作项」。
 - 玩家视图 Hit/Death 动画（2026-09-07）：自已留档的 401 动画库取 2 条——`pdw_01_01_def_shield_dam_00`（受击后仰，0.63s，全段）与 `pdw_01_01_def_shield_break_00`（裁至跪倒段 0.68s，掐掉恢复站立）；控制器加 Hit/Death 两状态（与 Idle/Run/Attack/Cast 同层）。`DriveEve` 只挂现有信号：`Session.HitFlash` 上跳沿=Hit（下一击重播即可打断），`MapState.Dead`=Death（播完 `animator.speed=0` 定格跪倒末帧，复活出图恢复）。逻辑状态机未扩、不接音频、命中/死亡公式未动。截图 `docs/reviews/images/07_hit.png`、`08_death.png`。
+- 相机跟拍收一帧（2026-09-07）：跟拍按贴地后身高 ≈1.19 重取景——偏移 `(0,17,-15)`→`(0,10.6,-9.3)`（注视点距离 22.7→14.1，俯角不变 ≈48.6°），注视高度 `CamLookY 0.5→0.6`（胸口/身体包围盒中心近似，不锁武器尖），FOV 42 不变。人物约占画面高 1/9（改前约 1/24），全身可辨+近怪在框（截图 `docs/reviews/images/09_camera.png`）。只动常量，无平滑、无新镜头系统；相机恒在地面 y=0 上方 11.2，不穿地；死亡冻帧/进出图无新增摆动源。
 
 ## 工作方式（导演 2026-09-07 追加）
 

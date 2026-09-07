@@ -45,10 +45,10 @@ namespace Game.Runtime.Core
         bool _built;
         bool _drawGui = true;
         bool _sampling;
-        // Same pitch as (0, 8.5, -7.5), ~2x farther. Fast ARPG read: bodies small, more ground in frame.
-        static readonly Vector3 CamOffset = new Vector3(0f, 17f, -15f);
+        // 跟拍按贴地后身高 ≈1.19 收一帧：同俯角把 2x 远取景收到人物约占画面高 1/9（全身可辨+近怪在框内）
+        static readonly Vector3 CamOffset = new Vector3(0f, 10.6f, -9.3f);
         const float CamFov = 42f;
-        const float CamLookY = 0.5f;
+        const float CamLookY = 0.6f;
         const float ViewBodyScale = 0.58f;
         const float PlayerViewSx = 0.64f;
         const float PlayerViewSy = 0.58f;
