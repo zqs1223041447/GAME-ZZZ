@@ -1,0 +1,8 @@
+# ArenaPerfHarness, density=300
+# resolution=2560x1440 fullscreen=True currentRes=2560x1440 editor=False dx=Direct3D12
+# hardware_cpu=AMD Ryzen 7 5700X3D 8-Core Processor 
+# hardware_gpu=NVIDIA GeForce RTX 5070
+# perf_env quality=PC vsync=0 targetFps=-1 warmup=60 sample=600 castInterval=0.12
+# density strategy: kill-then-refill (alive kept at nominal via SpawnAt top-up)
+dummy_count,alive,frames,main_ms_avg,main_ms_p95,main_ms_p99,main_ms_p999,main_ms_max,gc_alloc_bytes_avg,cpu_ms_avg,gpu_ms_avg,mem_total_mb,frame_timing_ok
+300,290,600,1.678,1.954,2.263,2.582,2.733,0.0,1.678,0.561,120.9,true

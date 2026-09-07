@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "resolution": { "width": 2560, "height": 1440 },
+  "fullscreen": true,
+  "graphicsApi": "Direct3D12",
+  "quality": "PC",
+  "vSyncCount": 0,
+  "targetFrameRate": -1,
+  "densities": [ 100, 200, 300 ],
+  "warmupFrames": 60,
+  "sampleFrames": 600,
+  "castIntervalSeconds": 0.12,
+  "frameBudgetMs": 8.33,
+  "requiredRuns": 3,
+  "requireFrameTiming": true,
+  "minAliveRatio": 0.95,
+  "hardware": {
+    "processorType": "AMD Ryzen 7 5700X3D 8-Core Processor",
+    "graphicsDeviceName": "NVIDIA GeForce RTX 5070"
+  },
+  "_notes": "S3-M7 canonical performance contract（机器可读唯一真相源）。硬件字段由 probe 实测回填；硬件变更必须经正式工作令显式更新本文件，禁止 Gate 自动学习。"
+}

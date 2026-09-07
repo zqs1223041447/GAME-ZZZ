@@ -1,0 +1,194 @@
+{
+  "issues": [],
+  "gate": {
+    "endedUtc": "2026-09-07T20:24:50.7915031Z",
+    "verdict": "PASS",
+    "startedUtc": "2026-09-07T20:23:18.8305603Z"
+  },
+  "unityVersion": "6000.3.23f1",
+  "projectRoot": "G:\\GAME-ZZZ\\unity\\game\\New Unity Project",
+  "playerRun": {
+    "status": "SKIPPED",
+    "requested": true,
+    "timeoutMinutes": 10,
+    "timedOut": false,
+    "exitCode": null,
+    "outputPath": "C:\\Users\\ZQS\\AppData\\Local\\Temp\\GAME-ZZZ-UnattendedGate\\PlayerRun",
+    "densities": null,
+    "graphicsApi": "",
+    "actualResolution": "",
+    "logPath": "C:\\Users\\ZQS\\AppData\\Local\\Temp\\GAME-ZZZ-UnattendedGate\\PlayerRun.log"
+  },
+  "build": {
+    "status": "PASS",
+    "requested": true,
+    "timeoutMinutes": 30,
+    "timedOut": false,
+    "dataDirectoryExists": true,
+    "executableExists": true,
+    "executablePath": "C:\\Users\\ZQS\\AppData\\Local\\Temp\\GAME-ZZZ-UnattendedGate\\PlayerBuild\\GAME-ZZZ.exe",
+    "executableBytes": 667136,
+    "unityExitCode": 0,
+    "logPath": "C:\\Users\\ZQS\\AppData\\Local\\Temp\\GAME-ZZZ-UnattendedGate\\PlayerBuild.log"
+  },
+  "unityPath": "G:\\Unity\\Hub\\Editor\\6000.3.23f1\\Editor\\Unity.exe",
+  "playMode": {
+    "status": "PASS",
+    "passed": 3,
+    "skipped": 0,
+    "total": 3,
+    "timedOut": false,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "performance": {
+    "runs": [
+      {
+        "densities": [
+          {
+            "status": "PASS",
+            "alive": 100,
+            "gpuAvg": 0.561,
+            "reasons": [],
+            "avg": 1.343,
+            "density": 100,
+            "p99": 1.99,
+            "frames": 600,
+            "cpuAvg": 1.343
+          },
+          {
+            "status": "PASS",
+            "alive": 200,
+            "gpuAvg": 0.564,
+            "reasons": [],
+            "avg": 1.443,
+            "density": 200,
+            "p99": 2.105,
+            "frames": 600,
+            "cpuAvg": 1.442
+          },
+          {
+            "status": "PASS",
+            "alive": 290,
+            "gpuAvg": 0.557,
+            "reasons": [],
+            "avg": 1.671,
+            "density": 300,
+            "p99": 2.355,
+            "frames": 600,
+            "cpuAvg": 1.67
+          }
+        ],
+        "index": 1,
+        "envStatus": "PASS"
+      },
+      {
+        "densities": [
+          {
+            "status": "PASS",
+            "alive": 100,
+            "gpuAvg": 0.578,
+            "reasons": [],
+            "avg": 1.348,
+            "density": 100,
+            "p99": 1.941,
+            "frames": 600,
+            "cpuAvg": 1.347
+          },
+          {
+            "status": "PASS",
+            "alive": 200,
+            "gpuAvg": 0.58,
+            "reasons": [],
+            "avg": 1.467,
+            "density": 200,
+            "p99": 2.111,
+            "frames": 600,
+            "cpuAvg": 1.467
+          },
+          {
+            "status": "PASS",
+            "alive": 291,
+            "gpuAvg": 0.574,
+            "reasons": [],
+            "avg": 1.657,
+            "density": 300,
+            "p99": 2.458,
+            "frames": 600,
+            "cpuAvg": 1.657
+          }
+        ],
+        "index": 2,
+        "envStatus": "PASS"
+      },
+      {
+        "densities": [
+          {
+            "status": "PASS",
+            "alive": 100,
+            "gpuAvg": 0.577,
+            "reasons": [],
+            "avg": 1.342,
+            "density": 100,
+            "p99": 4.319,
+            "frames": 600,
+            "cpuAvg": 1.342
+          },
+          {
+            "status": "PASS",
+            "alive": 200,
+            "gpuAvg": 0.58,
+            "reasons": [],
+            "avg": 1.467,
+            "density": 200,
+            "p99": 2.049,
+            "frames": 600,
+            "cpuAvg": 1.467
+          },
+          {
+            "status": "PASS",
+            "alive": 290,
+            "gpuAvg": 0.575,
+            "reasons": [],
+            "avg": 1.64,
+            "density": 300,
+            "p99": 2.223,
+            "frames": 600,
+            "cpuAvg": 1.639
+          }
+        ],
+        "index": 3,
+        "envStatus": "PASS"
+      }
+    ],
+    "targetFrameRate": "-1",
+    "requested": true,
+    "environmentStatus": "PASS",
+    "vsync": "0",
+    "hardwareMatch": true,
+    "frameBudgetMs": 8.33,
+    "resolution": "2560x1440",
+    "graphicsApi": "Direct3D12",
+    "verdict": "PASS",
+    "quality": "PC"
+  },
+  "editMode": {
+    "status": "PASS",
+    "passed": 115,
+    "skipped": 0,
+    "total": 115,
+    "timedOut": false,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "unityResolutionSource": "hub install root: G:\\\\Unity\\\\Hub\\\\Editor",
+  "contentAudit": {
+    "fresh": true,
+    "failureCount": 0,
+    "verdict": "PASS",
+    "exists": true,
+    "afterUtc": "2026-09-07T20:23:41.2743749Z",
+    "completed": "YES",
+    "beforeUtc": "2026-09-07T20:19:53.7294591Z"
+  }
+}

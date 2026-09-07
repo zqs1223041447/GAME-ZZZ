@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "a11aa8737669e188f453345b18414855c36d0955",
+  "contractSha256": "72caf4865300b5abccc438a003da0b52b6c58f8fb6d2e67e303eafe834e59464",
+  "verificationSummarySha256": "cef27de8b88712fd2d8530048c1aebd4d893fa7ab7ae01e84ea13ec6ef9a58ad",
+  "expectedRuns": 3,
+  "expectedDensities": [
+    100,
+    200,
+    300
+  ],
+  "performanceVerdict": "PASS",
+  "environmentStatus": "PASS",
+  "capturedAtUtc": "2026-09-07T20:26:46.4022162Z",
+  "files": [
+    {
+      "sha256": "731882bd1c5a20e1f7f7fad23177e08959ea12811ab5222e66e01b399736dd9a",
+      "relativePath": "Run1/100.txt",
+      "bytes": 606
+    },
+    {
+      "sha256": "fcdbd134037b29bbb5bf3bcf82ccdcfefb4a8ec40e8d7898eecd692d3541e1e4",
+      "relativePath": "Run1/200.txt",
+      "bytes": 606
+    },
+    {
+      "sha256": "fcd67faf32370f3f2d086891b4c61110b7a46a8e09edf1c50264d9685ca31820",
+      "relativePath": "Run1/300.txt",
+      "bytes": 606
+    },
+    {
+      "sha256": "f56a18d7bca1745dafa2a441f8cac1937f21d0372893e78575a80c0440112d3a",
+      "relativePath": "Run1/PlayerRun.log",
+      "bytes": 2918
+    },
+    {
+      "sha256": "86a56d79c828278bb372ed08306c99924148eeef7d630fd21dfa1794fd8577dc",
+      "relativePath": "Run2/100.txt",
+      "bytes": 607
+    },
+    {
+      "sha256": "db3711acce6318474fe1f09f324f28583e9658a669a0733fe31beb304f79b856",
+      "relativePath": "Run2/200.txt",
+      "bytes": 606
+    },
+    {
+      "sha256": "04f6ae690c0d2d044689a3c2361a550dd32aeb332241d68613bb6b7ce7be1df4",
+      "relativePath": "Run2/300.txt",
+      "bytes": 606
+    },
+    {
+      "sha256": "8c6d74cd0dba567a83b9567a47a2f4d0bc394cdc30cfadd717ae626365343fbd",
+      "relativePath": "Run2/PlayerRun.log",
+      "bytes": 2918
+    },
+    {
+      "sha256": "59e7155558920e396308535e0b35da2ac01771b969053b2c3bd811b6d6f94faa",
+      "relativePath": "Run3/100.txt",
+      "bytes": 606
+    },
+    {
+      "sha256": "21f86274dd8e63ae831537f2d8f7bd48f10f42aa9ecc09e961d44accba71e7f7",
+      "relativePath": "Run3/200.txt",
+      "bytes": 606
+    },
+    {
+      "sha256": "08bcc2820037dc26e71a7064bea8451d1a8bc1fafea671a14e1deb2863daae8a",
+      "relativePath": "Run3/300.txt",
+      "bytes": 606
+    },
+    {
+      "sha256": "6d43a39eb78c65dba08c67e0b21812d0f734a87bfa87c9819d308a7700f66dcc",
+      "relativePath": "Run3/PlayerRun.log",
+      "bytes": 2918
+    },
+    {
+      "sha256": "cef27de8b88712fd2d8530048c1aebd4d893fa7ab7ae01e84ea13ec6ef9a58ad",
+      "relativePath": "verification-summary.json",
+      "bytes": 5026
+    },
+    {
+      "sha256": "72caf4865300b5abccc438a003da0b52b6c58f8fb6d2e67e303eafe834e59464",
+      "relativePath": "PERFORMANCE_GATE.json",
+      "bytes": 749
+    }
+  ]
+}
