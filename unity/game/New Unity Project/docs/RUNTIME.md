@@ -294,6 +294,8 @@ E 命中：圈内 Dummy 闪白 + 池里 Hit 爆点（致死也要先闪白）
 
 即 Arena 场景。F1/F2/F3 切密度；F5 采样。PlayMode 测试会对 100/200/300 各采一截。
 
+测量钩子：`ArenaPerfHarness` 默认关（仅独立包 `-arenaPerf` 命令行或显式 `StartManual` 启动），`ArenaDirector.BuildIfNeeded` 内的钩子默认无操作；正式游玩路径不得自动开启。
+
 写出 `Logs/s1-perf-arena.txt`，每行含：Dummy 数、采样帧数、主线程帧时间（avg / p95 / max，毫秒）、GC Alloc/帧（字节，托管 `GetAllocatedBytesForCurrentThread` 差值）。
 
 S1 只要求能测量，不要求 1440p / 120FPS / 300 真实实体达标。
