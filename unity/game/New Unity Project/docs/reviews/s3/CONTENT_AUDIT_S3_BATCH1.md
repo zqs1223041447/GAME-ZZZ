@@ -27,7 +27,7 @@
 
 ## Support × 技能兼容矩阵（本批新增校验）
 
-判定依据：①带 RequiredTags 的 Mod 在该技能 Tag 下必须可满足（StatBag 对不满足是静默跳过=隐形无效）；②机制路径（分裂）只接入弹道结算。**矩阵是审计层判定，运行时 TrySetSupport 暂不阻断**（DECISIONS 有记录）。
+判定依据：①带 RequiredTags 的 Mod 在该技能 Tag 下必须可满足（StatBag 对不满足是静默跳过=隐形无效）；②机制路径（分裂）只接入弹道结算。**运行时已接入同一契约**：TrySetSupport 写入前调用 SliceSession.IsSupportCompatible 拒绝非法连接；golden 矩阵保持独立 oracle（SupportCompatGolden），Runtime parity 由 SupportGateTests 单独校验。
 
 | Support | Q 近战 | W 弹道 | E 范围 |
 |---|---|---|---|

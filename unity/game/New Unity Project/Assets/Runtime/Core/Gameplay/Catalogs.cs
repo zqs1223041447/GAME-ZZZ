@@ -64,6 +64,8 @@ namespace Game.Runtime.Core
         public EffectId TriggerEffect;
         public EventId TriggerEvent;
         public int TriggerDepth;
+        // 机制类 Support 的技能限制（SkillId.None = 不限）；S3-B1-RCLOSE 运行时兼容门据此判定（分裂只接弹道）
+        public SkillId MechanicSkill;
     }
 
     public struct AffixDef
@@ -310,7 +312,8 @@ namespace Game.Runtime.Core
                 Mods = new[] { Modifier.Make(StatId.Fork, ModOp.Flat, 1f) },
                 TriggerEffect = EffectId.ForkProjectiles,
                 TriggerEvent = EventId.OnHit,
-                TriggerDepth = 1
+                TriggerDepth = 1,
+                MechanicSkill = SkillId.Projectile
             };
         }
     }

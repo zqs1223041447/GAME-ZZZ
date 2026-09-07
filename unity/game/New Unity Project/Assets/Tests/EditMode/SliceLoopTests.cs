@@ -292,6 +292,58 @@ namespace Game.Tests.EditMode
             Assert.AreEqual(crafted.SecondValueAt(0), bag.RawFlat(StatId.IgniteChance), 0.0001f);
         }
 
+        [Test]
+        public void DirectedCraft_SingleRowOverHybrid_NoSecondValueResidue()
+        {
+            var s = new SliceSession();
+            ItemInstance it = default;
+            it.Id = s.NextItemId++;
+            it.Slot = EquipSlot.Weapon;
+            it.Rarity = Rarity.Rare;
+            it.SocketCount = 3;
+            it.BaseName = "Test";
+            it.AffixCount = 4;
+            it.SetAffix(0, AffixId.Life, 20f, 0f);
+            it.SetAffix(1, AffixId.Armour, 30f, 0f);
+            it.SetAffix(2, AffixId.Evasion, 30f, 0f);
+            it.SetAffix(3, AffixId.IgniteFire, 0.20f, 0.15f); // 组合词缀带第二值
+            int idx = s.AddItem(it);
+            s.Equipped[(int)EquipSlot.Weapon] = idx;
+
+            string err;
+            // 满槽定向制作：覆写最后一个槽（3）为单行词缀
+            Assert.IsTrue(s.TryDirectedCraft(idx, AffixId.Life, out err), err);
+            ItemInstance crafted = s.Inventory[idx];
+            Assert.AreEqual((int)AffixId.Life, crafted.AffixIdAt(3));
+            Assert.AreEqual(0f, crafted.SecondValueAt(3), 0.0001f, "单行词缀覆写后第二值必须归零（不得泄漏）");
+            Assert.GreaterOrEqual(crafted.ValueAt(3), AffixCatalog.Get(AffixId.Life).Min);
+            Assert.LessOrEqual(crafted.ValueAt(3), AffixCatalog.Get(AffixId.Life).Max);
+        }
+
+        [Test]
+        public void DirectedCraft_AccCrit_DualRangeIndependent()
+        {
+            var s = new SliceSession();
+            ItemInstance it = default;
+            it.Id = s.NextItemId++;
+            it.Slot = EquipSlot.Body;
+            it.Rarity = Rarity.Ordinary;
+            it.SocketCount = 3;
+            it.BaseName = "Test";
+            int idx = s.AddItem(it);
+
+            string err;
+            Assert.IsTrue(s.TryDirectedCraft(idx, AffixId.AccCrit, out err), err);
+            ItemInstance crafted = s.Inventory[idx];
+            AffixDef def = AffixCatalog.Get(AffixId.AccCrit);
+            // 两行范围差异明显（20–50 vs 0.15–0.30）：第一行不得污染第二行
+            Assert.GreaterOrEqual(crafted.ValueAt(0), def.Min);
+            Assert.LessOrEqual(crafted.ValueAt(0), def.Max);
+            Assert.GreaterOrEqual(crafted.SecondValueAt(0), def.Min2);
+            Assert.LessOrEqual(crafted.SecondValueAt(0), def.Max2);
+            Assert.Less(crafted.SecondValueAt(0), 1f, "第二行必须使用自身百分比范围");
+        }
+
         static ItemInstance RollWith(uint sessionSeed, uint rollSeed)
         {
             var s = new SliceSession();

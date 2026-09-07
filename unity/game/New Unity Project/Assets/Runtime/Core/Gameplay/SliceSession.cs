@@ -258,9 +258,44 @@ namespace Game.Runtime.Core
                 return false;
             }
 
+            // S3-B1-RCLOSE：兼容门在写入前判定，失败不产生任何半写入
+            if (support != SupportId.None && !IsSupportCompatible(support, skill))
+            {
+                error = SupportCatalog.Get(support).Name + " 与 " + SkillDisplayName(skill) + " 不兼容";
+                return false;
+            }
+
             arr[index] = support;
             RecalcPlayer(false);
             LastMessage = SkillDisplayName(skill) + " 连接[" + index + "] = " + (support == SupportId.None ? "空" : SupportCatalog.Get(support).Name);
+            return true;
+        }
+
+        /// <summary>
+        /// S3-B1-RCLOSE 运行时兼容判定单一入口（与审计 golden 矩阵同一契约、不同数据源）：
+        /// ①Tag 路径——带 RequiredTags 的 Mod 在该技能 Tag 下必须可满足（否则 StatBag 静默跳过=隐形无效）；
+        /// ②机制路径——SupportDef.MechanicSkill 限制（分裂只接弹道结算）。装配/配置阶段调用，不进战斗热路径。
+        /// </summary>
+        public static bool IsSupportCompatible(SupportId support, SkillId skill)
+        {
+            if (support == SupportId.None)
+                return false;
+            if (skill != SkillId.Melee && skill != SkillId.Projectile && skill != SkillId.Area)
+                return false;
+            SupportDef def = SupportCatalog.Get(support);
+            if (def.Id != support)
+                return false;
+            if (def.MechanicSkill != SkillId.None && def.MechanicSkill != skill)
+                return false;
+            Tag skillTags = SkillTags.Of(skill);
+            if (def.Mods == null)
+                return true;
+            for (int i = 0; i < def.Mods.Length; i++)
+            {
+                Tag req = def.Mods[i].RequiredTags;
+                if (req != Tag.None && (skillTags & req) != req)
+                    return false;
+            }
             return true;
         }
 

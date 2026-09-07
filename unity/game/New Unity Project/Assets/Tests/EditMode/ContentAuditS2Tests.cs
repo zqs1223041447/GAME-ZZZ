@@ -44,20 +44,11 @@ namespace Game.Tests.EditMode
         };
 
         /// <summary>
-        /// Support × 技能兼容矩阵（Q=近战 / W=弹道 / E=范围）。判定依据：
-        /// ①Tag 路径——带 RequiredTags 的 Mod 在该技能 Tag 下必须可满足（StatBag.Add 静默跳过，静默无效=内容债）；
-        /// ②机制路径——ForkProjectiles 只接入弹道结算（ArenaSim.ResolveProjectile 只询 ForkCount(Projectile)）。
-        /// 矩阵是审计层判定：运行时 TrySetSupport 暂不阻断非法连接（DECISIONS 有记录）。
+        /// Support × 技能兼容矩阵 golden 期望见 SupportCompatGolden（独立 oracle，本测试与 Runtime parity 测试共用）。
+        /// 判定依据：①Tag 路径——带 RequiredTags 的 Mod 在该技能 Tag 下必须可满足（StatBag.Add 静默跳过，静默无效=内容债）；
+        /// ②机制路径——ForkProjectiles 只接入弹道结算（SupportDef.MechanicSkill）。
+        /// 运行时已接入同一契约（TrySetSupport 拒绝非法连接，见 SliceSession.IsSupportCompatible）；golden 不得由 Runtime 推导。
         /// </summary>
-        static readonly Dictionary<SupportId, SkillId[]> SupportSkillCompat = new Dictionary<SupportId, SkillId[]>
-        {
-            { SupportId.AddedFire, new[] { SkillId.Melee, SkillId.Projectile, SkillId.Area } },
-            { SupportId.Brutal, new[] { SkillId.Melee, SkillId.Projectile, SkillId.Area } },
-            { SupportId.Concentrated, new[] { SkillId.Area } },
-            { SupportId.Faster, new[] { SkillId.Melee, SkillId.Projectile, SkillId.Area } },
-            { SupportId.Combustion, new[] { SkillId.Melee, SkillId.Projectile, SkillId.Area } },
-            { SupportId.Fork, new[] { SkillId.Projectile } }
-        };
 
         static string ReportPath
         {
@@ -244,7 +235,7 @@ namespace Game.Tests.EditMode
         static void CheckSupportCompat(SupportDef def, List<string> problems)
         {
             SkillId[] skills;
-            if (!SupportSkillCompat.TryGetValue(def.Id, out skills))
+            if (!SupportCompatGolden.Matrix.TryGetValue(def.Id, out skills))
             {
                 problems.Add("未声明兼容矩阵 " + def.Name);
                 return;
@@ -286,7 +277,7 @@ namespace Game.Tests.EditMode
         {
             if (defId != key)
                 return;
-            if (ContainsSkill(SupportSkillCompat[key], skill))
+            if (ContainsSkill(SupportCompatGolden.Matrix[key], skill))
                 problems.Add("已知不兼容被放宽：" + SupportCatalog.Get(key).Name + " × " + SliceSession.SkillDisplayName(skill));
         }
 
@@ -294,7 +285,7 @@ namespace Game.Tests.EditMode
         {
             if (defId != key)
                 return;
-            if (!ContainsSkill(SupportSkillCompat[key], skill))
+            if (!ContainsSkill(SupportCompatGolden.Matrix[key], skill))
                 problems.Add("已知兼容被收紧：" + SupportCatalog.Get(key).Name + " × " + SliceSession.SkillDisplayName(skill));
         }
 
@@ -347,14 +338,14 @@ namespace Game.Tests.EditMode
             sb.AppendLine("");
             sb.AppendLine("## Support × 技能兼容矩阵（本批新增校验）");
             sb.AppendLine("");
-            sb.AppendLine("判定依据：①带 RequiredTags 的 Mod 在该技能 Tag 下必须可满足（StatBag 对不满足是静默跳过=隐形无效）；②机制路径（分裂）只接入弹道结算。**矩阵是审计层判定，运行时 TrySetSupport 暂不阻断**（DECISIONS 有记录）。");
+            sb.AppendLine("判定依据：①带 RequiredTags 的 Mod 在该技能 Tag 下必须可满足（StatBag 对不满足是静默跳过=隐形无效）；②机制路径（分裂）只接入弹道结算。**运行时已接入同一契约**：TrySetSupport 写入前调用 SliceSession.IsSupportCompatible 拒绝非法连接；golden 矩阵保持独立 oracle（SupportCompatGolden），Runtime parity 由 SupportGateTests 单独校验。");
             sb.AppendLine("");
             sb.AppendLine("| Support | Q 近战 | W 弹道 | E 范围 |");
             sb.AppendLine("|---|---|---|---|");
             for (int i = 1; i <= SupportCatalog.Count; i++)
             {
                 SupportDef def = SupportCatalog.Get((SupportId)i);
-                SkillId[] skills = SupportSkillCompat[def.Id];
+                SkillId[] skills = SupportCompatGolden.Matrix[def.Id];
                 sb.AppendLine("| " + def.Name + " | " + Mark(skills, SkillId.Melee) + " | " + Mark(skills, SkillId.Projectile) + " | " + Mark(skills, SkillId.Area) + " |");
             }
             sb.AppendLine("");
