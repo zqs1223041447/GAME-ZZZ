@@ -2,7 +2,7 @@
 
 日期：2026-09-08。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit（M9 维护序列收口）：A=0f5908b（chore(unity)：移除未使用 Inference 直接依赖 + lock UPM 解析（-Inference/-dt.app-ui）+ canonical 删 SENTIS define + 零使用审计 `S3_M9_INFERENCE_DEPENDENCY_AUDIT.md`）/ B=回填本行
+本轮 commit（最终 hotfix ROADMAP-HEADER-TRUTH-HOTFIX，非 M10）：A=e9d681e（docs(roadmap)：页首当前阶段行 1440p/120 CLOSED 对齐）/ B=回填本行
 
 ## 门状态
 
@@ -64,6 +64,7 @@
 
 | 日期 | HEAD | EditMode | PlayMode | 失败项 |
 |---|---|---|---|---|
+| 2026-09-08 | e9d681e（hotfix：ROADMAP 页首 S2P/1440p CLOSED 对齐；SelfTest 9/9+Quick Gate PASS） | 115/115 | 3/3 | 无 |
 | 2026-09-08 | 0f5908b（M9：Inference 移除后五门矩阵 Quick/Build/Quick2/PlayerRuntime/Performance 全 PASS，每步树净+define 0 变动；worst p99=2.376ms；振荡 CLOSED） | 115/115 | 3/3 | 无 |
 | 2026-09-08 | ead815c+3a577d3+a11aa87+9889998（M8 revalidation Gate A+B：18 测量全 PASS，worst p99=4.380ms=预算 52.6%；gate-a/gate-b raw 14 文件冻结+MANIFEST 校验，同 HEAD=a11aa87） | 115/115 | 3/3 | 无 |
 | 2026-09-08 | b3999cd+0eeeea8+422d356（Performance Gate A+B：18 测量全 PASS，worst p99=2.388ms；S2P 1440p/120 CLOSED） | 115/115 | 3/3 | 无 |
