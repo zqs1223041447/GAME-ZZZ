@@ -22,6 +22,7 @@ S0 锁定。后续阶段不得在未改本文的情况下推翻这些决定。
 - 语音 ogg 接入·第一轮（2026-09-07）：独立人声表 `VoiceCues`（**与 AudioEvents 5 键战斗 SFX 完全隔离**，查找 `Resources/Audio/Voice/<键>`）；3 键=Cast（施放喊招，`ArenaSim.Resolve`，冷却 1.5s）/ Hit（受击呼痛，`ArenaDirector` 上跳沿，冷却 0.6s）/ Death（进入 Dead，`ArenaDirector`，每次一次）。**映射为缺口**：包内 609 条 ogg 为数值 ID 无语义名（fx 208 / voice 401，清点见 `docs/reviews/audio/DK_VOICE_INVENTORY.md`），待导演试听 `Desktop/voice_listen/` 候选（20 条，按 CAST/受击/死亡 前缀）指认后投放 `Resources/Audio/Voice/` 即生效；未指认前=静音。不外购、不硬塞语义。
 - 5 键战斗 clip 投放·CC0（2026-09-07）：五键全部接入——来源**单一包 80 CC0 RPG SFX**（rubberduck，OpenGameArt，页面 License=CC0）：Cast=spell_fire_04（黑骑士火系）/ Impact=blade_02 / Hit=creature_hurt_01 / Death=creature_die_01 / Loot=item_coins_01，落 `Assets/Resources/Audio/<键>.ogg`（AudioEvents 查找表零逻辑改动，投放即生效）。来源与许可全录 `docs/reviews/audio/SFX_SOURCES.md`。Play 实证：五键 PlayOneShot 逐一 isPlaying=True。包内 fx 208 条留作备选池。
 - UI 方案页已出（2026-09-07）：`docs/ui/UI_PROPOSAL_POE_D3.md`（类 PoE/暗黑 3：深色石质面板+金色细描边+左下双球+底栏技能槽+右侧装备抽屉；含 SliceHud 迁移映射与分轮建议）——**待导演过目点头后才分轮实现**，本轮不改 SliceHud。
+- S3 后续规划已出（2026-09-07）：`docs/reviews/s3/S3_PLAN.md`——阶段 0 永关清单 / 1 内容工厂校验扩展 / 2 组合系增产（R1≤3 词缀，R2 +1 Support 变体）/ 3-5 依赖导演输入（UI 过目、人声指认、精模点名）/ 6 后置项单列开启条件 / 7 1440p 非前置。**开工口令=导演明说「开 S3」**；规划存在本身不构成开工；第一批只允许校验扩展+R1。
 
 ## 工作方式（导演 2026-09-07 追加）
 
