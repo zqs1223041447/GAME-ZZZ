@@ -216,13 +216,13 @@ namespace Game.Runtime.Core
         static void WriteRow(int count, PerfRow row)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("# S2P 1440p harness, density=" + count);
+            // 标题不声明分辨率（真实分辨率以 resolution= 实测行为准；S3-M6 证据中性化）
+            sb.AppendLine("# ArenaPerfHarness, density=" + count);
             sb.AppendLine("# resolution=" + Screen.width + "x" + Screen.height +
                 " fullscreen=" + Screen.fullScreen +
                 " currentRes=" + Screen.currentResolution.width + "x" + Screen.currentResolution.height +
                 " editor=" + Application.isEditor +
-                " dx=" + SystemInfo.graphicsDeviceType +
-                " enteredMap=" + (Application.isEditor ? "n/a" : "false"));
+                " dx=" + SystemInfo.graphicsDeviceType);
             sb.AppendLine("# density strategy: kill-then-refill (alive kept at nominal via SpawnAt top-up)");
             sb.AppendLine("dummy_count,alive,frames,main_ms_avg,main_ms_p95,main_ms_p99,main_ms_p999,main_ms_max,gc_alloc_bytes_avg,cpu_ms_avg,gpu_ms_avg,mem_total_mb,frame_timing_ok");
             sb.Append(row.DummyCount.ToString(CultureInfo.InvariantCulture)).Append(',');
