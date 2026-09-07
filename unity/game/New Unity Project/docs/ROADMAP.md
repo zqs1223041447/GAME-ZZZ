@@ -61,6 +61,6 @@ S2P 技术收口已记录。**S3 最小底座已开工（2026-09-07）**：`docs
 | 语音 ogg 接入 | 素材留档未接 | **已执行·第一轮**（2026-09-07）：`VoiceCues` 独立表 3 键+冷却已接（Cast 1.5s/Hit 0.6s/Death 每次一次）；**映射缺口待导演试听指认**（清单 `docs/reviews/audio/DK_VOICE_INVENTORY.md`，候选在 `Desktop/voice_listen/`） |
 | EveView/DriveEve 改名 | **已执行**（2026-09-07 改名轮：`DarkKnightView`/`DriveDarkKnight`，行为零变化） | 指向改名轮 commit；历史叙述保留曾用名 |
 | 怪物独立 EnemyHit 事件 | 无此名，用 Impact 语义 | **维持现状**——不新增 |
-| 5 个音频 clip | 查找表全空=静音 | **已下令**——网上搜免费资源；搜不到则等后续补充（待排令） |
+| 5 个音频 clip | 查找表全空=静音 | **已执行**（2026-09-07）：五键全 CC0 投放（来源 80 CC0 RPG SFX / rubberduck / OGA，许可与映射见 `docs/reviews/audio/SFX_SOURCES.md`）；Play 实证五键 PlayOneShot 全响 |
 
 表外项 **S3 内容扩张**：导演裁定（2026-09-07）——其他问题全部完成后开启 S3；S3 内容问 GPT 要规划。

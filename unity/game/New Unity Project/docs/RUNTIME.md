@@ -58,7 +58,7 @@ static class GameLog
 
 输出到 Unity Console，格式：`[tag] message`。
 
-S1 音频无资源时：`[Audio] Cast|Impact|Hit|Death`。性能采样：`[Perf] ...`。音频事件（2026-09-07 挂钩）：单一入口 `AudioEvents.Play`（无中间件），5 事件=Cast（施放起手 `ArenaSim.Resolve`）/ Impact（技能命中 `ArenaSim.PlayImpact`）/ Hit（玩家受击上跳沿 `ArenaDirector`，与 Hit 动画同帧）/ Death（玩家进入 `MapState.Dead` `ArenaDirector`，与 Death 动画同处）/ Loot（掉落生成 `SliceSession.DropGear`）；查找表 `Resources/Audio/<事件名>` 预留 5 键，无资产=静音+限频日志（5s/键），缺音频不报错不卡死；语音 ogg 未接。**人声（2026-09-07）**：独立表 `VoiceCues`（`Resources/Audio/Voice/<键>`，与 5 键 SFX 隔离），Cast=施放喊招（冷却 1.5s）/ Hit=受击呼痛（0.6s）/ Death=倒下（每次 Dead 一次）；清点 609 条 ogg 见 `docs/reviews/audio/DK_VOICE_INVENTORY.md`，映射缺口待导演试听指认，未指认=静音。
+S1 音频无资源时：`[Audio] Cast|Impact|Hit|Death`。性能采样：`[Perf] ...`。音频事件（2026-09-07 挂钩）：单一入口 `AudioEvents.Play`（无中间件），5 事件=Cast（施放起手 `ArenaSim.Resolve`）/ Impact（技能命中 `ArenaSim.PlayImpact`）/ Hit（玩家受击上跳沿 `ArenaDirector`，与 Hit 动画同帧）/ Death（玩家进入 `MapState.Dead` `ArenaDirector`，与 Death 动画同处）/ Loot（掉落生成 `SliceSession.DropGear`）；查找表 `Resources/Audio/<事件名>` 预留 5 键，无资产=静音+限频日志（5s/键），缺音频不报错不卡死；语音 ogg 未接。**战斗 SFX 已投放（2026-09-07，全 CC0）**：Cast/Impact/Hit/Death/Loot 五键各 1 条（来源 80 CC0 RPG SFX / rubberduck / OGA；映射与许可见 `docs/reviews/audio/SFX_SOURCES.md`）；**人声**：独立表 `VoiceCues`（`Resources/Audio/Voice/<键>`，与 5 键 SFX 隔离），Cast=施放喊招（冷却 1.5s）/ Hit=受击呼痛（0.6s）/ Death=倒下（每次 Dead 一次）；清点 609 条 ogg 见 `docs/reviews/audio/DK_VOICE_INVENTORY.md`，映射缺口待导演试听指认，未指认=静音。
 
 ## ContentId + ContentDatabase（Content，S0）
 
