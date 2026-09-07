@@ -2,7 +2,7 @@
 
 日期：2026-09-07。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit：A=@待回填 / B=@待回填
+本轮 commit：A=fe5bbf2（STATUS 主体 + ART_BIBLE 相机对齐 + DECISIONS 指向行）/ B=回填本行
 
 ## 门状态
 
