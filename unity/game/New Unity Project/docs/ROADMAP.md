@@ -47,6 +47,4 @@
 
 ## 下一步
 
-S2P 技术收口已记录。**下一门默认：S3 未开**——开 S3 前按协调席决定先清非阻断残留（Eve 回退链、EveView 命名）或直接开 S3 最小项（Art Bible 初稿 / 内容校验工具最小版）。1440p 补测列为「硬件条件满足后的 S2P 补测」。
-
-**现在仍禁止**：大天赋树、Unique 库、Atlas、完整 Craft 链、DOTS、HDRP、FMOD。**HUD 未完备**，角色背包、技能、装备、天赋 HUD 后补，不得当作已经做完。I 不自放行。
+S2P 技术收口已记录。**S3 最小底座已开工（2026-09-07）**：`docs/art/ART_BIBLE.md` 初稿 + 内容校验（`ContentAuditS2Tests`，EditMode，报告 `docs/reviews/s3/CONTENT_AUDIT_S2.md`）。**内容扩张仍关闭**——大天赋树、Unique 库、Atlas、完整 Craft 禁止。1440p 补测列为「硬件条件满足后的 S2P 补测」，非 S3 前置阻断。残留清理（Eve 回退）已清（bb0adde）。
