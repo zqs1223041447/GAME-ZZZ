@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -8,13 +9,16 @@ using Game.Runtime.Core;
 namespace Game.Tests.EditMode
 {
     /// <summary>
-    /// S3 内容工厂收口校验（在 ContentAuditS2Tests 上扩展，类名保留以维持文档指向）。
+    /// S3 内容工厂校验（在 ContentAuditS2Tests 上扩展，类名保留以维持文档指向）。
     /// 只扫现行切片：3 Active + 7 Support（含 R2 火焰转化）+ 13 词缀（含第一批 3 条组合系）+ 16 天赋 + 3 图词缀 + 怪表。
     /// 失败条件：①REQUIRED 资源缺失 ②Support×技能兼容矩阵违规 ③词缀/Mod 行引用运行期未知 Stat / 非法 ModOp
-    /// ④Tag 规则违规（未声明 bit / Skill profile 偏离 golden / 死 Tagged Modifier）⑤内容数量护栏 ⑥新词缀 &gt; 3 条。
+    /// ④Tag 规则违规（未声明 bit / Skill profile 偏离 golden / 死 Tagged Modifier）⑤内容数量护栏 ⑥结构/契约问题。
     /// 未使用 Tag 与 GATED 资源（人声）只记录，不得当作失败项。
+    /// S3-M3 failure-safe：语义顺序 **Collect → Render → Persist → Assert**——全部内容问题先收集进
+    /// ContentAuditResult（Collect 阶段零 NUnit 断言），报告写盘后才断言；测试红 ⇒ 当前快照报告同轮红，
+    /// 绝不遗留上一轮 PASS。审计基础设施异常先落 FAIL 快照再上抛；写盘失败直接红。
     /// 拆分：ContentResourceAuditContracts（资源契约）/ ContentAuditTagRules + SkillTagGolden（Tag 规则与 golden）。
-    /// 报告写入 docs/reviews/s3/CONTENT_AUDIT_S3_CLOSEOUT.md（BATCH1/R2 报告保留历史）。
+    /// 报告写入 docs/reviews/s3/CONTENT_AUDIT_S3_CLOSEOUT.md（BATCH1/R2 报告保留冻结历史）。
     /// </summary>
     public sealed class ContentAuditS2Tests
     {
@@ -56,15 +60,13 @@ namespace Game.Tests.EditMode
         [Test]
         public void ContentAuditS2_Passes()
         {
-            var missingStat = new List<string>();
-            var illegalTag = new List<string>();
-            var badEffect = new List<string>();
-            var missingLinks = new List<string>();
-            var badAffix = new List<string>();
-            var compatProblems = new List<string>();
-            var tagProblems = new List<string>();
-            var deadTagged = new List<string>();
-            var requiredResourceMissing = new List<string>();
+            ContentAuditFailsafe.ExecuteAudit(ReportPath, CollectCurrentRepositoryAudit, RenderReport);
+        }
+
+        /// <summary>Stage 1：收集当前仓库审计状态。普通内容违规只入 Result 集合，绝不在此抛 NUnit 断言。</summary>
+        internal static ContentAuditResult CollectCurrentRepositoryAudit()
+        {
+            var result = new ContentAuditResult();
             var usedTags = new List<Tag>();
             var taggedMods = new List<TaggedModEntry>();
             int modCount = 0;
@@ -75,15 +77,15 @@ namespace Game.Tests.EditMode
                 {
                     modCount++;
                     if ((int)m.Stat < 0 || (int)m.Stat >= (int)StatId.Count)
-                        missingStat.Add(owner + " -> StatId " + m.Stat);
+                        result.MissingStat.Add(owner + " -> StatId " + m.Stat);
                     if (!IsRuntimeConsumed(m.Stat))
-                        missingStat.Add(owner + " -> 运行期未知 Stat " + m.Stat);
+                        result.MissingStat.Add(owner + " -> 运行期未知 Stat " + m.Stat);
                     if ((int)m.Op > (int)ModOp.Override)
-                        missingStat.Add(owner + " -> ModOp " + m.Op);
+                        result.MissingStat.Add(owner + " -> ModOp " + m.Op);
                     if (m.RequiredTags != Tag.None)
                     {
                         if (((uint)m.RequiredTags & ~(uint)SkillTagGolden.DeclaredTags) != 0)
-                            illegalTag.Add(owner + " -> RequiredTags " + m.RequiredTags);
+                            result.IllegalTag.Add(owner + " -> RequiredTags " + m.RequiredTags);
                         usedTags.Add(m.RequiredTags);
                         taggedMods.Add(new TaggedModEntry { Owner = owner, Tags = m.RequiredTags });
                     }
@@ -94,89 +96,122 @@ namespace Game.Tests.EditMode
             for (int i = 1; i <= SupportCatalog.Count; i++)
             {
                 var def = SupportCatalog.Get((SupportId)i);
-                Assert.IsFalse(string.IsNullOrEmpty(def.Name), "Support " + i + " Name 为空");
+                if (string.IsNullOrEmpty(def.Name))
+                    result.StructuralProblems.Add("Support " + i + " Name 为空");
                 ScanMods(def.Mods, "Support." + def.Name);
                 if (def.TriggerEffect != EffectId.None)
                 {
                     if ((int)def.TriggerEffect > (int)EffectId.ApplyIgnite)
-                        badEffect.Add("Support." + def.Name + " -> EffectId " + def.TriggerEffect);
+                        result.BadEffect.Add("Support." + def.Name + " -> EffectId " + def.TriggerEffect);
                     if ((int)def.TriggerEvent >= (int)EventId.Count)
-                        badEffect.Add("Support." + def.Name + " -> EventId " + def.TriggerEvent);
+                        result.BadEffect.Add("Support." + def.Name + " -> EventId " + def.TriggerEvent);
                 }
-                CheckSupportCompat(def, compatProblems);
+                CheckSupportCompat(def, result.CompatProblems);
+                SkillId[] matrix;
+                if (SupportCompatGolden.Matrix.TryGetValue(def.Id, out matrix))
+                    result.MatrixRows.Add("| " + def.Name + " | " + Mark(matrix, SkillId.Melee) + " | " + Mark(matrix, SkillId.Projectile) + " | " + Mark(matrix, SkillId.Area) + " |");
+                else
+                    result.MatrixRows.Add("| " + def.Name + " | 未声明 | 未声明 | 未声明 |");
             }
 
             // Affixes（13 = S2 基线 10 + 第一批 3）
             for (int i = 0; i < AffixCatalog.Count; i++)
             {
                 var def = AffixCatalog.Get((AffixId)i);
-                Assert.IsFalse(string.IsNullOrEmpty(def.Name), "Affix " + i + " Name 为空");
-                Assert.IsFalse(string.IsNullOrEmpty(def.Format), "Affix " + i + " Format 为空");
+                if (string.IsNullOrEmpty(def.Name))
+                    result.StructuralProblems.Add("Affix " + i + " Name 为空");
+                if (string.IsNullOrEmpty(def.Format))
+                    result.StructuralProblems.Add("Affix " + i + " Format 为空");
                 for (int r = 0; r < def.RowCount; r++)
                 {
                     StatId stat = def.RowStat(r);
                     string owner = "Affix." + def.Name + " 行" + (r + 1);
                     if ((int)stat < 0 || (int)stat >= (int)StatId.Count)
-                        badAffix.Add(owner + " -> StatId " + stat);
+                        result.BadAffix.Add(owner + " -> StatId " + stat);
                     if (!IsRuntimeConsumed(stat))
-                        badAffix.Add(owner + " -> 运行期未知 Stat " + stat);
+                        result.BadAffix.Add(owner + " -> 运行期未知 Stat " + stat);
                     ModOp op = def.RowOp(r);
                     if ((int)op > (int)ModOp.Override)
-                        badAffix.Add(owner + " -> ModOp " + op);
+                        result.BadAffix.Add(owner + " -> ModOp " + op);
                     if (r == 0 && def.Max < def.Min)
-                        badAffix.Add(owner + " Max < Min");
+                        result.BadAffix.Add(owner + " Max < Min");
                     if (r == 1 && def.Max2 < def.Min2)
-                        badAffix.Add(owner + " Max < Min");
+                        result.BadAffix.Add(owner + " Max < Min");
                 }
                 if (def.RowCount == 2 && string.IsNullOrEmpty(def.Format2))
-                    badAffix.Add("Affix." + def.Name + " 组合第二行缺 Format2");
+                    result.BadAffix.Add("Affix." + def.Name + " 组合第二行缺 Format2");
                 if (def.RowCount == 1 && !string.IsNullOrEmpty(def.Format2))
-                    badAffix.Add("Affix." + def.Name + " 单行词缀却带 Format2");
+                    result.BadAffix.Add("Affix." + def.Name + " 单行词缀却带 Format2");
             }
 
-            // 第一批断言：新增词缀 ≤3 且全部合法（合法性由上方通用扫描覆盖）
+            // 第一批护栏：新增词缀 ∈ [0,3] 且全部合法（合法性由上方通用扫描覆盖）
             int newAffixes = (int)AffixId.Count - S2BaselineAffixCount;
-            Assert.GreaterOrEqual(newAffixes, 0, "S3 第一批词缀池缩水：AffixId.Count < " + S2BaselineAffixCount);
-            Assert.LessOrEqual(newAffixes, 3, "S3 第一批新增词缀必须 ≤3：当前 " + newAffixes);
+            result.NewAffixCount = newAffixes;
+            if (newAffixes < 0)
+                result.StructuralProblems.Add("S3 第一批词缀池缩水：AffixId.Count < " + S2BaselineAffixCount);
+            if (newAffixes > 3)
+                result.StructuralProblems.Add("S3 第一批新增词缀必须 ≤3：当前 " + newAffixes);
 
-            // S3-R2 内容数量护栏：仅 Support +1（火焰转化），其余内容轴全部不变（内容 Count 冻结由本护栏持续保证）
-            Assert.AreEqual(S2BaselineSupportCount + 1, SupportCatalog.Count, "R2 仅允许新增 1 个 Support（火焰转化）");
-            Assert.AreEqual(10 + 3, (int)AffixId.Count, "词缀轴应保持 S2 基线 10 + 第一批 3");
-            Assert.AreEqual(28, (int)StatId.Count, "不得新增 StatId");
-            Assert.AreEqual(4, (int)ModOp.Override, "不得新增 ModOp（最大仍为 Override=4）");
-            Assert.AreEqual(256u, (uint)Tag.Duration, "不得新增 Tag（最大仍为 Duration=1<<8）");
-            Assert.AreEqual(2, (int)EffectId.ApplyIgnite, "不得新增 EffectId（最大仍为 ApplyIgnite=2）");
-            Assert.AreEqual(4, (int)EventId.Count, "不得新增 EventId");
-            Assert.AreEqual(4, (int)ConditionId.IsSpell, "不得新增 ConditionId（最大仍为 IsSpell=4）");
-            Assert.AreEqual(3, (int)SkillId.Area, "Active 技能不得新增");
-            Assert.AreEqual(3, MapAffixCatalog.All.Length, "图词缀不得新增");
+            // S3-R2 内容数量护栏：仅 Support +1（火焰转化），其余内容轴全部不变（护栏违规入结构/契约问题）
+            PinCount(result, SupportCatalog.Count, S2BaselineSupportCount + 1, "Support（R2 仅允许新增 1 个火焰转化）");
+            PinCount(result, (int)AffixId.Count, 10 + 3, "词缀轴（S2 基线 10 + 第一批 3）");
+            PinCount(result, (int)StatId.Count, 28, "StatId（不得新增）");
+            PinCount(result, (int)ModOp.Override, 4, "ModOp（最大仍为 Override=4）");
+            PinCount(result, (int)Tag.Duration, 256, "Tag（最大仍为 Duration=1<<8）");
+            PinCount(result, (int)EffectId.ApplyIgnite, 2, "EffectId（最大仍为 ApplyIgnite=2）");
+            PinCount(result, (int)EventId.Count, 4, "EventId（不得新增）");
+            PinCount(result, (int)ConditionId.IsSpell, 4, "ConditionId（最大仍为 IsSpell=4）");
+            PinCount(result, (int)SkillId.Area, 3, "Active 技能（不得新增）");
+            PinCount(result, MapAffixCatalog.All.Length, 3, "图词缀（不得新增）");
 
             // R2 Support 定义契约（S3-R2-FIRE-CONVERSION）
             SupportDef fc = SupportCatalog.Get(SupportId.FireConversion);
-            Assert.AreEqual(SupportId.FireConversion, fc.Id, "FireConversion Id 必须有效");
-            Assert.IsTrue(fc.ChangesMechanism, "火焰转化必须 ChangesMechanism=true");
-            Assert.AreEqual(SkillId.None, fc.MechanicSkill, "火焰转化兼容性必须完全由 Tag 路径推导，不得绑死技能");
-            Assert.AreEqual(EffectId.None, fc.TriggerEffect, "火焰转化不得使用 Trigger Effect");
-            Assert.IsNotNull(fc.Mods);
-            Assert.AreEqual(1, fc.Mods.Length, "火焰转化只允许 1 条核心 Modifier");
-            Assert.AreEqual(StatId.ConvertPhysToFire, fc.Mods[0].Stat);
-            Assert.AreEqual(ModOp.Flat, fc.Mods[0].Op);
-            Assert.AreEqual(0.50f, fc.Mods[0].Value, 0.0001f);
-            Assert.AreEqual(Tag.Attack | Tag.Hit | Tag.Physical, fc.Mods[0].RequiredTags);
+            if (fc.Id != SupportId.FireConversion)
+                result.StructuralProblems.Add("FireConversion Id 必须有效");
+            if (!fc.ChangesMechanism)
+                result.StructuralProblems.Add("火焰转化必须 ChangesMechanism=true");
+            if (fc.MechanicSkill != SkillId.None)
+                result.StructuralProblems.Add("火焰转化兼容性必须完全由 Tag 路径推导，不得绑死技能");
+            if (fc.TriggerEffect != EffectId.None)
+                result.StructuralProblems.Add("火焰转化不得使用 Trigger Effect");
+            if (fc.Mods == null)
+            {
+                result.StructuralProblems.Add("火焰转化 Mods 缺失");
+            }
+            else
+            {
+                if (fc.Mods.Length != 1)
+                    result.StructuralProblems.Add("火焰转化只允许 1 条核心 Modifier，实际 " + fc.Mods.Length);
+                else
+                {
+                    Modifier m0 = fc.Mods[0];
+                    if (m0.Stat != StatId.ConvertPhysToFire)
+                        result.StructuralProblems.Add("火焰转化核心 Stat 必须 ConvertPhysToFire，实际 " + m0.Stat);
+                    if (m0.Op != ModOp.Flat)
+                        result.StructuralProblems.Add("火焰转化核心 Op 必须 Flat，实际 " + m0.Op);
+                    if (Mathf.Abs(m0.Value - 0.50f) > 0.0001f)
+                        result.StructuralProblems.Add("火焰转化核心值必须 0.50，实际 " + m0.Value);
+                    if (m0.RequiredTags != (Tag.Attack | Tag.Hit | Tag.Physical))
+                        result.StructuralProblems.Add("火焰转化 RequiredTags 必须 Attack|Hit|Physical，实际 " + m0.RequiredTags);
+                }
+            }
 
             // Passives（16）+ 链接对称与连通
-            Assert.AreEqual(SliceRules.PassiveCount, PassiveCatalog.Count);
+            if (PassiveCatalog.Count != SliceRules.PassiveCount)
+                result.StructuralProblems.Add("Passive 数量 " + PassiveCatalog.Count + " ≠ SliceRules.PassiveCount " + SliceRules.PassiveCount);
             var linkSet = new HashSet<long>();
             for (int i = 0; i < PassiveCatalog.Count; i++)
             {
                 var n = PassiveCatalog.Get(i);
-                Assert.IsFalse(string.IsNullOrEmpty(n.Name), "Passive " + i + " Name 为空");
+                if (string.IsNullOrEmpty(n.Name))
+                    result.StructuralProblems.Add("Passive " + i + " Name 为空");
                 ScanMods(n.Mods, "Passive." + n.Name);
-                Assert.Greater(n.Links.Length, 0, "Passive " + i + " 无链接");
+                if (n.Links.Length == 0)
+                    result.MissingLinks.Add("Passive " + i + " 无链接");
                 foreach (var l in n.Links)
                 {
                     if (l < 0 || l >= PassiveCatalog.Count)
-                        missingLinks.Add(n.Name + " -> 越界链接 " + l);
+                        result.MissingLinks.Add(n.Name + " -> 越界链接 " + l);
                     else
                         linkSet.Add(LinkKey(i, l));
                 }
@@ -185,45 +220,57 @@ namespace Game.Tests.EditMode
             {
                 long rev = (key >> 32) | ((key & 0xffffffffL) << 32);
                 if (!linkSet.Contains(rev))
-                    missingLinks.Add("单向链接 " + (int)(key >> 32) + " -> " + (int)(key & 0xffffffffL));
+                    result.MissingLinks.Add("单向链接 " + (int)(key >> 32) + " -> " + (int)(key & 0xffffffffL));
             }
-            // 连通性：从 0 出发 BFS 覆盖全部节点
-            var seen = new bool[PassiveCatalog.Count];
-            var queue = new Queue<int>();
-            queue.Enqueue(0);
-            seen[0] = true;
-            while (queue.Count > 0)
+            // 连通性：从 0 出发 BFS 覆盖全部节点（链接已先核入 MissingLinks，BFS 只走合法边保证 Collect 完整）
+            if (PassiveCatalog.Count > 0)
             {
-                int cur = queue.Dequeue();
-                foreach (var l in PassiveCatalog.Get(cur).Links)
-                    if (!seen[l]) { seen[l] = true; queue.Enqueue(l); }
+                var seen = new bool[PassiveCatalog.Count];
+                var queue = new Queue<int>();
+                queue.Enqueue(0);
+                seen[0] = true;
+                while (queue.Count > 0)
+                {
+                    int cur = queue.Dequeue();
+                    foreach (var l in PassiveCatalog.Get(cur).Links)
+                        if (l >= 0 && l < PassiveCatalog.Count && !seen[l]) { seen[l] = true; queue.Enqueue(l); }
+                }
+                for (int i = 0; i < seen.Length; i++)
+                    if (!seen[i])
+                        result.StructuralProblems.Add("天赋图不连通：节点 " + i + " 不可达");
             }
-            for (int i = 0; i < seen.Length; i++)
-                Assert.IsTrue(seen[i], "天赋图不连通：节点 " + i + " 不可达");
 
             // Skills（3 Active）
-            foreach (SkillId id in new[] { SkillId.Melee, SkillId.Projectile, SkillId.Area })
+            var activeSkills = new[] { SkillId.Melee, SkillId.Projectile, SkillId.Area };
+            result.ActiveSkillCount = activeSkills.Length;
+            foreach (SkillId id in activeSkills)
             {
                 var def = SkillCatalog.Get(id);
-                Assert.Greater(def.Range, 0f, id + " Range");
-                Assert.Greater(def.Windup, 0f, id + " Windup");
-                Assert.Greater(def.Active, 0f, id + " Active");
-                Assert.Greater(def.Recovery, 0f, id + " Recovery");
-                Assert.GreaterOrEqual(def.Cooldown, 0f, id + " Cooldown");
+                if (def.Range <= 0f) result.StructuralProblems.Add(id + " Range 必须 > 0");
+                if (def.Windup <= 0f) result.StructuralProblems.Add(id + " Windup 必须 > 0");
+                if (def.Active <= 0f) result.StructuralProblems.Add(id + " Active 必须 > 0");
+                if (def.Recovery <= 0f) result.StructuralProblems.Add(id + " Recovery 必须 > 0");
+                if (def.Cooldown < 0f) result.StructuralProblems.Add(id + " Cooldown 必须 ≥ 0");
             }
 
             // Enemies（5）与 MapAffix（3）
-            foreach (EnemyKind kind in new[] { EnemyKind.Dummy, EnemyKind.Brute, EnemyKind.Stinger, EnemyKind.Ashling, EnemyKind.Warden })
+            var enemyKinds = new[] { EnemyKind.Dummy, EnemyKind.Brute, EnemyKind.Stinger, EnemyKind.Ashling, EnemyKind.Warden };
+            result.EnemyCount = enemyKinds.Length;
+            foreach (EnemyKind kind in enemyKinds)
             {
                 var e = EnemyCatalog.Get(kind);
-                Assert.Greater(e.Life, 0, kind + " Life");
-                Assert.IsFalse(string.IsNullOrEmpty(e.Name), kind + " Name 为空");
+                if (e.Life <= 0)
+                    result.StructuralProblems.Add(kind + " Life 必须 > 0");
+                if (string.IsNullOrEmpty(e.Name))
+                    result.StructuralProblems.Add(kind + " Name 为空");
             }
             var mapIds = new HashSet<int>();
             foreach (var m in MapAffixCatalog.All)
             {
-                Assert.Greater(m.StabilityCost, 0, "MapAffix " + m.Name + " StabilityCost");
-                Assert.IsTrue(mapIds.Add(m.Id), "MapAffix Id 重复 " + m.Id);
+                if (m.StabilityCost <= 0)
+                    result.StructuralProblems.Add("MapAffix " + m.Name + " StabilityCost 必须 > 0");
+                if (!mapIds.Add(m.Id))
+                    result.StructuralProblems.Add("MapAffix Id 重复 " + m.Id);
             }
 
             // Skill Tag golden parity（Rule B）+ 当前形态规则（Rule C/D）+ 死 Tagged Modifier（Rule E）
@@ -231,42 +278,44 @@ namespace Game.Tests.EditMode
             foreach (var pair in SkillTagGolden.Masks)
             {
                 Tag runtime = SkillTags.Of(pair.Key);
+                result.TagProfileRows.Add("| " + pair.Key + " | " + runtime + " | " + pair.Value + " | " + (runtime == pair.Value ? "✓" : "✗") + " |");
                 if (runtime != pair.Value)
-                    tagProblems.Add(pair.Key + " Runtime Tag " + runtime + " ≠ golden " + pair.Value);
+                    result.TagProblems.Add(pair.Key + " Runtime Tag " + runtime + " ≠ golden " + pair.Value);
                 string ruleErr = ContentAuditTagRules.ValidateSkillMask(pair.Key, runtime);
                 if (ruleErr != null)
-                    tagProblems.Add(ruleErr);
+                    result.TagProblems.Add(ruleErr);
             }
-            var reachRows = new List<string>();
             int reachable = 0;
             foreach (var t in taggedMods)
             {
                 string err = ContentAuditTagRules.ValidateRequiredTags(t.Tags);
                 if (err != null)
-                    deadTagged.Add(t.Owner + " -> " + t.Tags + "（" + err + "）");
+                    result.DeadTagged.Add(t.Owner + " -> " + t.Tags + "（" + err + "）");
                 else
                     reachable++;
                 var skills = ContentAuditTagRules.SatisfyingSkills(t.Tags);
-                reachRows.Add("| " + t.Owner + " | " + t.Tags + " | " + JoinSkills(skills) + " | " + (skills.Count > 0 ? "✓" : "✗") + " |");
+                result.ReachabilityRows.Add("| " + t.Owner + " | " + t.Tags + " | " + JoinSkills(skills) + " | " + (skills.Count > 0 ? "✓" : "✗") + " |");
             }
+            result.TaggedModCount = taggedMods.Count;
+            result.ReachableTaggedMods = reachable;
 
             // 资源契约：真实加载验证（与 Runtime 同 key/同类型/同拼接语义）。REQUIRED 缺失=失败；GATED 缺失=只记录。
-            var resourceRows = new List<string>();
-            int requiredPassed = 0, gatedPresent = 0, gatedMissing = 0;
+            int requiredPassed = 0, requiredTotal = 0, gatedPresent = 0, gatedMissing = 0;
             foreach (var contract in ContentResourceAuditContracts.All)
             {
                 var r = ContentResourceAuditContracts.Verify(contract);
-                string result = ContentResourceAuditContracts.ResultWord(r.Loaded, contract.Class);
-                resourceRows.Add("| " + contract.Logical + " | " + contract.Key + " | " + contract.TypeName + " | " + contract.Class + " | " +
-                                 (r.Loaded ? r.AssetPath : "—") + " | " + result + " |");
+                string resultWord = ContentResourceAuditContracts.ResultWord(r.Loaded, contract.Class);
+                result.ResourceRows.Add("| " + contract.Logical + " | " + contract.Key + " | " + contract.TypeName + " | " + contract.Class + " | " +
+                                 (r.Loaded ? r.AssetPath : "—") + " | " + resultWord + " |");
                 if (contract.Class == ResourceClass.Required)
                 {
+                    requiredTotal++;
                     if (r.Loaded && !string.IsNullOrEmpty(r.AssetPath) && r.AssetPath.StartsWith("Assets/Resources/"))
                         requiredPassed++;
                     else if (r.Loaded)
-                        requiredResourceMissing.Add(contract.Logical + "（" + contract.Key + "）：已加载但资产路径异常 " + r.AssetPath);
+                        result.RequiredResourceMissing.Add(contract.Logical + "（" + contract.Key + "）：已加载但资产路径异常 " + r.AssetPath);
                     else
-                        requiredResourceMissing.Add(contract.Logical + "（" + contract.Key + "）：" + r.Error);
+                        result.RequiredResourceMissing.Add(contract.Logical + "（" + contract.Key + "）：" + r.Error);
                 }
                 else if (contract.Class == ResourceClass.Gated)
                 {
@@ -276,32 +325,161 @@ namespace Game.Tests.EditMode
                         gatedMissing++;
                 }
             }
+            result.RequiredPassed = requiredPassed;
+            result.RequiredTotal = requiredTotal;
+            result.GatedPresent = gatedPresent;
+            result.GatedMissing = gatedMissing;
 
             // 未使用 Tag（声明了但没有任何内容引用）——预留记录，不是失败项
-            var unusedTags = new List<string>();
             foreach (Tag t in new[] { Tag.Attack, Tag.Spell, Tag.Melee, Tag.Projectile, Tag.Area, Tag.Hit, Tag.Physical, Tag.Fire, Tag.Duration })
             {
                 bool used = false;
                 foreach (var u in usedTags)
                     if ((u & t) == t) { used = true; break; }
                 if (!used)
-                    unusedTags.Add(t.ToString());
+                    result.UnusedTags.Add(t.ToString());
             }
 
-            // 失败断言（缺失/非法/矩阵/Tag 规则/REQUIRED 资源即失败；GATED 资源与未使用 Tag 只记录）
-            Assert.IsEmpty(missingStat, "StatId/ModOp 引用缺失或运行期未知：" + string.Join("; ", missingStat));
-            Assert.IsEmpty(illegalTag, "非法 Tag：" + string.Join("; ", illegalTag));
-            Assert.IsEmpty(badEffect, "Effect/Event 引用非法：" + string.Join("; ", badEffect));
-            Assert.IsEmpty(missingLinks, "天赋链接缺失/单向：" + string.Join("; ", missingLinks));
-            Assert.IsEmpty(badAffix, "词缀行非法：" + string.Join("; ", badAffix));
-            Assert.IsEmpty(compatProblems, "Support×技能兼容矩阵：" + string.Join("; ", compatProblems));
-            Assert.IsEmpty(tagProblems, "Skill Tag 规则/golden parity：" + string.Join("; ", tagProblems));
-            Assert.IsEmpty(deadTagged, "死 Tagged Modifier：" + string.Join("; ", deadTagged));
-            Assert.IsEmpty(requiredResourceMissing, "REQUIRED 资源缺失：" + string.Join("; ", requiredResourceMissing));
+            // 数量快照（渲染用；护栏违规时如实渲染实际值）
+            result.SupportCount = SupportCatalog.Count;
+            result.AffixCount = AffixCatalog.Count;
+            result.PassiveCount = PassiveCatalog.Count;
+            result.MapAffixCount = MapAffixCatalog.All.Length;
+            result.ModRefCount = modCount;
 
-            WriteReport(modCount, newAffixes, missingStat, illegalTag, badEffect, missingLinks, badAffix,
-                compatProblems, tagProblems, deadTagged, requiredResourceMissing, unusedTags,
-                resourceRows, reachRows, taggedMods.Count, reachable, requiredPassed, gatedPresent, gatedMissing);
+            // R2 新增 Support 与第一批新增词缀的表格行
+            for (int i = S2BaselineSupportCount + 1; i <= SupportCatalog.Count; i++)
+            {
+                SupportDef def = SupportCatalog.Get((SupportId)i);
+                result.R2SupportRows.Add("| " + def.Id + " | " + def.Name + " | " + JoinMods(def.Mods) + " | " + TagsText(def.Mods) + " | " +
+                             (def.ChangesMechanism ? "true" : "false") + " | " + (def.MechanicSkill == SkillId.None ? "无（Tag 路径推导）" : def.MechanicSkill.ToString()) + " | " +
+                             (def.TriggerEffect == EffectId.None ? "无" : def.TriggerEffect.ToString()) + " |");
+            }
+            for (int i = S2BaselineAffixCount; i < AffixCatalog.Count; i++)
+            {
+                AffixDef def = AffixCatalog.Get((AffixId)i);
+                result.NewAffixRows.Add("| " + def.Id + " | " + def.Name + " | " + def.Stat + " " + ModOpName(def.Op) + "（" + def.Format + "） | " +
+                             def.Stat2 + " " + ModOpName(def.Op2) + "（" + def.Format2 + "） | 4 槽全部 | 随机池 + 定向列表 |");
+            }
+            return result;
+        }
+
+        /// <summary>Stage 2：纯渲染——同一 Result 两次渲染 byte 级一致（无时间戳/GUID/用户名/绝对路径/会话 id）。</summary>
+        internal static string RenderReport(ContentAuditResult result)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("# CONTENT_AUDIT_S3_CLOSEOUT");
+            sb.AppendLine("");
+            sb.AppendLine("**当前 Content Audit snapshot（测试再生）**。文件名保留 CLOSEOUT 是因为它源自 S3 Phase 1/2 收口；**BATCH1 / R2 报告才是冻结历史 evidence**。");
+            sb.AppendLine("");
+            sb.AppendLine("生成：EditMode 测试 `ContentAuditS2Tests`，failure-safe 顺序 **Collect → Render → Persist → Assert**（S3-M3：报告先于测试断言落盘——测试红 ⇒ 本快照同轮红，不遗留上一轮 PASS）。只覆盖现行切片：3 Active + " + result.SupportCount + " Support + " + result.AffixCount + " 词缀 + " + result.PassiveCount + " 天赋 + " + result.MapAffixCount + " 图词缀 + " + result.EnemyCount + " 怪。");
+            sb.AppendLine("");
+            sb.AppendLine("## Verdict");
+            sb.AppendLine("");
+            sb.AppendLine("- Audit completed: " + (result.Completed ? "YES" : "NO"));
+            sb.AppendLine("- Verdict: " + (result.Completed && result.FailureCount == 0 ? "PASS" : "FAIL"));
+            sb.AppendLine("- Failure count: " + result.FailureCount);
+            if (!string.IsNullOrEmpty(result.ExecutionError))
+                sb.AppendLine("- Execution error: " + result.ExecutionError);
+            sb.AppendLine("");
+            sb.AppendLine("## 总数");
+            sb.AppendLine("");
+            sb.AppendLine("| 类别 | 数量 |");
+            sb.AppendLine("|---|---|");
+            sb.AppendLine("| Active 技能 | " + result.ActiveSkillCount + " |");
+            sb.AppendLine("| Support | " + result.SupportCount + " |");
+            sb.AppendLine("| 词缀 | " + result.AffixCount + " |");
+            sb.AppendLine("| 天赋节点 | " + result.PassiveCount + "（含 2 Notable + 1 机制烬心） |");
+            sb.AppendLine("| 图词缀 | " + result.MapAffixCount + " |");
+            sb.AppendLine("| 怪 | " + result.EnemyCount + "（3 普通 + Elite 监守 + 木桩） |");
+            sb.AppendLine("| Modifier 引用（Support+Passive） | " + result.ModRefCount + " |");
+            sb.AppendLine("");
+            sb.AppendLine("内容数量护栏（Collect 阶段核入「结构/契约问题」，baseline 冻结）：Support=7 / 词缀=13 / StatId=28 / ModOp、Tag、Effect、Event、Condition、Skill、图词缀轴全部 +0。");
+            sb.AppendLine("");
+            sb.AppendLine("## 资源契约（真实加载验证，非声明文字）");
+            sb.AppendLine("");
+            sb.AppendLine("REQUIRED 缺失=审计失败；GATED 缺失=如实记录不失败（导演门控）；「无声明引用」与「有引用但缺资源」是两种状态——VFX 当前 Declared references = 0（Runtime 无任何 VFX 资源路径，Reviewer 已独立扫描复核）→ Result: N/A，与资源缺失不同。");
+            sb.AppendLine("");
+            sb.AppendLine("| Logical | Resource Key | Type | Class | Asset Path | Result |");
+            sb.AppendLine("|---|---|---|---|---|---|");
+            foreach (var row in result.ResourceRows)
+                sb.AppendLine(row);
+            sb.AppendLine("");
+            sb.AppendLine("REQUIRED 通过 " + result.RequiredPassed + "/" + result.RequiredTotal + "；GATED present " + result.GatedPresent + " / missing " + result.GatedMissing + "（缺失不失败）。");
+            sb.AppendLine("");
+            sb.AppendLine("## Skill Tag Profiles（golden parity + 当前形态规则）");
+            sb.AppendLine("");
+            sb.AppendLine("| Skill | Runtime Tags | Golden | Result |");
+            sb.AppendLine("|---|---|---|---|");
+            foreach (var row in result.TagProfileRows)
+                sb.AppendLine(row);
+            sb.AppendLine("");
+            sb.AppendLine("## Tagged Modifier Reachability（Rule E：死 Tagged Modifier = 0）");
+            sb.AppendLine("");
+            sb.AppendLine("| Owner | RequiredTags | 可满足 Skill | 结果 |");
+            sb.AppendLine("|---|---|---|---|");
+            foreach (var row in result.ReachabilityRows)
+                sb.AppendLine(row);
+            sb.AppendLine("");
+            sb.AppendLine("Tagged Modifier 总数 " + result.TaggedModCount + "，可满足 " + result.ReachableTaggedMods + "，不可满足 " + (result.TaggedModCount - result.ReachableTaggedMods) + "（期望 0）。负向测试 `ContentAuditTagRules_NegativeCases_AreRejected` 证明规则能抓坏合成输入。");
+            sb.AppendLine("");
+            sb.AppendLine("## 缺失 / 非法");
+            sb.AppendLine("");
+            sb.AppendLine("| 项 | 条数 | 明细 |");
+            sb.AppendLine("|---|---|---|");
+            sb.AppendLine("| 结构/契约问题（目录条目 Name / 数量护栏 / FireConversion 契约 / 图连通 / 技能与怪参数 / MapAffix） | " + result.StructuralProblems.Count + " | " + JoinOrEmpty(result.StructuralProblems) + " |");
+            sb.AppendLine("| StatId/ModOp 引用缺失或运行期未知 | " + result.MissingStat.Count + " | " + JoinOrEmpty(result.MissingStat) + " |");
+            sb.AppendLine("| 非法 Tag | " + result.IllegalTag.Count + " | " + JoinOrEmpty(result.IllegalTag) + " |");
+            sb.AppendLine("| Effect/Event 引用非法 | " + result.BadEffect.Count + " | " + JoinOrEmpty(result.BadEffect) + " |");
+            sb.AppendLine("| 天赋链接缺失/单向 | " + result.MissingLinks.Count + " | " + JoinOrEmpty(result.MissingLinks) + " |");
+            sb.AppendLine("| 词缀行非法（含运行期未知 Stat） | " + result.BadAffix.Count + " | " + JoinOrEmpty(result.BadAffix) + " |");
+            sb.AppendLine("| Support×技能兼容矩阵违规 | " + result.CompatProblems.Count + " | " + JoinOrEmpty(result.CompatProblems) + " |");
+            sb.AppendLine("| Skill Tag 规则/golden parity 违规 | " + result.TagProblems.Count + " | " + JoinOrEmpty(result.TagProblems) + " |");
+            sb.AppendLine("| 死 Tagged Modifier | " + result.DeadTagged.Count + " | " + JoinOrEmpty(result.DeadTagged) + " |");
+            sb.AppendLine("| REQUIRED 资源缺失 | " + result.RequiredResourceMissing.Count + " | " + JoinOrEmpty(result.RequiredResourceMissing) + " |");
+            sb.AppendLine("");
+            sb.AppendLine("## Support × 技能兼容矩阵");
+            sb.AppendLine("");
+            sb.AppendLine("判定依据：①带 RequiredTags 的 Mod 在该技能 Tag 下必须可满足；②机制路径（SupportDef.MechanicSkill）。**运行时已接入同一契约**：TrySetSupport 写入前调用 SliceSession.IsSupportCompatible 拒绝非法连接；golden 矩阵保持独立 oracle（SupportCompatGolden），Runtime parity 由 SupportGateTests 单独校验。");
+            sb.AppendLine("");
+            sb.AppendLine("| Support | Q 近战 | W 弹道 | E 范围 |");
+            sb.AppendLine("|---|---|---|---|");
+            foreach (var row in result.MatrixRows)
+                sb.AppendLine(row);
+            sb.AppendLine("");
+            sb.AppendLine("已知不兼容（钉死，不得放宽）：集中×近战、集中×弹道（Tag.Area 仅范围技能满足）；分裂×近战、分裂×范围（ForkProjectiles 只进弹道结算）；火焰转化×范围（RequiredTags=Attack|Hit|Physical，范围=Spell 无 Attack）。");
+            sb.AppendLine("");
+            sb.AppendLine("## S3 R2 新增 Support（工作令 S3-R2-FIRE-CONVERSION）");
+            sb.AppendLine("");
+            sb.AppendLine("机制型转换 Support：无新 Effect/Trigger/Stat/ModOp/Tag，无 Support 专用 Runtime 分支（Reviewer 零分支审计见 `S3_R2_REVIEW.md`）。");
+            sb.AppendLine("");
+            sb.AppendLine("| ID | 名称 | Modifier | RequiredTags | ChangesMechanism | MechanicSkill | Trigger |");
+            sb.AppendLine("|---|---|---|---|---|---|---|");
+            foreach (var row in result.R2SupportRows)
+                sb.AppendLine(row);
+            sb.AppendLine("");
+            sb.AppendLine("## S3 第一批新增词缀");
+            sb.AppendLine("");
+            sb.AppendLine("全部由**已有 StatId/ModOp** 组成。可出现在 4 槽（武器/胸甲/头盔/靴子）掉落池；进两步 Craft（随机制作=废料池重掷、定向制作=蚀刻剂写入列表）。第二行独立掷值，存 `ItemInstance` 第二值。");
+            sb.AppendLine("");
+            sb.AppendLine("| ID | 名称 | 行 1（Stat/Op） | 行 2（Stat/Op） | 槽位 | 两步 Craft |");
+            sb.AppendLine("|---|---|---|---|---|---|");
+            foreach (var row in result.NewAffixRows)
+                sb.AppendLine(row);
+            sb.AppendLine("");
+            sb.AppendLine("## 未使用 Tag（已声明、当前内容未引用）");
+            sb.AppendLine("");
+            sb.AppendLine("**预留 Tag 不是失败项**：以下 Tag 为已声明预留，当前切片未引用；后续批次未立令前不得当作「缺实现」去补系统或补技能。");
+            sb.AppendLine("");
+            sb.AppendLine(result.UnusedTags.Count == 0 ? "无" : "- " + string.Join("\n- ", result.UnusedTags));
+            sb.AppendLine("");
+            return sb.ToString();
+        }
+
+        static void PinCount(ContentAuditResult result, int actual, int expected, string axis)
+        {
+            if (actual != expected)
+                result.StructuralProblems.Add("内容数量护栏违规：" + axis + " 期望 " + expected + " 实际 " + actual);
         }
 
         /// <summary>Tag 规则负向测试：合成坏输入必须被 validator 拒绝（证明规则本身有效，而非当前内容碰巧合法）。</summary>
@@ -366,15 +544,15 @@ namespace Game.Tests.EditMode
                 }
             }
             // 钉死已知不兼容（矩阵不得放宽）与已知兼容（矩阵不得收紧）
-            AssertCompatExcludes(def.Id, SupportId.Concentrated, SkillId.Melee, problems);
-            AssertCompatExcludes(def.Id, SupportId.Concentrated, SkillId.Projectile, problems);
-            AssertCompatExcludes(def.Id, SupportId.Fork, SkillId.Melee, problems);
-            AssertCompatExcludes(def.Id, SupportId.Fork, SkillId.Area, problems);
-            AssertCompatIncludes(def.Id, SupportId.Concentrated, SkillId.Area, problems);
-            AssertCompatIncludes(def.Id, SupportId.Fork, SkillId.Projectile, problems);
+            PinCompatExcludes(def.Id, SupportId.Concentrated, SkillId.Melee, problems);
+            PinCompatExcludes(def.Id, SupportId.Concentrated, SkillId.Projectile, problems);
+            PinCompatExcludes(def.Id, SupportId.Fork, SkillId.Melee, problems);
+            PinCompatExcludes(def.Id, SupportId.Fork, SkillId.Area, problems);
+            PinCompatIncludes(def.Id, SupportId.Concentrated, SkillId.Area, problems);
+            PinCompatIncludes(def.Id, SupportId.Fork, SkillId.Projectile, problems);
         }
 
-        static void AssertCompatExcludes(SupportId defId, SupportId key, SkillId skill, List<string> problems)
+        static void PinCompatExcludes(SupportId defId, SupportId key, SkillId skill, List<string> problems)
         {
             if (defId != key)
                 return;
@@ -382,7 +560,7 @@ namespace Game.Tests.EditMode
                 problems.Add("已知不兼容被放宽：" + SupportCatalog.Get(key).Name + " × " + SliceSession.SkillDisplayName(skill));
         }
 
-        static void AssertCompatIncludes(SupportId defId, SupportId key, SkillId skill, List<string> problems)
+        static void PinCompatIncludes(SupportId defId, SupportId key, SkillId skill, List<string> problems)
         {
             if (defId != key)
                 return;
@@ -403,140 +581,6 @@ namespace Game.Tests.EditMode
         static long LinkKey(int a, int b)
         {
             return ((long)a << 32) | (uint)b;
-        }
-
-        static void WriteReport(int modCount, int newAffixes, List<string> missingStat, List<string> illegalTag,
-            List<string> badEffect, List<string> missingLinks, List<string> badAffix, List<string> compatProblems,
-            List<string> tagProblems, List<string> deadTagged, List<string> requiredResourceMissing, List<string> unusedTags,
-            List<string> resourceRows, List<string> reachRows, int taggedModCount, int reachable,
-            int requiredPassed, int gatedPresent, int gatedMissing)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("# CONTENT_AUDIT_S3_CLOSEOUT");
-            sb.AppendLine("");
-            sb.AppendLine("生成：EditMode 测试 `ContentAuditS2Tests`（S3 阶段 1/2 收口，工作令 S3-P12-AUDIT-CLOSEOUT）。只覆盖现行切片：3 Active + " + SupportCatalog.Count + " Support + " + AffixCatalog.Count + " 词缀 + 16 天赋 + 3 图词缀 + 5 怪。BATCH1/R2 报告保留历史。");
-            sb.AppendLine("");
-            sb.AppendLine("## 总数");
-            sb.AppendLine("");
-            sb.AppendLine("| 类别 | 数量 |");
-            sb.AppendLine("|---|---|");
-            sb.AppendLine("| Active 技能 | 3 |");
-            sb.AppendLine("| Support | " + SupportCatalog.Count + " |");
-            sb.AppendLine("| 词缀 | " + AffixCatalog.Count + " |");
-            sb.AppendLine("| 天赋节点 | 16（含 2 Notable + 1 机制烬心） |");
-            sb.AppendLine("| 图词缀 | 3 |");
-            sb.AppendLine("| 怪 | 5（3 普通 + Elite 监守 + 木桩） |");
-            sb.AppendLine("| Modifier 引用（Support+Passive） | " + modCount + " |");
-            sb.AppendLine("");
-            sb.AppendLine("内容数量护栏（测试断言，baseline 冻结）：Support=7 / 词缀=13 / StatId=28 / ModOp、Tag、Effect、Event、Condition、Skill、图词缀轴全部 +0。");
-            sb.AppendLine("");
-            sb.AppendLine("## 资源契约（真实加载验证，非声明文字）");
-            sb.AppendLine("");
-            sb.AppendLine("REQUIRED 缺失=审计失败；GATED 缺失=如实记录不失败（导演门控）；「无声明引用」与「有引用但缺资源」是两种状态——VFX 当前 Declared references = 0（Runtime 无任何 VFX 资源路径，Reviewer 已独立扫描复核）→ Result: N/A，与资源缺失不同。");
-            sb.AppendLine("");
-            sb.AppendLine("| Logical | Resource Key | Type | Class | Asset Path | Result |");
-            sb.AppendLine("|---|---|---|---|---|---|");
-            foreach (var row in resourceRows)
-                sb.AppendLine(row);
-            sb.AppendLine("");
-            sb.AppendLine("REQUIRED 通过 " + requiredPassed + "/" + (requiredPassed + CountRows(resourceRows, "MISSING")) + "；GATED present " + gatedPresent + " / missing " + gatedMissing + "（缺失不失败）。");
-            sb.AppendLine("");
-            sb.AppendLine("## Skill Tag Profiles（golden parity + 当前形态规则）");
-            sb.AppendLine("");
-            sb.AppendLine("| Skill | Runtime Tags | Golden | Result |");
-            sb.AppendLine("|---|---|---|---|");
-            foreach (var pair in SkillTagGolden.Masks)
-            {
-                Tag runtime = SkillTags.Of(pair.Key);
-                sb.AppendLine("| " + pair.Key + " | " + runtime + " | " + pair.Value + " | " + (runtime == pair.Value ? "✓" : "✗") + " |");
-            }
-            sb.AppendLine("");
-            sb.AppendLine("## Tagged Modifier Reachability（Rule E：死 Tagged Modifier = 0）");
-            sb.AppendLine("");
-            sb.AppendLine("| Owner | RequiredTags | 可满足 Skill | 结果 |");
-            sb.AppendLine("|---|---|---|---|");
-            foreach (var row in reachRows)
-                sb.AppendLine(row);
-            sb.AppendLine("");
-            sb.AppendLine("Tagged Modifier 总数 " + taggedModCount + "，可满足 " + reachable + "，不可满足 " + (taggedModCount - reachable) + "（期望 0）。负向测试 `ContentAuditTagRules_NegativeCases_AreRejected` 证明规则能抓坏合成输入。");
-            sb.AppendLine("");
-            sb.AppendLine("## 缺失 / 非法");
-            sb.AppendLine("");
-            sb.AppendLine("| 项 | 条数 | 明细 |");
-            sb.AppendLine("|---|---|---|");
-            sb.AppendLine("| StatId/ModOp 引用缺失或运行期未知 | " + missingStat.Count + " | " + JoinOrEmpty(missingStat) + " |");
-            sb.AppendLine("| 非法 Tag | " + illegalTag.Count + " | " + JoinOrEmpty(illegalTag) + " |");
-            sb.AppendLine("| Effect/Event 引用非法 | " + badEffect.Count + " | " + JoinOrEmpty(badEffect) + " |");
-            sb.AppendLine("| 天赋链接缺失/单向 | " + missingLinks.Count + " | " + JoinOrEmpty(missingLinks) + " |");
-            sb.AppendLine("| 词缀行非法（含运行期未知 Stat） | " + badAffix.Count + " | " + JoinOrEmpty(badAffix) + " |");
-            sb.AppendLine("| Support×技能兼容矩阵违规 | " + compatProblems.Count + " | " + JoinOrEmpty(compatProblems) + " |");
-            sb.AppendLine("| Skill Tag 规则/golden parity 违规 | " + tagProblems.Count + " | " + JoinOrEmpty(tagProblems) + " |");
-            sb.AppendLine("| 死 Tagged Modifier | " + deadTagged.Count + " | " + JoinOrEmpty(deadTagged) + " |");
-            sb.AppendLine("| REQUIRED 资源缺失 | " + requiredResourceMissing.Count + " | " + JoinOrEmpty(requiredResourceMissing) + " |");
-            sb.AppendLine("");
-            sb.AppendLine("## Support × 技能兼容矩阵");
-            sb.AppendLine("");
-            sb.AppendLine("判定依据：①带 RequiredTags 的 Mod 在该技能 Tag 下必须可满足；②机制路径（SupportDef.MechanicSkill）。**运行时已接入同一契约**：TrySetSupport 写入前调用 SliceSession.IsSupportCompatible 拒绝非法连接；golden 矩阵保持独立 oracle（SupportCompatGolden），Runtime parity 由 SupportGateTests 单独校验。");
-            sb.AppendLine("");
-            sb.AppendLine("| Support | Q 近战 | W 弹道 | E 范围 |");
-            sb.AppendLine("|---|---|---|---|");
-            for (int i = 1; i <= SupportCatalog.Count; i++)
-            {
-                SupportDef def = SupportCatalog.Get((SupportId)i);
-                SkillId[] skills = SupportCompatGolden.Matrix[def.Id];
-                sb.AppendLine("| " + def.Name + " | " + Mark(skills, SkillId.Melee) + " | " + Mark(skills, SkillId.Projectile) + " | " + Mark(skills, SkillId.Area) + " |");
-            }
-            sb.AppendLine("");
-            sb.AppendLine("已知不兼容（钉死，不得放宽）：集中×近战、集中×弹道（Tag.Area 仅范围技能满足）；分裂×近战、分裂×范围（ForkProjectiles 只进弹道结算）；火焰转化×范围（RequiredTags=Attack|Hit|Physical，范围=Spell 无 Attack）。");
-            sb.AppendLine("");
-            sb.AppendLine("## S3 R2 新增 Support（工作令 S3-R2-FIRE-CONVERSION）");
-            sb.AppendLine("");
-            sb.AppendLine("机制型转换 Support：无新 Effect/Trigger/Stat/ModOp/Tag，无 Support 专用 Runtime 分支（Reviewer 零分支审计见 `S3_R2_REVIEW.md`）。");
-            sb.AppendLine("");
-            sb.AppendLine("| ID | 名称 | Modifier | RequiredTags | ChangesMechanism | MechanicSkill | Trigger |");
-            sb.AppendLine("|---|---|---|---|---|---|---|");
-            for (int i = S2BaselineSupportCount + 1; i <= SupportCatalog.Count; i++)
-            {
-                SupportDef def = SupportCatalog.Get((SupportId)i);
-                sb.AppendLine("| " + def.Id + " | " + def.Name + " | " + JoinMods(def.Mods) + " | " + TagsText(def.Mods) + " | " +
-                             (def.ChangesMechanism ? "true" : "false") + " | " + (def.MechanicSkill == SkillId.None ? "无（Tag 路径推导）" : def.MechanicSkill.ToString()) + " | " +
-                             (def.TriggerEffect == EffectId.None ? "无" : def.TriggerEffect.ToString()) + " |");
-            }
-            sb.AppendLine("");
-            sb.AppendLine("## S3 第一批新增词缀");
-            sb.AppendLine("");
-            sb.AppendLine("全部由**已有 StatId/ModOp** 组成。可出现在 4 槽（武器/胸甲/头盔/靴子）掉落池；进两步 Craft（随机制作=废料池重掷、定向制作=蚀刻剂写入列表）。第二行独立掷值，存 `ItemInstance` 第二值。");
-            sb.AppendLine("");
-            sb.AppendLine("| ID | 名称 | 行 1（Stat/Op） | 行 2（Stat/Op） | 槽位 | 两步 Craft |");
-            sb.AppendLine("|---|---|---|---|---|---|");
-            for (int i = S2BaselineAffixCount; i < AffixCatalog.Count; i++)
-            {
-                AffixDef def = AffixCatalog.Get((AffixId)i);
-                sb.AppendLine("| " + def.Id + " | " + def.Name + " | " + def.Stat + " " + ModOpName(def.Op) + "（" + def.Format + "） | " +
-                             def.Stat2 + " " + ModOpName(def.Op2) + "（" + def.Format2 + "） | 4 槽全部 | 随机池 + 定向列表 |");
-            }
-            sb.AppendLine("");
-            sb.AppendLine("## 未使用 Tag（已声明、当前内容未引用）");
-            sb.AppendLine("");
-            sb.AppendLine("**预留 Tag 不是失败项**：以下 Tag 为已声明预留，当前切片未引用；后续批次未立令前不得当作「缺实现」去补系统或补技能。");
-            sb.AppendLine("");
-            sb.AppendLine(unusedTags.Count == 0 ? "无" : "- " + string.Join("\n- ", unusedTags));
-            sb.AppendLine("");
-
-            string dir = Path.GetDirectoryName(ReportPath);
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
-            File.WriteAllText(ReportPath, sb.ToString());
-            UnityEngine.Debug.Log("[ContentAudit] wrote " + ReportPath);
-        }
-
-        static int CountRows(List<string> rows, string keyword)
-        {
-            int n = 0;
-            foreach (var row in rows)
-                if (row.Contains("| " + keyword + " |"))
-                    n++;
-            return n;
         }
 
         static string JoinSkills(List<SkillId> skills)
