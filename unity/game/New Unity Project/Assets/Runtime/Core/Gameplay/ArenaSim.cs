@@ -142,6 +142,7 @@ namespace Game.Runtime.Core
 
             SkillDef def = Caster.Def(skill);
             AudioEvents.Play(AudioEventId.Cast);
+            VoiceCues.Play("Cast", 1.5f); // 施放喊招人声（独立表，冷却防连发刷屏）
             CastEvents++;
             SpawnCastFeedback(skill, def);
 

@@ -19,6 +19,7 @@ S0 锁定。后续阶段不得在未改本文的情况下推翻这些决定。
 - 导演门控待输入表（2026-09-07）：ROADMAP 增「导演门控待输入」节（ART_BIBLE 临时色 / 1440p 补测 / 正式 UI / 语音 ogg / EveView 改名 / 怪物独立 EnemyHit 事件 / 音频 clip 投资源）——每项「无输入则不做」，不得当自动任务开工。
 - 门状态总览（2026-09-07）：`docs/reviews/STATUS.md` 一页纸——11 门状态+玩家视图/碰撞/测量/音频/校验快照；总览见 STATUS.md。
 - 导演决策集·八项（2026-09-07 导演就位逐项裁定，同日细化）：①三色**仅占位**——现阶段颜色随意，后续按技能敲定配色并配贴图+动效（归未来皮肤/技能表现轮）；②1440p 补测**保留后续测试**（维持挂起、不宣布 120@1440p）；③**重做 UI，参考 PoE/暗黑 3，可使用网络免费资源**（先出方案页给导演过目再实现）；④语音 ogg **全部事件接入并设默认冷却**；⑤**批准** EveView/DriveEve 改名轮——**已执行（2026-09-07 改名轮：`DarkKnightView`/`DriveDarkKnight`）**；⑥怪物独立 EnemyHit 事件**维持现状**（用 Impact 语义，不新增）；⑦5 个音频 clip——**网上搜免费资源**，搜不到则等后续补充；⑧**其余问题全部完成后开启 S3**，S3 内容问 GPT 要规划。门控表（ROADMAP）已同步裁定状态。
+- 语音 ogg 接入·第一轮（2026-09-07）：独立人声表 `VoiceCues`（**与 AudioEvents 5 键战斗 SFX 完全隔离**，查找 `Resources/Audio/Voice/<键>`）；3 键=Cast（施放喊招，`ArenaSim.Resolve`，冷却 1.5s）/ Hit（受击呼痛，`ArenaDirector` 上跳沿，冷却 0.6s）/ Death（进入 Dead，`ArenaDirector`，每次一次）。**映射为缺口**：包内 609 条 ogg 为数值 ID 无语义名（fx 208 / voice 401，清点见 `docs/reviews/audio/DK_VOICE_INVENTORY.md`），待导演试听 `Desktop/voice_listen/` 候选（20 条，按 CAST/受击/死亡 前缀）指认后投放 `Resources/Audio/Voice/` 即生效；未指认前=静音。不外购、不硬塞语义。
 
 ## 工作方式（导演 2026-09-07 追加）
 

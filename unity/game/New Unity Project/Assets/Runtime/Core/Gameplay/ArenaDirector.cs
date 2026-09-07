@@ -763,6 +763,7 @@ namespace Game.Runtime.Core
                 {
                     _dkDead = true;
                     AudioEvents.Play(AudioEventId.Death);
+                    VoiceCues.Play("Death", 2f); // 倒下哀声（每次进入 Dead 只一次）
                     if (_dkHasDeath)
                     {
                         _dkAnimator.speed = 1f;
@@ -785,7 +786,10 @@ namespace Game.Runtime.Core
 
             bool hitEdge = flash > 0.02f && _lastPlayerFlash <= 0.02f;
             if (hitEdge)
+            {
                 AudioEvents.Play(AudioEventId.Hit); // 与 Hit 动画同一处：玩家受击上跳沿
+                VoiceCues.Play("Hit", 0.6f); // 受击呼痛人声
+            }
             if (_dkHasHit && hitEdge)
             {
                 // 新的受击上跳沿即重播：高攻速下 Hit 可被下一击打断重来
