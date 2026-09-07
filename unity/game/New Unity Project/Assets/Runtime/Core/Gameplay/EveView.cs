@@ -5,9 +5,6 @@ namespace Game.Runtime.Core
 {
     public static class EveView
     {
-        public const string ResourcesName = "Player/Eve";
-
-        // 换模候选优先于旧 Eve 预制体；均未命中则回退胶囊视图
         public const string ResourcesNameDarkKnight = "Player/DarkKnight";
 
         public const float TargetHeight = 1.16f;
@@ -16,9 +13,11 @@ namespace Game.Runtime.Core
         {
             GameObject prefab = Resources.Load<GameObject>(ResourcesNameDarkKnight);
             if (prefab == null)
-                prefab = Resources.Load<GameObject>(ResourcesName);
-            if (prefab == null)
+            {
+                // 旧 Eve 回退已删除：无 DarkKnight 预制体即回退胶囊视图（避免同名预制体复活已剔除旧模）
+                GameLog.Info("Arena", "no DarkKnight prefab -> capsule visual");
                 return null;
+            }
 
             GameObject go = Object.Instantiate(prefab, playerRoot, false);
             go.name = "DarkKnight";
