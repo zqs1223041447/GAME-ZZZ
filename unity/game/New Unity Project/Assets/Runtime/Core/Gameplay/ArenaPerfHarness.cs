@@ -25,6 +25,7 @@ namespace Game.Runtime.Core
         static string _outDir;
 
         public static bool RequestedFromArgs { get; private set; }
+        public static bool GateEnvironment { get; private set; }
         public static string OutDir { get; private set; }
         public static bool Finished { get; private set; }
 
@@ -37,6 +38,8 @@ namespace Game.Runtime.Core
             {
                 if (args[i] == "-arenaPerf")
                     RequestedFromArgs = true;
+                else if (args[i] == "-arenaPerfGate")
+                    GateEnvironment = true;
                 else if (args[i] == "-arenaPerfOut" && i + 1 < args.Length)
                 {
                     OutDir = args[i + 1];
@@ -97,6 +100,14 @@ namespace Game.Runtime.Core
         {
             if (_running || director == null)
                 return;
+            // S3-M7：-arenaPerfGate 仅固定测量环境（解除帧率上限），不改游戏工作量/质量/分辨率
+            if (GateEnvironment)
+            {
+                QualitySettings.vSyncCount = 0;
+                Application.targetFrameRate = -1;
+                GameLog.Info("Perf", "gate env pinned: vSync=" + QualitySettings.vSyncCount +
+                    " targetFrameRate=" + Application.targetFrameRate);
+            }
             try
             {
                 _outDir = string.IsNullOrEmpty(outDir)
@@ -223,6 +234,14 @@ namespace Game.Runtime.Core
                 " currentRes=" + Screen.currentResolution.width + "x" + Screen.currentResolution.height +
                 " editor=" + Application.isEditor +
                 " dx=" + SystemInfo.graphicsDeviceType);
+            // S3-M7 只读硬件与环境证据（真实值来自 Runtime API / 既有常量，不打印预期值冒充实际值）
+            sb.AppendLine("# hardware_cpu=" + SystemInfo.processorType);
+            sb.AppendLine("# hardware_gpu=" + SystemInfo.graphicsDeviceName);
+            sb.AppendLine("# perf_env quality=" + QualitySettings.names[QualitySettings.GetQualityLevel()] +
+                " vsync=" + QualitySettings.vSyncCount +
+                " targetFps=" + Application.targetFrameRate +
+                " warmup=" + WarmupFrames + " sample=" + SampleFrames +
+                " castInterval=" + CastInterval.ToString(CultureInfo.InvariantCulture));
             sb.AppendLine("# density strategy: kill-then-refill (alive kept at nominal via SpawnAt top-up)");
             sb.AppendLine("dummy_count,alive,frames,main_ms_avg,main_ms_p95,main_ms_p99,main_ms_p999,main_ms_max,gc_alloc_bytes_avg,cpu_ms_avg,gpu_ms_avg,mem_total_mb,frame_timing_ok");
             sb.Append(row.DummyCount.ToString(CultureInfo.InvariantCulture)).Append(',');

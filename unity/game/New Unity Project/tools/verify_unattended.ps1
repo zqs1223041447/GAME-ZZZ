@@ -1,27 +1,33 @@
 # =====================================================================
-# GAME-ZZZ Unattended Verification Gate (S3-M4 tests + S3-M5 build + S3-M6 player runtime)
-# Repository-local canonical verification entry. Three tiers:
+# GAME-ZZZ Unattended Verification Gate (S3-M4 tests + S3-M5 build + S3-M6 player runtime + S3-M7 performance)
+# Repository-local canonical verification entry. Four tiers:
 #   Quick Gate:            EditMode + PlayMode + Content Audit
 #   Build Gate (-IncludeBuild):      Quick + StandaloneWindows64 Player Build
 #   Player Runtime Gate (-IncludePlayerRun): Build Gate + launch the just-built player,
 #                                            run ArenaPerfHarness (-arenaPerf), verify
 #                                            100/200/300 evidence. NOT a performance verdict.
+#   Performance Gate (-IncludePerformance): Player Runtime + locked environment
+#                                           (docs/qa/PERFORMANCE_GATE.json) + 3 repeated
+#                                           runs + hard 8.33ms budget. Only this tier may
+#                                           print PerformanceVerdict=PASS.
 #
 # Canonical usage (from Unity project root):
 #   .\tools\verify_unattended.ps1                            # Quick Gate
 #   .\tools\verify_unattended.ps1 -IncludeBuild              # Build Gate
 #   .\tools\verify_unattended.ps1 -IncludePlayerRun          # Player Runtime Gate (implies -IncludeBuild)
+#   .\tools\verify_unattended.ps1 -IncludePerformance        # Performance Gate (implies all tiers)
 #   .\tools\verify_unattended.ps1 -UnityPath "G:\Unity\Hub\Editor\6000.3.23f1\Editor\Unity.exe"
 #   .\tools\verify_unattended.ps1 -TimeoutMinutes 20 -BuildTimeoutMinutes 30 -PlayerRunTimeoutMinutes 10
 #   .\tools\verify_unattended.ps1 -SelfTest                  # no Unity launch, synthetic fixtures
 #
-# Exit codes: 0 = Gate PASS | 1 = Gate FAIL (tests/audit/build/player-run/timeout) |
+# Exit codes: 0 = Gate PASS (Performance tier: only verdict=PASS) |
+#             1 = Gate FAIL (tests/audit/build/player-run/performance: FAIL/ENV_NOT_MET/EVIDENCE_INCOMPLETE) |
 #             2 = Unity not resolved | 3 = project already open (editor lock)
 # The gate verifies only; it never modifies STATUS/ROADMAP/catalogs/tests,
 # never runs git commands, and never kills Unity processes it did not start.
 # Allowed repo side effects: the formal EditMode run re-persists
 # docs/reviews/s3/CONTENT_AUDIT_S3_CLOSEOUT.md (existing audit contract).
-# Player build + player run outputs are ephemeral (temp only), never committed.
+# Player build + player run + performance outputs are ephemeral (temp only), never committed.
 # =====================================================================
 [CmdletBinding()]
 param(
@@ -31,10 +37,12 @@ param(
     [int]$PlayerRunTimeoutMinutes = 10,
     [switch]$IncludeBuild,
     [switch]$IncludePlayerRun,
+    [switch]$IncludePerformance,
     [switch]$SelfTest
 )
 
-# -IncludePlayerRun 自动隐含 -IncludeBuild（无需同时写两个 switch；同时提供也正常）
+# 隐含链：Performance ⊃ PlayerRun ⊃ Build（无需同时写多个 switch；同时提供亦正常）
+if ($IncludePerformance) { $IncludePlayerRun = $true }
 if ($IncludePlayerRun) { $IncludeBuild = $true }
 
 $ErrorActionPreference = 'Stop'
@@ -204,20 +212,42 @@ function Test-PlayerArtifact {
 
 function Read-HarnessResult {
     param([string]$FilePath, [int]$ExpectedDensity)
-    $out = @{ Valid = $false; Reason = ''; Density = $ExpectedDensity; Resolution = ''; Editor = ''; GraphicsApi = ''
-        Alive = -1; Frames = -1; MainMsAvg = [double]::NaN; MainMsP99 = [double]::NaN; GpuMsAvg = [double]::NaN; FrameTimingOk = '' }
+    $out = @{ Valid = $false; Reason = ''; Density = $ExpectedDensity; Resolution = ''; Fullscreen = ''; Editor = ''; GraphicsApi = ''
+        HardwareCpu = ''; HardwareGpu = ''; Quality = ''; VSync = ''; TargetFps = ''; Warmup = 0; Sample = 0; CastInterval = ''
+        Alive = -1; Frames = -1; MainMsAvg = [double]::NaN; MainMsP99 = [double]::NaN; GpuMsAvg = [double]::NaN
+        CpuMsAvg = [double]::NaN; GcBytesAvg = [double]::NaN; MemTotalMb = [double]::NaN; FrameTimingOk = '' }
     if ([string]::IsNullOrEmpty($FilePath) -or -not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
         $out.Reason = 'missing file'
         return $out
     }
     $lines = @(Get-Content -LiteralPath $FilePath)
     $header = $null; $meta = $null; $csv = -1; $dataRows = @()
+    $hwCpu = ''; $hwGpu = ''; $perfEnv = ''
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $line = $lines[$i]
         if ($null -eq $header -and $line -match '^#\s+.*density=(\d+)\s*$') { $header = $line; continue }
         if ($null -eq $meta -and $line -match '^#\s+resolution=') { $meta = $line; continue }
+        if ($line -match '^#\s+hardware_cpu=(.*)$') { $hwCpu = $Matches[1].Trim(); continue }
+        if ($line -match '^#\s+hardware_gpu=(.*)$') { $hwGpu = $Matches[1].Trim(); continue }
+        if ($line -match '^#\s+perf_env\s+(.*)$') { $perfEnv = $Matches[1]; continue }
         if ($line -match '^dummy_count,alive,frames,') { $csv = $i; continue }
         if ($csv -ge 0 -and $i -gt $csv -and $line -notmatch '^#' -and $line.Trim().Length -gt 0) { $dataRows += $line }
+    }
+    $out.HardwareCpu = $hwCpu
+    $out.HardwareGpu = $hwGpu
+    if ($perfEnv -ne '') {
+        $q = [regex]::Match($perfEnv, 'quality=(\S+)')
+        $vs = [regex]::Match($perfEnv, 'vsync=(\S+)')
+        $tf = [regex]::Match($perfEnv, 'targetFps=(-?\d+)')
+        $wu = [regex]::Match($perfEnv, 'warmup=(\d+)')
+        $sa = [regex]::Match($perfEnv, 'sample=(\d+)')
+        $ci = [regex]::Match($perfEnv, 'castInterval=(\S+)')
+        if ($q.Success) { $out.Quality = $q.Groups[1].Value }
+        if ($vs.Success) { $out.VSync = $vs.Groups[1].Value }
+        if ($tf.Success) { $out.TargetFps = $tf.Groups[1].Value }
+        if ($wu.Success) { $out.Warmup = [int]$wu.Groups[1].Value }
+        if ($sa.Success) { $out.Sample = [int]$sa.Groups[1].Value }
+        if ($ci.Success) { $out.CastInterval = $ci.Groups[1].Value }
     }
     if ($null -eq $header) { $out.Reason = 'unrecognizable header'; return $out }
     $headerDensity = [int]([regex]::Match($header, 'density=(\d+)').Groups[1].Value)
@@ -229,6 +259,8 @@ function Read-HarnessResult {
         return $out
     }
     $out.Resolution = $res.Groups[1].Value + 'x' + $res.Groups[2].Value
+    $fs = [regex]::Match($meta, 'fullscreen=(\S+)')
+    if ($fs.Success) { $out.Fullscreen = $fs.Groups[1].Value }
     $ed = [regex]::Match($meta, 'editor=(\S+)')
     $out.Editor = $(if ($ed.Success) { $ed.Groups[1].Value } else { '' })
     if ($out.Editor -ne 'False' -and $out.Editor -ne 'false') { $out.Reason = 'editor=True (not a standalone player run)'; return $out }
@@ -266,6 +298,11 @@ function Read-HarnessResult {
     $out.MainMsAvg = $nums[0]
     $out.MainMsP99 = $nums[2]
     $out.GpuMsAvg = $nums[7]
+    $out.CpuMsAvg = $nums[6]
+    $out.GcBytesAvg = $nums[5]
+    $mem = [double]0
+    if (-not [double]::TryParse($f[11], [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$mem)) { $mem = [double]::NaN }
+    $out.MemTotalMb = $mem
     $out.FrameTimingOk = $fto
     $out.Valid = $true
     return $out
@@ -292,6 +329,147 @@ function Test-PlayerRunEvidence {
     return $out
 }
 
+# ---------------------------------------------------------------------
+# Performance contract + pure evaluator（S3-M7）。contract 唯一真相源=docs/qa/PERFORMANCE_GATE.json。
+# ---------------------------------------------------------------------
+
+function Get-PerformanceContract {
+    param([string]$Path)
+    $out = @{ Ok = $false; Contract = $null; Reason = '' }
+    if ([string]::IsNullOrEmpty($Path) -or -not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        $out.Reason = "contract file missing: $Path"
+        return $out
+    }
+    try { $c = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json } catch {
+        $out.Reason = "contract JSON malformed: $($_.Exception.Message)"
+        return $out
+    }
+    foreach ($field in @('resolution', 'fullscreen', 'graphicsApi', 'quality', 'vSyncCount', 'targetFrameRate', 'densities', 'warmupFrames', 'sampleFrames', 'castIntervalSeconds', 'frameBudgetMs', 'requiredRuns', 'requireFrameTiming', 'minAliveRatio', 'hardware')) {
+        if ($null -eq $c.$field) { $out.Reason = "contract field missing: $field"; return $out }
+    }
+    if ("$($c.hardware.processorType)" -match 'PENDING_HARDWARE_PROBE' -or "$($c.hardware.graphicsDeviceName)" -match 'PENDING_HARDWARE_PROBE') {
+        $out.Reason = 'contract hardware not locked yet (PENDING_HARDWARE_PROBE; run hardware probe then update docs/qa/PERFORMANCE_GATE.json via formal work order)'
+        return $out
+    }
+    $out.Contract = $c
+    $out.Ok = $true
+    return $out
+}
+
+function Test-PerfEnvironment {
+    param($Contract, $Results)
+    $out = @{ Status = 'PASS'; Reasons = @(); Resolution = ''; Fullscreen = ''; GraphicsApi = ''; Quality = ''; VSync = ''; TargetFps = ''; HardwareCpu = ''; HardwareGpu = '' }
+    $expectedRes = "$($Contract.resolution.width)x$($Contract.resolution.height)"
+    $expectedFps = "$($Contract.targetFrameRate)"
+    $expectedVs = "$($Contract.vSyncCount)"
+    $budgetCi = [double]::Parse("$($Contract.castIntervalSeconds)", [System.Globalization.CultureInfo]::InvariantCulture)
+    foreach ($r in $Results) {
+        $d = $r.Density
+        if ($r.Editor -ne 'False' -and $r.Editor -ne 'false') { $out.Reasons += "density ${d}: editor=$($r.Editor) (must be standalone False)" }
+        if ($r.Resolution -ne $expectedRes) { $out.Reasons += "density ${d}: resolution '$($r.Resolution)' != locked '$expectedRes'" }
+        $fsOk = ($Contract.fullscreen -and ($r.Fullscreen -eq 'True' -or $r.Fullscreen -eq 'true')) -or
+            ((-not $Contract.fullscreen) -and ($r.Fullscreen -eq 'False' -or $r.Fullscreen -eq 'false'))
+        if (-not $fsOk) { $out.Reasons += "density ${d}: fullscreen '$($r.Fullscreen)' != locked $($Contract.fullscreen)" }
+        if ($r.GraphicsApi -ne $Contract.graphicsApi) { $out.Reasons += "density ${d}: graphics '$($r.GraphicsApi)' != locked '$($Contract.graphicsApi)'" }
+        if ($r.Quality -ne $Contract.quality) { $out.Reasons += "density ${d}: quality '$($r.Quality)' != locked '$($Contract.quality)'" }
+        if ($r.VSync -ne $expectedVs) { $out.Reasons += "density ${d}: vSync '$($r.VSync)' != locked $expectedVs" }
+        if ($r.TargetFps -ne $expectedFps) { $out.Reasons += "density ${d}: targetFps '$($r.TargetFps)' != locked $expectedFps" }
+        if ($r.Warmup -ne $Contract.warmupFrames) { $out.Reasons += "density ${d}: warmup $($r.Warmup) != locked $($Contract.warmupFrames)" }
+        if ($r.Sample -ne $Contract.sampleFrames) { $out.Reasons += "density ${d}: sample $($r.Sample) != locked $($Contract.sampleFrames)" }
+        $ci = [double]0
+        $ciOk = [double]::TryParse($r.CastInterval, [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$ci)
+        if (-not $ciOk -or [math]::Abs($ci - $budgetCi) -gt 0.0001) { $out.Reasons += "density ${d}: castInterval '$($r.CastInterval)' != locked $($Contract.castIntervalSeconds)" }
+        if ($r.HardwareCpu -ne $Contract.hardware.processorType) { $out.Reasons += "density ${d}: CPU '$($r.HardwareCpu)' != locked '$($Contract.hardware.processorType)'" }
+        if ($r.HardwareGpu -ne $Contract.hardware.graphicsDeviceName) { $out.Reasons += "density ${d}: GPU '$($r.HardwareGpu)' != locked '$($Contract.hardware.graphicsDeviceName)'" }
+    }
+    if ($Results.Count -gt 0) {
+        $first = $Results[0]
+        $out.Resolution = $first.Resolution
+        $out.Fullscreen = $first.Fullscreen
+        $out.GraphicsApi = $first.GraphicsApi
+        $out.Quality = $first.Quality
+        $out.VSync = $first.VSync
+        $out.TargetFps = $first.TargetFps
+        $out.HardwareCpu = $first.HardwareCpu
+        $out.HardwareGpu = $first.HardwareGpu
+    }
+    if ($out.Reasons.Count -gt 0) { $out.Status = 'ENV_NOT_MET' }
+    return $out
+}
+
+function Test-PerfMetrics {
+    param($Contract, $Result)
+    $out = @{ Status = 'PASS'; Reasons = @(); TimingAvailable = $true
+        Avg = $Result.MainMsAvg; P99 = $Result.MainMsP99; Cpu = $Result.CpuMsAvg; Gpu = $Result.GpuMsAvg
+        Alive = $Result.Alive; Frames = $Result.Frames; Density = $Result.Density }
+    $d = $Result.Density
+    $budget = [double]$Contract.frameBudgetMs
+    if ($Result.Frames -ne $Contract.sampleFrames) {
+        $out.Reasons += "density ${d}: frames $($Result.Frames) != sampleFrames $($Contract.sampleFrames) (measurement validity)"
+    }
+    $minAlive = [int][math]::Ceiling($Contract.minAliveRatio * $Result.Density)
+    if ($Result.Alive -lt $minAlive) {
+        $out.Reasons += "density ${d}: alive $($Result.Alive)/$($Result.Density) < minAliveRatio $($Contract.minAliveRatio) (measurement validity)"
+    }
+    if ($Result.MainMsAvg -gt $budget) { $out.Reasons += "density ${d}: main_ms_avg $($Result.MainMsAvg) > budget $budget" }
+    if ($Result.MainMsP99 -gt $budget) { $out.Reasons += "density ${d}: main_ms_p99 $($Result.MainMsP99) > budget $budget" }
+    if ($Contract.requireFrameTiming) {
+        if ($Result.FrameTimingOk -ne 'true') {
+            $out.TimingAvailable = $false
+            $out.Reasons += "density ${d}: frame timing unavailable (frame_timing_ok=$($Result.FrameTimingOk)) -> EVIDENCE_INCOMPLETE"
+        }
+        elseif ($Result.CpuMsAvg -le 0 -or $Result.CpuMsAvg -gt $budget) {
+            $out.Reasons += "density ${d}: cpu_ms_avg $($Result.CpuMsAvg) must be >0 and <= budget $budget"
+        }
+        elseif ($Result.GpuMsAvg -le 0 -or $Result.GpuMsAvg -gt $budget) {
+            $out.Reasons += "density ${d}: gpu_ms_avg $($Result.GpuMsAvg) must be >0 and <= budget $budget"
+        }
+    }
+    if ($out.Reasons.Count -gt 0) {
+        $out.Status = 'FAIL'
+        if (-not $out.TimingAvailable) { $out.Status = 'EVIDENCE_INCOMPLETE' }
+    }
+    return $out
+}
+
+function Invoke-PerformanceVerdict {
+    param($Contract, $RunRecords)
+    $out = @{ Verdict = 'PASS'; EnvStatus = 'PASS'; Reasons = @(); Runs = @(); EnvSummaries = @() }
+    $envBad = $false; $perfFail = $false; $evidence = $false
+    $infraRuns = @($RunRecords | Where-Object { $_.Status -ne 'OK' })
+    foreach ($rec in $RunRecords) {
+        $i = $rec.Index
+        if ($rec.Status -ne 'OK') {
+            $perfFail = $true
+            $out.Reasons += "run ${i}: INFRA/BAD-EVIDENCE: $($rec.StatusReason)"
+            $out.Runs += @{ Index = $i; Env = $null; Metrics = @() }
+            continue
+        }
+        $env = Test-PerfEnvironment -Contract $Contract -Results $rec.Results
+        $out.EnvSummaries += $env
+        $metrics = @()
+        foreach ($r in $rec.Results) {
+            $m = Test-PerfMetrics -Contract $Contract -Result $r
+            $metrics += $m
+            if ($m.Status -eq 'EVIDENCE_INCOMPLETE') { $evidence = $true; $out.Reasons += "run ${i}: " + ($m.Reasons -join ' | ') }
+            elseif ($m.Status -ne 'PASS') { $perfFail = $true; $out.Reasons += "run ${i}: " + ($m.Reasons -join ' | ') }
+        }
+        if ($env.Status -ne 'PASS') {
+            $envBad = $true
+            $out.Reasons += "run ${i}: ENV_NOT_MET: " + ($env.Reasons -join ' | ')
+        }
+        $out.Runs += @{ Index = $i; Env = $env; Metrics = $metrics }
+    }
+    if ($envBad) { $out.EnvStatus = 'ENV_NOT_MET' }
+    # 裁决优先级：ENV_NOT_MET（无法评性能）> FAIL（真实测得超预算/无效测量）> EVIDENCE_INCOMPLETE > PASS；全 INFRA -> INFRA
+    if ($infraRuns.Count -eq $RunRecords.Count) { $out.Verdict = 'INFRA' }
+    elseif ($envBad) { $out.Verdict = 'ENV_NOT_MET' }
+    elseif ($perfFail) { $out.Verdict = 'FAIL' }
+    elseif ($evidence) { $out.Verdict = 'EVIDENCE_INCOMPLETE' }
+    else { $out.Verdict = 'PASS' }
+    return $out
+}
+
 function Get-SuiteSummary {
     param($Result, $Run, [bool]$Ok, [bool]$Infra)
     $status = 'FAIL'
@@ -308,7 +486,7 @@ function Get-SuiteSummary {
 
 function Write-SummaryJson {
     param([string]$Path, [hashtable]$Data)
-    $Data | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $Path -Encoding UTF8
+    $Data | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $Path -Encoding UTF8
 }
 
 # ---------------------------------------------------------------------
@@ -401,12 +579,14 @@ if ($SelfTest) {
     $ok = -not ($v.ExecutableExists -and $v.ExecutableBytes -gt 0 -and $v.DataDirectoryExists -and $v.DataFileCount -gt 0)
     $results.Add("selftest.artifact-empty-data: $(@('FAIL', 'PASS')[[int]$ok])")
 
-    # ArenaPerfHarness 证据解析夹具（S3-M6）：schema 与 ArenaPerfHarness.WriteRow 对齐
+    # ArenaPerfHarness 证据解析夹具（S3-M6/M7）：schema 与 ArenaPerfHarness.WriteRow 对齐
     $CsvHeader = 'dummy_count,alive,frames,main_ms_avg,main_ms_p95,main_ms_p99,main_ms_p999,main_ms_max,gc_alloc_bytes_avg,cpu_ms_avg,gpu_ms_avg,mem_total_mb,frame_timing_ok'
     function Write-HarnessFixture {
-        param([string]$Dir, [int]$Density, [string]$Meta, [string]$Data)
-        Set-Content -LiteralPath (Join-Path $Dir "$Density.txt") -Encoding UTF8 -Value (
-            "# ArenaPerfHarness, density=$Density`n" + $Meta + "`n# density strategy: kill-then-refill`n" + $CsvHeader + "`n" + $Data + "`n")
+        param([string]$Dir, [int]$Density, [string]$Meta, [string]$Data, [string[]]$ExtraMeta = @())
+        $all = "# ArenaPerfHarness, density=$Density`n" + $Meta
+        foreach ($x in $ExtraMeta) { $all += "`n" + $x }
+        $all += "`n# density strategy: kill-then-refill`n" + $CsvHeader + "`n" + $Data + "`n"
+        Set-Content -LiteralPath (Join-Path $Dir "$Density.txt") -Encoding UTF8 -Value $all
     }
     $GoodMeta = '# resolution=1920x1080 fullscreen=True currentRes=1920x1080 editor=False dx=Direct3D12'
     $pr = Join-Path $fx 'playerrun'
@@ -482,6 +662,108 @@ if ($SelfTest) {
     $ok = (-not $e.Valid) -and (($e.Reasons -join ' ') -match 'invalid resolution')
     $results.Add("selftest.playerrun-invalid-resolution: $(@('FAIL', 'PASS')[[int]$ok])")
 
+    # Performance contract + evaluator 夹具（S3-M7）：contract 单一来源=docs/qa/PERFORMANCE_GATE.json
+    # SelfTest 只校验 schema 完整性（硬件锁定状态由 canonical Gate 检查）；评估夹具硬件用合成值
+    $contractFile = Join-Path $ProjectRoot 'docs\qa\PERFORMANCE_GATE.json'
+    $CT = $null
+    try {
+        $CT = Get-Content -LiteralPath $contractFile -Raw | ConvertFrom-Json
+        $missingFields = @()
+        foreach ($field in @('resolution', 'fullscreen', 'graphicsApi', 'quality', 'vSyncCount', 'targetFrameRate', 'densities', 'warmupFrames', 'sampleFrames', 'castIntervalSeconds', 'frameBudgetMs', 'requiredRuns', 'requireFrameTiming', 'minAliveRatio', 'hardware')) {
+            if ($null -eq $CT.$field) { $missingFields += $field }
+        }
+        if ($missingFields.Count -gt 0) { $CT = $null }
+    } catch { $CT = $null }
+    $results.Add("selftest.perf-contract-schema: $(@('FAIL', 'PASS')[[int]($null -ne $CT)])")
+    if ($null -ne $CT) {
+        if ("$($CT.hardware.processorType)" -match 'PENDING_HARDWARE_PROBE') { $CT.hardware.processorType = 'SelfTest CPU (synthetic)' }
+        if ("$($CT.hardware.graphicsDeviceName)" -match 'PENDING_HARDWARE_PROBE') { $CT.hardware.graphicsDeviceName = 'SelfTest GPU (synthetic)' }
+        function New-PerfResult {
+            param($CT, [int]$Density, [string]$Resolution, [string]$Api, [string]$Quality, [string]$VSync, [string]$TFps, [string]$Cpu, [string]$Gpu, [double]$Avg, [double]$P99, [double]$CpuAvg, [double]$GpuAvg, [string]$Fto, [int]$Alive, [int]$Frames)
+            return @{ Valid = $true; Density = $Density; Resolution = $Resolution; Fullscreen = 'True'; Editor = 'False'; GraphicsApi = $Api
+                HardwareCpu = $Cpu; HardwareGpu = $Gpu; Quality = $Quality; VSync = $VSync; TargetFps = $TFps
+                Warmup = $CT.warmupFrames; Sample = $CT.sampleFrames; CastInterval = "$($CT.castIntervalSeconds)"
+                Alive = $Alive; Frames = $Frames; MainMsAvg = $Avg; MainMsP99 = $P99; CpuMsAvg = $CpuAvg; GpuMsAvg = $GpuAvg
+                GcBytesAvg = 0.0; MemTotalMb = 512.0; FrameTimingOk = $Fto; Reason = '' }
+        }
+        function New-PerfRun {
+            param($CT, [string]$Resolution, [string]$Api, [string]$Quality, [string]$VSync, [string]$TFps, [string]$Cpu, [string]$Gpu, [double]$AvgMul, [double]$P99Mul, [string]$Fto)
+            $rs = @()
+            foreach ($d in $CT.densities) {
+                $rs += New-PerfResult -CT $CT -Density $d -Resolution $Resolution -Api $Api -Quality $Quality -VSync $VSync -TFps $TFps -Cpu $Cpu -Gpu $Gpu -Avg ($CT.frameBudgetMs * $AvgMul) -P99 ($CT.frameBudgetMs * $P99Mul) -CpuAvg ($CT.frameBudgetMs * 0.2) -GpuAvg ($CT.frameBudgetMs * 0.1) -Fto $Fto -Alive ([int][math]::Ceiling($d * $CT.minAliveRatio)) -Frames $CT.sampleFrames
+            }
+            return $rs
+        }
+        function New-PerfRecords {
+            param($CT, [string]$Resolution, [string]$Api, [string]$Quality, [string]$VSync, [string]$TFps, [string]$Cpu, [string]$Gpu, [double]$AvgMul, [double]$P99Mul, [string]$Fto)
+            $recs = @()
+            for ($i = 1; $i -le $CT.requiredRuns; $i++) {
+                $recs += @{ Index = $i; Status = 'OK'; StatusReason = ''; Results = (New-PerfRun -CT $CT -Resolution $Resolution -Api $Api -Quality $Quality -VSync $VSync -TFps $TFps -Cpu $Cpu -Gpu $Gpu -AvgMul $AvgMul -P99Mul $P99Mul -Fto $Fto) }
+            }
+            return $recs
+        }
+        $HW = @{ processorType = "$($CT.hardware.processorType)"; graphicsDeviceName = "$($CT.hardware.graphicsDeviceName)" }
+        $okRes = "$($CT.resolution.width)x$($CT.resolution.height)"
+
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords (New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true')
+        $results.Add("selftest.perf-pass: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'PASS')])")
+
+        $recs = New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true'
+        $recs[0].Results[2].MainMsP99 = $CT.frameBudgetMs + 0.01
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords $recs
+        $results.Add("selftest.perf-p99-fail: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'FAIL')])")
+
+        $recs = New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true'
+        $recs[1].Results[0].MainMsAvg = $CT.frameBudgetMs + 0.01
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords $recs
+        $results.Add("selftest.perf-avg-fail: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'FAIL')])")
+
+        $recs = New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true'
+        $recs[2].Results[1].GpuMsAvg = $CT.frameBudgetMs + 0.01
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords $recs
+        $results.Add("selftest.perf-gpu-fail: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'FAIL')])")
+
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords (New-PerfRecords -CT $CT -Resolution '1920x1080' -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true')
+        $results.Add("selftest.perf-resolution-mismatch: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'ENV_NOT_MET')])")
+
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords (New-PerfRecords -CT $CT -Resolution $okRes -Api 'D3D11' -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true')
+        $results.Add("selftest.perf-api-mismatch: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'ENV_NOT_MET')])")
+
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords (New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality 'Mobile' -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true')
+        $results.Add("selftest.perf-quality-mismatch: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'ENV_NOT_MET')])")
+
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords (New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync '1' -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true')
+        $results.Add("selftest.perf-vsync-mismatch: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'ENV_NOT_MET')])")
+
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords (New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps '60' -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true')
+        $results.Add("selftest.perf-fps-mismatch: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'ENV_NOT_MET')])")
+
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords (New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu 'Different CPU' -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true')
+        $results.Add("selftest.perf-hardware-mismatch: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'ENV_NOT_MET')])")
+
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords (New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'false')
+        $results.Add("selftest.perf-timing-unavailable: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'EVIDENCE_INCOMPLETE')])")
+
+        $recs = New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true'
+        $d300 = $CT.densities[2]
+        $recs[0].Results[2].Alive = [int][math]::Ceiling($d300 * $CT.minAliveRatio) - 1
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords $recs
+        $results.Add("selftest.perf-alive-invalid: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'FAIL')])")
+
+        $recs = New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true'
+        $recs[2].Results[1].Frames = $CT.sampleFrames - 1
+        $v = Invoke-PerformanceVerdict -Contract $CT -RunRecords $recs
+        $results.Add("selftest.perf-frames-invalid: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'FAIL')])")
+
+        # 文件级端到端：硬件/perf_env 行真实捕获
+        $perfFileDir = Join-Path $fx 'perffile'
+        New-Item -ItemType Directory -Path $perfFileDir -Force | Out-Null
+        Write-HarnessFixture -Dir $perfFileDir -Density 100 -Meta $GoodMeta -Data '100,100,600,2.500,2.600,2.700,2.800,3.000,0.0,2.400,0.300,512.0,true' -ExtraMeta @("# hardware_cpu=$($HW.processorType)", "# hardware_gpu=$($HW.graphicsDeviceName)", "# perf_env quality=$($CT.quality) vsync=$($CT.vSyncCount) targetFps=$($CT.targetFrameRate) warmup=$($CT.warmupFrames) sample=$($CT.sampleFrames) castInterval=$($CT.castIntervalSeconds)")
+        $r = Read-HarnessResult -FilePath (Join-Path $perfFileDir '100.txt') -ExpectedDensity 100
+        $ok = $r.Valid -and $r.HardwareCpu -eq $HW.processorType -and $r.Quality -eq $CT.quality -and $r.VSync -eq "$($CT.vSyncCount)" -and $r.TargetFps -eq "$($CT.targetFrameRate)" -and $r.Warmup -eq $CT.warmupFrames -and $r.Sample -eq $CT.sampleFrames -and $r.CpuMsAvg -gt 0
+        $results.Add("selftest.perf-harness-metadata-capture: $(@('FAIL', 'PASS')[[int]$ok])")
+    }
+
     $allPass = $true
     foreach ($line in $results) {
         Write-Output $line
@@ -529,13 +811,19 @@ $unityExe = $resolved.Path
 Write-Output "=== GAME-ZZZ UNATTENDED GATE ==="
 Write-Output "Unity: $unityExe (source: $($resolved.Source))"
 
-# 2) Editor lock: fail fast, never kill a running editor
+# 2) Editor lock: fail fast if a live editor holds the project; clean stale locks (no Unity process alive)
 if (Test-Path -LiteralPath $LockFile -PathType Leaf) {
-    Write-Output "Gate: FAIL"
-    Write-Output "Reason: PROJECT_ALREADY_OPEN"
-    Write-Output "Lock file: $LockFile"
-    Write-Output "Close the running Unity Editor for this project, then rerun the gate."
-    exit 3
+    $liveUnity = @(Get-Process -Name Unity -ErrorAction SilentlyContinue)
+    if ($liveUnity.Count -gt 0) {
+        Write-Output "Gate: FAIL"
+        Write-Output "Reason: PROJECT_ALREADY_OPEN"
+        Write-Output "Lock file: $LockFile"
+        Write-Output "Close the running Unity Editor for this project, then rerun the gate."
+        exit 3
+    }
+    # 崩溃/强杀残留的僵死锁：无 Unity 进程存活时安全移除（不杀任何进程；有进程一律 fail fast）
+    Write-Output "Note: stale UnityLockfile with no live Unity process; removing stale lock."
+    Remove-Item -LiteralPath $LockFile -Force
 }
 
 # 3) EditMode suite
@@ -552,6 +840,7 @@ elseif ($editRun.ExitCode -ne 0) { $Issues.Add("EditMode exit code $($editRun.Ex
 $playSkipped = $false
 if ($editInfra) {
     $playSkipped = $true
+    $playInfra = $false   # 跳过≠基础设施失败；显式赋值防 $null 绑定 [bool] 参数报错
     $Issues.Add('PlayMode SKIPPED (Edit suite infrastructure failure; PlayMode result not fabricated)')
 } else {
     $playXml = Join-Path $TempRoot 'PlayModeResults.xml'
@@ -619,12 +908,18 @@ $playerRunRun = $null
 $playerRunEvidence = $null
 $playerRunDir = Join-Path $TempRoot 'PlayerRun'
 $playerRunLog = Join-Path $TempRoot 'PlayerRun.log'
-if (-not $IncludePlayerRun) {
+if ($IncludePerformance) {
+    # Performance Gate 层接管：以锁定环境连续 3 次运行替代单次普通 Player Run（不做第 4 次）
+    $playerRunStatus = 'SKIPPED'
+}
+elseif (-not $IncludePlayerRun) {
     # 未请求：不运行，也不谎称已验证 Player Runtime
-} elseif ($buildStatus -ne 'PASS') {
+}
+elseif ($buildStatus -ne 'PASS') {
     $playerRunStatus = 'NOT_RUN'
     $Issues.Add('PlayerRun NOT RUN / INFRA BLOCKED (build did not produce a valid player)')
-} else {
+}
+else {
     New-Item -ItemType Directory -Path $playerRunDir -Force | Out-Null
     Get-ChildItem -LiteralPath $playerRunDir -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
     $playerRunRun = Invoke-UnityChild -UnityExe $buildExe -ArgumentString "-arenaPerf -arenaPerfOut `"$playerRunDir`" -logFile `"$playerRunLog`"" -TimeoutMin $PlayerRunTimeoutMinutes
@@ -645,12 +940,84 @@ if (-not $IncludePlayerRun) {
         $playerRunStatus = 'PASS'
     }
 }
-$playerRunOk = (-not $IncludePlayerRun) -or ($playerRunStatus -eq 'PASS')
+$playerRunOk = (-not $IncludePlayerRun) -or $IncludePerformance -or ($playerRunStatus -eq 'PASS')
 
-# 8) Finalize once: unified verdict + summary + exit code
+# 8) Performance Gate (-IncludePerformance)：锁定环境 + 同一 Build 连续 3 次运行 + 硬预算
+$perfStatus = 'NOT_EVALUATED'
+$perfContract = $null
+$perfVerdict = $null
+$perfEnvSummary = $null
+if ($IncludePerformance) {
+    $perfDir = Join-Path $TempRoot 'Performance'
+    $perfContractPath = Join-Path $ProjectRoot 'docs\qa\PERFORMANCE_GATE.json'
+    $c = Get-PerformanceContract -Path $perfContractPath
+    if (-not $c.Ok) {
+        $perfStatus = 'INFRA'
+        $Issues.Add('Performance INFRA: ' + $c.Reason)
+    }
+    elseif ($buildStatus -ne 'PASS') {
+        $perfStatus = 'INFRA'
+        $Issues.Add('Performance INFRA: build did not produce a valid player')
+    }
+    else {
+        $perfContract = $c.Contract
+        New-Item -ItemType Directory -Path $perfDir -Force | Out-Null
+        $perfRunRecords = @()
+        for ($runIndex = 1; $runIndex -le [int]$perfContract.requiredRuns; $runIndex++) {
+            $runDir = Join-Path $perfDir "Run$runIndex"
+            New-Item -ItemType Directory -Path $runDir -Force | Out-Null
+            Get-ChildItem -LiteralPath $runDir -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
+            $runLog = Join-Path $runDir 'PlayerRun.log'
+            $rec = @{ Index = $runIndex; Status = 'OK'; StatusReason = ''; Results = @() }
+            $perfRun = Invoke-UnityChild -UnityExe $buildExe -ArgumentString "-screen-width $($perfContract.resolution.width) -screen-height $($perfContract.resolution.height) -screen-fullscreen 1 -screen-quality $($perfContract.quality) -force-d3d12 -arenaPerf -arenaPerfGate -arenaPerfOut `"$runDir`" -logFile `"$runLog`"" -TimeoutMin $PlayerRunTimeoutMinutes
+            if ($perfRun.TimedOut) {
+                $rec.Status = 'INFRA'
+                $rec.StatusReason = 'TIMEOUT (gate killed only its own child process)'
+                $Issues.Add("Performance run $runIndex TIMEOUT")
+            }
+            elseif ($perfRun.ExitCode -ne 0) {
+                $rec.Status = 'INFRA'
+                $rec.StatusReason = "player exit code $($perfRun.ExitCode)"
+                $Issues.Add("Performance run $runIndex player exit $($perfRun.ExitCode)")
+            }
+            else {
+                $runResults = @()
+                $badEvidence = @()
+                foreach ($density in $perfContract.densities) {
+                    $r = Read-HarnessResult -FilePath (Join-Path $runDir "$density.txt") -ExpectedDensity $density
+                    $runResults += $r
+                    if (-not $r.Valid) { $badEvidence += "density ${density}: $($r.Reason)" }
+                }
+                if ($badEvidence.Count -gt 0) {
+                    $rec.Status = 'INFRA'
+                    $rec.StatusReason = 'evidence missing/invalid in the specified output dir (fallback elsewhere does not count): ' + ($badEvidence -join ' | ')
+                    $Issues.Add("Performance run $runIndex bad evidence")
+                }
+                else {
+                    $rec.Results = $runResults
+                }
+            }
+            $perfRunRecords += $rec
+        }
+        $okRecords = @($perfRunRecords | Where-Object { $_.Status -eq 'OK' })
+        if ($okRecords.Count -eq 0) {
+            $perfStatus = 'INFRA'
+        }
+        else {
+            $perfVerdict = Invoke-PerformanceVerdict -Contract $perfContract -RunRecords $perfRunRecords
+            $perfStatus = $perfVerdict.Verdict
+            $envOk = @($perfVerdict.EnvSummaries | Where-Object { $_.Status -eq 'PASS' })
+            if ($envOk.Count -gt 0) { $perfEnvSummary = $envOk[0] }
+            foreach ($reason in $perfVerdict.Reasons) { $Issues.Add("Performance: $reason") }
+        }
+    }
+}
+$perfOk = (-not $IncludePerformance) -or ($perfStatus -eq 'PASS')
+
+# 9) Finalize once: unified verdict + summary + exit code
 $editOk = (-not $editInfra) -and $editResult.Result -eq 'Passed' -and $editResult.Failed -eq 0
 $playOk = (-not $playInfra) -and $null -ne $playResult -and $playResult.Result -eq 'Passed' -and $playResult.Failed -eq 0
-$gatePass = $editOk -and $playOk -and $auditOk -and $buildOk -and $playerRunOk
+$gatePass = $editOk -and $playOk -and $auditOk -and $buildOk -and $playerRunOk -and $perfOk
 
 $editLine = 'EditMode: N/A'
 if ($null -ne $editResult) {
@@ -671,7 +1038,10 @@ if ($IncludeBuild) {
     }
 }
 $playerRunLine = 'PlayerRun: SKIPPED (use -IncludePlayerRun)'
-if ($IncludePlayerRun) {
+if ($IncludePerformance) {
+    $playerRunLine = 'PlayerRun: SKIPPED (superseded by -IncludePerformance: 3 locked-env runs instead)'
+}
+elseif ($IncludePlayerRun) {
     if ($playerRunStatus -eq 'PASS') {
         $playerRunLine = "PlayerRun: PASS exit=$($playerRunRun.ExitCode) resolution=$($playerRunEvidence.ActualResolution) densities=100/200/300"
     } elseif ($playerRunStatus -eq 'SKIPPED') {
@@ -686,7 +1056,42 @@ Write-Output $playLine
 Write-Output $auditLine
 Write-Output $buildLine
 Write-Output $playerRunLine
-Write-Output 'PerformanceVerdict: NOT_EVALUATED'
+if ($IncludePerformance) {
+    Write-Output '=== GAME-ZZZ PERFORMANCE GATE ==='
+    if ($null -ne $perfEnvSummary) {
+        Write-Output "Environment: $($perfEnvSummary.Status)"
+        Write-Output "Resolution: $($perfEnvSummary.Resolution)"
+        Write-Output "Graphics: $($perfEnvSummary.GraphicsApi)"
+        Write-Output "Quality: $($perfEnvSummary.Quality)"
+        Write-Output "vSync: $($perfEnvSummary.VSync)"
+        Write-Output "TargetFrameRate: $($perfEnvSummary.TargetFps)"
+        Write-Output "Hardware: $($perfEnvSummary.HardwareCpu) / $($perfEnvSummary.HardwareGpu)"
+    }
+    if ($null -ne $perfVerdict) {
+        foreach ($runSummary in $perfVerdict.Runs) {
+            $i = $runSummary.Index
+            if ($null -eq $runSummary.Env) {
+                Write-Output "Run${i}: INFRA/BAD-EVIDENCE"
+                continue
+            }
+            $parts = @()
+            foreach ($m in $runSummary.Metrics) {
+                $parts += ("{0}: avg={1} p99={2} cpu={3} gpu={4} alive={5}/{6} {7}" -f $m.Density,
+                    ([math]::Round([double]$m.Avg, 3)), ([math]::Round([double]$m.P99, 3)),
+                    ([math]::Round([double]$m.Cpu, 3)), ([math]::Round([double]$m.Gpu, 3)),
+                    $m.Alive, $m.Density, $m.Status)
+            }
+            $envTag = ''
+            if ($runSummary.Env.Status -ne 'PASS') { $envTag = ' ENV_NOT_MET' }
+            Write-Output ("Run{0}:{1} {2}" -f $i, $envTag, ($parts -join ' | '))
+        }
+    }
+    Write-Output "PerformanceVerdict: $perfStatus"
+    Write-Output "FrameBudget: $($perfContract.frameBudgetMs) ms"
+}
+else {
+    Write-Output 'PerformanceVerdict: NOT_EVALUATED'
+}
 foreach ($issue in $Issues) { Write-Output "Issue: $issue" }
 Write-Output "Gate: $(@('FAIL', 'PASS')[[int]$gatePass])"
 Write-Output "Artifacts: $TempRoot"
@@ -699,6 +1104,7 @@ Write-SummaryJson -Path (Join-Path $TempRoot 'verification-summary.json') -Data 
     editMode = (Get-SuiteSummary -Result $editResult -Run $editRun -Ok $editOk -Infra $editInfra)
     playMode = $playSummary
     contentAudit = @{ exists = $auditExists; fresh = $fresh; completed = $audit.Completed; verdict = $audit.Verdict; failureCount = $audit.FailureCount; beforeUtc = $auditBeforeUtc; afterUtc = $auditAfterUtc }
+    performance = @{ requested = [bool]$IncludePerformance; verdict = $perfStatus; environmentStatus = $(if ($null -ne $perfVerdict) { $perfVerdict.EnvStatus } else { 'NOT_EVALUATED' }); frameBudgetMs = $(if ($null -ne $perfContract) { $perfContract.frameBudgetMs } else { $null }); hardwareMatch = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.Status -eq 'PASS' } else { $false }); resolution = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.Resolution } else { '' }); graphicsApi = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.GraphicsApi } else { '' }); quality = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.Quality } else { '' }); vsync = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.VSync } else { '' }); targetFrameRate = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.TargetFps } else { '' }); runs = $(if ($null -ne $perfVerdict) { @($perfVerdict.Runs | ForEach-Object { @{ index = $_.Index; envStatus = $(if ($null -ne $_.Env) { $_.Env.Status } else { 'INFRA' }); densities = @($_.Metrics | ForEach-Object { @{ density = $_.Density; alive = $_.Alive; frames = $_.Frames; avg = $_.Avg; p99 = $_.P99; cpuAvg = $_.Cpu; gpuAvg = $_.Gpu; status = $_.Status; reasons = $_.Reasons } }) } }) } else { @() }) }
     build = @{ requested = [bool]$IncludeBuild; status = $buildStatus; unityExitCode = $(if ($null -ne $buildRun) { $buildRun.ExitCode } else { $null }); timedOut = $(if ($null -ne $buildRun) { $buildRun.TimedOut } else { $false }); executablePath = $buildExe; executableExists = $(if ($null -ne $artifact) { $artifact.ExecutableExists } else { $false }); executableBytes = $(if ($null -ne $artifact) { $artifact.ExecutableBytes } else { 0 }); dataDirectoryExists = $(if ($null -ne $artifact) { $artifact.DataDirectoryExists } else { $false }); timeoutMinutes = $BuildTimeoutMinutes; logPath = $buildLog }
     playerRun = @{ requested = [bool]$IncludePlayerRun; status = $playerRunStatus; exitCode = $(if ($null -ne $playerRunRun) { $playerRunRun.ExitCode } else { $null }); timedOut = $(if ($null -ne $playerRunRun) { $playerRunRun.TimedOut } else { $false }); timeoutMinutes = $PlayerRunTimeoutMinutes; logPath = $playerRunLog; outputPath = $playerRunDir; actualResolution = $(if ($null -ne $playerRunEvidence) { $playerRunEvidence.ActualResolution } else { '' }); graphicsApi = $(if ($null -ne $playerRunEvidence) { $playerRunEvidence.GraphicsApi } else { '' }); densities = $(if ($null -ne $playerRunEvidence) { @($playerRunEvidence.Results | ForEach-Object { @{ density = $_.Density; alive = $_.Alive; frames = $_.Frames; mainMsAvg = $_.MainMsAvg; mainMsP99 = $_.MainMsP99; gpuMsAvg = $_.GpuMsAvg; frameTimingAvailable = $_.FrameTimingOk } }) } else { @() }) }
     gate = @{ verdict = $(@('FAIL', 'PASS')[[int]$gatePass]); startedUtc = $gateStartUtc; endedUtc = [DateTime]::UtcNow }
