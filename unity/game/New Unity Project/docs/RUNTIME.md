@@ -253,7 +253,7 @@ IgnoreLayerCollision(Player, Monster) = true
 IgnoreLayerCollision(Monster, Monster) = true
 ```
 
-- 玩家视图：优先 `Resources/Player/DarkKnight`（Dark Knight 换模，视图层动画 Idle/Run/Attack/Cast），无预制体时回退 S1 胶囊（自制 Eve FBX 已剔除）。根上留 CapsuleCollider（贴地/墙用），不挡怪。
+- 玩家视图：优先 `Resources/Player/DarkKnight`（Dark Knight 换模，视图层动画 Idle/Run/Attack/Cast），无预制体时回退 S1 胶囊（自制 Eve FBX 已剔除）。模型按**身体包围盒**每帧贴地（`EveView.UpdateGround`，武器长刀不参与身高/贴地计算），身体净高 ≈1.19。根上留 CapsuleCollider（贴地/墙用，高 1.16），不挡怪。
 - Dummy 视图：无 Collider、无 Rigidbody、无 CharacterController。
 - 命中仍是距离 / 锥 / 弹道半径，不是物理接触。
 - 怪-怪：`DummyCrowd.Separate(DummyMinSeparation=1)`，在 `ArenaSim.Tick` 里 `TickAi` 之后调用。距离 < 1 水平各拨一半；`dist==0` 沿 +X 拨开，禁止除零。

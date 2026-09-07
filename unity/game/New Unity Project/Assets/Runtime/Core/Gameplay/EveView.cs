@@ -68,6 +68,7 @@ namespace Game.Runtime.Core
             if (go == null || targetHeight <= 0.01f)
                 return;
 
+            // 身高以身体包围盒为准，排除武器（刀随动画垂到地下会污染整体包围盒）
             Bounds b;
             if (!TryWorldBounds(go, out b))
                 return;
@@ -90,9 +91,28 @@ namespace Game.Runtime.Core
                 go.transform.position += new Vector3(0f, lift, 0f);
 
             GameLog.Info("Arena",
-                "Eve fitted height " + targetHeight.ToString("0.00") +
+                "Eve fitted body height " + targetHeight.ToString("0.00") +
                 " from " + height.ToString("0.000") +
                 " scale x" + scale.ToString("0.00"));
+        }
+
+        static bool IsWeaponRenderer(Renderer r)
+        {
+            // 长刀（Bip_Weapon_R 挂点），不参与身高/贴地计算
+            return r != null && r.name == "longblade";
+        }
+
+        // 每帧贴地校正：动画胯骨高度与挂载时静止姿势不同，一次性补偿会失准
+        public static void UpdateGround(GameObject model, float groundY)
+        {
+            if (model == null)
+                return;
+            Bounds b;
+            if (!TryWorldBounds(model, out b))
+                return;
+            float lift = groundY - b.min.y;
+            if (Mathf.Abs(lift) > 1e-4f)
+                model.transform.position += new Vector3(0f, lift, 0f);
         }
 
         static bool TryWorldBounds(GameObject go, out Bounds bounds)
@@ -102,7 +122,7 @@ namespace Game.Runtime.Core
             bounds = new Bounds(go.transform.position, Vector3.zero);
             for (int i = 0; i < rs.Length; i++)
             {
-                if (rs[i] == null || !rs[i].enabled)
+                if (rs[i] == null || !rs[i].enabled || IsWeaponRenderer(rs[i]))
                     continue;
                 if (!any)
                 {

@@ -384,6 +384,7 @@ namespace Game.Runtime.Core
             {
                 _playerView.localScale = Vector3.one;
                 DriveEve(Sim.Player.Anim);
+                EveView.UpdateGround(_eve, playerPos.y);
             }
 
             if (_camera != null)
