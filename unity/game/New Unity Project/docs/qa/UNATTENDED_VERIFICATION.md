@@ -20,19 +20,22 @@ S3-M4 建立（Quick Gate）；S3-M5 扩展（Build Gate）；S3-M6 扩展（Pla
 
 可加 `-TimeoutMinutes <n>`（默认 20，每测试平台一套件）、`-BuildTimeoutMinutes <n>`（默认 30，Player Build）、`-PlayerRunTimeoutMinutes <n>`（默认 10，Player Runtime）；不会无限等待 Unity。
 
-## 三层 Gate
+## 四层 Gate
 
-| | Quick | Build（`-IncludeBuild`） | Player Runtime（`-IncludePlayerRun`，隐含 Build） |
-|---|---|---|---|
-| EditMode 全套 | ✓ | ✓ | ✓ |
-| PlayMode 全套 | ✓ | ✓ | ✓ |
-| Content Audit freshness+verdict | ✓ | ✓ | ✓ |
-| StandaloneWindows64 Player Build | ✗（明示 `SKIPPED (use -IncludeBuild)`） | ✓（win64，输出 temp） | ✓ |
-| 刚构建 Player 跑 ArenaPerfHarness（100/200/300） | ✗（明示 `SKIPPED (use -IncludePlayerRun)`） | ✗（明示 `SKIPPED (use -IncludePlayerRun)`） | ✓（Player 自退 exit 0 + 三档证据解析） |
+| | Quick | Build（`-IncludeBuild`） | Player Runtime（`-IncludePlayerRun`，隐含 Build） | Performance（`-IncludePerformance`，隐含全部） |
+|---|---|---|---|---|
+| EditMode 全套 | ✓ | ✓ | ✓ | ✓ |
+| PlayMode 全套 | ✓ | ✓ | ✓ | ✓ |
+| Content Audit freshness+verdict | ✓ | ✓ | ✓ | ✓ |
+| StandaloneWindows64 Player Build | ✗（明示 `SKIPPED (use -IncludeBuild)`） | ✓（win64，输出 temp） | ✓ | ✓（只 Build 一次） |
+| 刚构建 Player 跑 ArenaPerfHarness（100/200/300） | ✗（明示 `SKIPPED (use -IncludePlayerRun)`） | ✗（明示 `SKIPPED (use -IncludePlayerRun)`） | ✓（Player 自退 exit 0 + 三档证据解析） | → 由 Performance 层 3 次锁定环境运行取代 |
+| 锁定环境 + 3 次重复运行 + 8.33ms 硬预算 | ✗（恒输出 `PerformanceVerdict: NOT_EVALUATED`） | 同左 | 同左 | ✓（唯一允许输出 `PerformanceVerdict: PASS` 的层） |
 
-**Player Runtime Gate ≠ performance pass**：只证明「刚构建的 Player 能启动、跑完三档 Harness、产出结构化证据」；控制台恒输出 `PerformanceVerdict: NOT_EVALUATED`，无任何性能阈值。1440p/120 维持未结案。
+**Player Runtime Gate ≠ performance pass**：只证明「刚构建的 Player 能启动、跑完三档 Harness、产出结构化证据」。
 
-**什么时候要求更高层**：Runtime C#、Scene、ProjectSettings、Packages、Resources、build settings、player-facing asset 修改后默认要求 Player Runtime Gate（或至少 Build Gate，由工作令指定）；纯 docs / test-only / tooling-only 可 Quick，规划 AI 有权逐轮强制更高层。
+**Performance Gate**：contract 唯一真相源=`docs/qa/PERFORMANCE_GATE.json`（预算语义文档=`docs/qa/PERFORMANCE_BUDGET.md`）。锁定环境：真实 `Screen` 分辨率 2560×1440 / fullscreen / Direct3D12 / Quality=PC / vSync=0 / targetFrameRate=-1 / CPU+GPU 锁定（probe 实测回填；硬件变更需正式工作令显式更新，禁止自动学习）。同一 Build 连续 3 次独立 Player 运行（`-screen-width/-height/-fullscreen/-screen-quality/-force-d3d12 -arenaPerf -arenaPerfGate`），全部 PASS 才 PASS；硬指标：main avg+p99 ≤8.33、cpu/gpu avg >0 且 ≤8.33、frame_timing 必须 available（否则 EVIDENCE_INCOMPLETE）、alive≥95%、frames==600。Verdict 语义（PASS/FAIL/ENV_NOT_MET/EVIDENCE_INCOMPLETE/INFRA/NOT_EVALUATED）与 R3 内容冻结契约见 PERFORMANCE_BUDGET.md；只有 Performance 层允许输出 `PerformanceVerdict: PASS`。
+
+**什么时候要求更高层**：Runtime C#、Scene、ProjectSettings、Packages、Resources、build settings、player-facing asset 修改后默认要求 Player Runtime Gate（或更高，由工作令指定）；触及性能相关面（渲染/质量/工作负载/分辨率）默认 Performance 层；纯 docs / test-only / tooling-only 可 Quick，规划 AI 有权逐轮强制更高层。
 
 ## Player Build（Build Gate 层）
 
@@ -74,7 +77,7 @@ S3-M4 建立（Quick Gate）；S3-M5 扩展（Build Gate）；S3-M6 扩展（Pla
 .\tools\verify_unattended.ps1 -SelfTest
 ```
 
-不启动 Unity。合成夹具验证（22 项）：PASS XML→PASS / 含失败 XML→FAIL / 缺失 XML→FAIL / 畸形 XML→FAIL / 缺 result 节点→FAIL / Audit PASS 文本→PASS / Audit FAIL 文本→FAIL / Audit 未完成文本→FAIL / freshness 纯函数 / Player 构件有效→PASS / 缺 exe→FAIL / 零字节 exe→FAIL / 缺 `_Data`→FAIL / 空 `_Data`→FAIL / Harness 三份合法证据→PASS / 缺档→FAIL / 密度不匹配→FAIL / CSV 畸形→FAIL / 数值 NaN→FAIL / editor=True→FAIL / alive=0→FAIL / 分辨率 0x0→FAIL。全过 exit 0，任一失败 exit 非 0。
+不启动 Unity。合成夹具验证（36 项）：XML 解析 5 项（PASS/失败/缺失/畸形/缺 result 节点）+ Audit 文本 3 项（PASS/FAIL/未完成）+ freshness 纯函数 + Player 构件 5 项（有效/缺 exe/零字节/缺 `_Data`/空 `_Data`）+ Player 证据 8 项（合法三份/缺档/密度不匹配/CSV 畸形/NaN/editor=True/alive=0/分辨率 0x0）+ Performance 15 项（contract schema/合法三轮 PASS/p99 超预算 FAIL/avg 超预算 FAIL/GPU 超预算 FAIL/分辨率不符 ENV_NOT_MET/API 不符 ENV_NOT_MET/Quality 不符 ENV_NOT_MET/vSync 不符 ENV_NOT_MET/targetFps 不符 ENV_NOT_MET/硬件不符 ENV_NOT_MET/FrameTiming 不可用 EVIDENCE_INCOMPLETE/alive 比例无效 FAIL/frames 无效 FAIL/文件级硬件与环境行捕获）。全过 exit 0，任一失败 exit 非 0。
 
 ## Gate 包含什么
 
@@ -91,7 +94,7 @@ Unity 定位 → 项目锁检查 → EditMode 全套 →（基础设施仍允许
 
 ## Temp artifact location
 
-`%TEMP%\GAME-ZZZ-UnattendedGate\`——每轮开始清理上一轮并重建：`EditModeResults.xml` / `EditMode.log` / `PlayModeResults.xml` / `PlayMode.log` / `PlayerBuild\`（GAME-ZZZ.exe + GAME-ZZZ_Data）/ `PlayerBuild.log` / `PlayerRun\`（100/200/300.txt）/ `PlayerRun.log` / `verification-summary.json`（machine-readable，ephemeral，不提交）。仓库不得出现这些产物（不靠 .gitignore 掩盖）。
+`%TEMP%\GAME-ZZZ-UnattendedGate\`——每轮开始清理上一轮并重建：`EditModeResults.xml` / `EditMode.log` / `PlayModeResults.xml` / `PlayMode.log` / `PlayerBuild\`（GAME-ZZZ.exe + GAME-ZZZ_Data）/ `PlayerBuild.log` / `PlayerRun\`（100/200/300.txt）/ `PlayerRun.log` / `Performance\Run1-3\`（每轮独立清空：100/200/300.txt + PlayerRun.log）/ `verification-summary.json`（machine-readable，ephemeral，不提交）。仓库不得出现这些产物（不靠 .gitignore 掩盖）。
 
 ## Editor-open 行为
 
