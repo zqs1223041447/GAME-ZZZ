@@ -202,8 +202,7 @@ namespace Game.Runtime.Core
             HitEvents++;
             if (feedback != null)
                 feedback.Spawn(FeedbackKind.Hit, d.X, d.Z, 0.18f, 0.95f, 0f);
-            if (logAudio)
-                AudioEvents.Play(AudioEventId.Hit);
+            // Hit 音频已重挂到玩家受击（ArenaDirector.HitFlash 上跳沿），怪物受击不再是 Hit 语义
 
             if (d.Hp <= 0)
             {
@@ -214,8 +213,7 @@ namespace Game.Runtime.Core
                 DeathEvents++;
                 if (feedback != null)
                     feedback.Spawn(FeedbackKind.Death, d.X, d.Z, CombatRules.DeathRecycle);
-                if (logAudio)
-                    AudioEvents.Play(AudioEventId.Death);
+                // Death 音频已重挂到玩家进入 MapState.Dead（ArenaDirector）
                 return true;
             }
 

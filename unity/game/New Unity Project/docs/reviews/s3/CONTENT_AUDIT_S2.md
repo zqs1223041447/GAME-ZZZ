@@ -37,7 +37,7 @@
 
 ## 音频（已知债，不阻断 S3 最小门）
 
-全部事件（Cast, Impact, Hit, Death, Loot）仅有 `AudioEvents.Play` 日志接线，无音频资产。事件名固定 Cast/Impact/Hit/Death/Loot，接入时按名补资产即可。
+全部事件（Cast, Impact, Hit, Death, Loot）已挂钩 `AudioEvents.Play`（单一入口，无中间件）：Cast=施放起手、Impact=技能命中、Hit=玩家受击上跳沿、Death=玩家进入 Dead、Loot=掉落生成（SliceSession.DropGear）。查找表 `Resources/Audio/<事件名>` 已预留 5 键，当前无音频资产=静音+限频日志（5s/键）。接入时按名投放资产即可，无需改代码。
 
 ## 预制体 / VFX 引用
 

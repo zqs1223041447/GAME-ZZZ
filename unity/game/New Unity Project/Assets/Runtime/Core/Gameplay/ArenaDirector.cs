@@ -762,6 +762,7 @@ namespace Game.Runtime.Core
                 if (!_eveDead)
                 {
                     _eveDead = true;
+                    AudioEvents.Play(AudioEventId.Death);
                     if (_eveHasDeath)
                     {
                         _eveAnimator.speed = 1f;
@@ -782,7 +783,10 @@ namespace Game.Runtime.Core
             if (_eveAnimator.speed == 0f)
                 _eveAnimator.speed = 1f;
 
-            if (_eveHasHit && flash > 0.02f && _lastPlayerFlash <= 0.02f)
+            bool hitEdge = flash > 0.02f && _lastPlayerFlash <= 0.02f;
+            if (hitEdge)
+                AudioEvents.Play(AudioEventId.Hit); // 与 Hit 动画同一处：玩家受击上跳沿
+            if (_eveHasHit && hitEdge)
             {
                 // 新的受击上跳沿即重播：高攻速下 Hit 可被下一击打断重来
                 _eveAnimator.Play("Hit", 0, 0f);

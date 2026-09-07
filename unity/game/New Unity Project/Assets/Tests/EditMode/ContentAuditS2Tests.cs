@@ -149,7 +149,7 @@ namespace Game.Tests.EditMode
                     unusedTags.Add(t.ToString());
             }
 
-            // 音频：S1/S2 只打事件日志，无资产接线（已知债，不阻断）
+            // 音频：5 事件已挂钩 AudioEvents（无中间件），Resources/Audio 无资产=静音+限频日志（已知债，不阻断）
             var missingAudio = new List<string> { "Cast", "Impact", "Hit", "Death", "Loot" };
 
             // 失败断言（缺失/非法即失败；音频缺失与未使用 Tag 只记录）
@@ -203,7 +203,7 @@ namespace Game.Tests.EditMode
             sb.AppendLine("");
             sb.AppendLine("## 音频（已知债，不阻断 S3 最小门）");
             sb.AppendLine("");
-            sb.AppendLine("全部事件（" + string.Join(", ", missingAudio) + "）仅有 `AudioEvents.Play` 日志接线，无音频资产。事件名固定 Cast/Impact/Hit/Death/Loot，接入时按名补资产即可。");
+            sb.AppendLine("全部事件（" + string.Join(", ", missingAudio) + "）已挂钩 `AudioEvents.Play`（单一入口，无中间件）：Cast=施放起手、Impact=技能命中、Hit=玩家受击上跳沿、Death=玩家进入 Dead、Loot=掉落生成（SliceSession.DropGear）。查找表 `Resources/Audio/<事件名>` 已预留 5 键，当前无音频资产=静音+限频日志（5s/键）。接入时按名投放资产即可，无需改代码。");
             sb.AppendLine("");
             sb.AppendLine("## 预制体 / VFX 引用");
             sb.AppendLine("");

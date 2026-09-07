@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Runtime.Core
@@ -250,6 +251,20 @@ namespace Game.Runtime.Core
 
     public static class AudioEvents
     {
+        // 预留查找表：5 个键固定写上，值可空=未接资源（查找路径 Resources/Audio/<键名>）
+        static readonly Dictionary<string, AudioClip> _table = new Dictionary<string, AudioClip>
+        {
+            { "Cast", null },
+            { "Impact", null },
+            { "Hit", null },
+            { "Death", null },
+            { "Loot", null }
+        };
+        static readonly HashSet<string> _probed = new HashSet<string>();
+        static readonly Dictionary<string, float> _lastLog = new Dictionary<string, float>();
+        const float LogIntervalSec = 5f;
+        static AudioSource _source;
+
         public static string Name(AudioEventId id)
         {
             switch (id)
@@ -265,7 +280,44 @@ namespace Game.Runtime.Core
 
         public static void Play(AudioEventId id)
         {
-            GameLog.Info("Audio", Name(id));
+            string name = Name(id);
+            AudioClip clip = ClipFor(name);
+            if (clip != null)
+            {
+                Source().PlayOneShot(clip);
+                return;
+            }
+            // 无资源=静音；日志限频，禁止每帧刷屏
+            float now = Time.realtimeSinceStartup;
+            float last;
+            if (!_lastLog.TryGetValue(name, out last) || now - last >= LogIntervalSec)
+            {
+                _lastLog[name] = now;
+                GameLog.Info("Audio", name);
+            }
+        }
+
+        static AudioClip ClipFor(string name)
+        {
+            if (!_probed.Contains(name))
+            {
+                _probed.Add(name);
+                _table[name] = Resources.Load<AudioClip>("Audio/" + name);
+            }
+            return _table[name];
+        }
+
+        static AudioSource Source()
+        {
+            if (_source == null)
+            {
+                var go = new GameObject("AudioCue");
+                if (Application.isPlaying)
+                    Object.DontDestroyOnLoad(go);
+                _source = go.AddComponent<AudioSource>();
+                _source.playOnAwake = false;
+            }
+            return _source;
         }
     }
 
