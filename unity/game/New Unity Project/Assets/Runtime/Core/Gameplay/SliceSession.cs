@@ -186,7 +186,8 @@ namespace Game.Runtime.Core
                 used[id] = true;
                 AffixDef def = AffixCatalog.Get((AffixId)id);
                 float v = RngUtil.Range(rng, def.Min, def.Max);
-                it.SetAffix(i, def.Id, v);
+                float v2 = def.RowCount > 1 ? RngUtil.Range(rng, def.Min2, def.Max2) : 0f;
+                it.SetAffix(i, def.Id, v, v2);
             }
 
             return it;
@@ -391,16 +392,17 @@ namespace Game.Runtime.Core
             ItemInstance it = Inventory[invIndex];
             AffixDef def = AffixCatalog.Get(pick);
             float v = RngUtil.Range(LootRng, def.Min, def.Max);
+            float v2 = def.RowCount > 1 ? RngUtil.Range(LootRng, def.Min2, def.Max2) : 0f;
             if (it.AffixCount < 4)
             {
-                it.SetAffix(it.AffixCount, pick, v);
+                it.SetAffix(it.AffixCount, pick, v, v2);
                 it.AffixCount++;
                 if (it.AffixCount >= 3)
                     it.Rarity = Rarity.Rare;
             }
             else
             {
-                it.SetAffix(it.AffixCount - 1, pick, v);
+                it.SetAffix(it.AffixCount - 1, pick, v, v2);
             }
 
             Inventory[invIndex] = it;
@@ -689,10 +691,19 @@ namespace Game.Runtime.Core
             for (int i = 0; i < it.AffixCount; i++)
             {
                 AffixDef def = AffixCatalog.Get((AffixId)it.AffixIdAt(i));
-                if (!IsDefensive(def.Stat))
-                    continue;
-                PlayerStats.Add(Modifier.Make(def.Stat, def.Op, it.ValueAt(i)), Tag.None, ConditionId.Always);
+                for (int r = 0; r < def.RowCount; r++)
+                {
+                    StatId stat = def.RowStat(r);
+                    if (!IsDefensive(stat))
+                        continue;
+                    PlayerStats.Add(Modifier.Make(stat, def.RowOp(r), RowValue(it, i, r)), Tag.None, ConditionId.Always);
+                }
             }
+        }
+
+        static float RowValue(ItemInstance it, int affixIndex, int row)
+        {
+            return row == 0 ? it.ValueAt(affixIndex) : it.SecondValueAt(affixIndex);
         }
 
         void RebuildTriggers()
@@ -748,9 +759,13 @@ namespace Game.Runtime.Core
                 for (int a = 0; a < it.AffixCount; a++)
                 {
                     AffixDef def = AffixCatalog.Get((AffixId)it.AffixIdAt(a));
-                    if (IsDefensive(def.Stat) && def.Stat != StatId.Accuracy)
-                        continue;
-                    bag.Add(Modifier.Make(def.Stat, def.Op, it.ValueAt(a)), tags, ConditionId.Always);
+                    for (int r = 0; r < def.RowCount; r++)
+                    {
+                        StatId stat = def.RowStat(r);
+                        if (IsDefensive(stat) && stat != StatId.Accuracy)
+                            continue;
+                        bag.Add(Modifier.Make(stat, def.RowOp(r), RowValue(it, a, r)), tags, ConditionId.Always);
+                    }
                 }
             }
 
@@ -1161,10 +1176,7 @@ namespace Game.Runtime.Core
                 baseName = ItemBaseName(it.Slot);
             string s = RarityWord(it.Rarity) + " " + baseName + " [" + it.SocketCount + "孔]";
             for (int i = 0; i < it.AffixCount; i++)
-            {
-                AffixDef def = AffixCatalog.Get((AffixId)it.AffixIdAt(i));
-                s += " | " + string.Format(def.Format, it.ValueAt(i));
-            }
+                s += " | " + AffixLine(it, i);
 
             return s;
         }
@@ -1174,7 +1186,10 @@ namespace Game.Runtime.Core
             if (i < 0 || i >= it.AffixCount)
                 return "";
             AffixDef def = AffixCatalog.Get((AffixId)it.AffixIdAt(i));
-            return string.Format(def.Format, it.ValueAt(i));
+            string s = string.Format(def.Format, it.ValueAt(i));
+            if (def.RowCount > 1)
+                s += "，" + string.Format(def.Format2, it.SecondValueAt(i));
+            return s;
         }
 
         public bool CanAllocate(int node)

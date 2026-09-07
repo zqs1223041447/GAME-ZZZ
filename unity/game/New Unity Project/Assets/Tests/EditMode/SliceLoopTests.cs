@@ -255,6 +255,43 @@ namespace Game.Tests.EditMode
             Assert.GreaterOrEqual(sim.CastEvents, 1);
         }
 
+        [Test]
+        public void DirectedCraft_HybridAffix_WritesBothRows()
+        {
+            var s = new SliceSession();
+            // 清空初始装备，隔离断言
+            s.InventoryCount = 0;
+            for (int i = 0; i < s.Equipped.Length; i++)
+                s.Equipped[i] = -1;
+
+            ItemInstance it = default;
+            it.Id = s.NextItemId++;
+            it.Slot = EquipSlot.Weapon;
+            it.Rarity = Rarity.Ordinary;
+            it.SocketCount = 3;
+            it.BaseName = "Test";
+            int idx = s.AddItem(it);
+            s.Equipped[(int)EquipSlot.Weapon] = idx;
+
+            string err;
+            Assert.IsTrue(s.TryDirectedCraft(idx, AffixId.IgniteFire, out err), err);
+            ItemInstance crafted = s.Inventory[idx];
+            Assert.AreEqual(1, crafted.AffixCount);
+            Assert.AreEqual((int)AffixId.IgniteFire, crafted.AffixIdAt(0));
+
+            AffixDef def = AffixCatalog.Get(AffixId.IgniteFire);
+            Assert.GreaterOrEqual(crafted.ValueAt(0), def.Min);
+            Assert.LessOrEqual(crafted.ValueAt(0), def.Max);
+            Assert.GreaterOrEqual(crafted.SecondValueAt(0), def.Min2);
+            Assert.LessOrEqual(crafted.SecondValueAt(0), def.Max2);
+
+            // 两行都必须进技能属性包（行 1 = FireDamage 提高，行 2 = IgniteChance 固定）
+            var bag = new StatBag();
+            s.CollectSkillMods(SkillId.Projectile, bag);
+            Assert.AreEqual(crafted.ValueAt(0), bag.RawIncreased(StatId.FireDamage), 0.0001f);
+            Assert.AreEqual(crafted.SecondValueAt(0), bag.RawFlat(StatId.IgniteChance), 0.0001f);
+        }
+
         static ItemInstance RollWith(uint sessionSeed, uint rollSeed)
         {
             var s = new SliceSession();

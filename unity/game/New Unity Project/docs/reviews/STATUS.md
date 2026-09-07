@@ -2,7 +2,7 @@
 
 日期：2026-09-07。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit：A=fe5bbf2（STATUS 主体 + ART_BIBLE 相机对齐 + DECISIONS 指向行）/ B=回填本行
+本轮 commit：A=（S3 第一批主体，由紧随的回填提交写入）/ B=回填本行
 
 ## 门状态
 
@@ -18,7 +18,7 @@
 | S2P 1080p | 已证 | b152610 独立包：p99 最高 2.508ms（预算 8.33ms） |
 | S2P 1440p@120 | 未结案 | 硬件钳制（本机 1080p 显示器）；不宣布 120FPS@1440p |
 | S3 最小底座 | 已开工 | c2689be ART_BIBLE+内容校验；8f2de35 预留 Tag 钉死 |
-| S3 内容扩张 | 关闭 | 大天赋树 / Unique / Atlas / 完整 Craft 禁止 |
+| S3 内容扩张 | **第一批已开（2026-09-07，导演口令）** | 校验扩展 + 3 组合系词缀（灼燃/锐击/熔铸，全复用已有 StatId/ModOp）；报告 `CONTENT_AUDIT_S3_BATCH1.md`；Unique / 大树 / Atlas / 完整 Craft / 新系统仍禁 |
 
 ## 玩家视图
 
@@ -44,7 +44,7 @@
 
 ## 校验
 
-- EditMode 82/82、PlayMode 3/3（pipeline run_tests，运行中编辑器）。CONTENT_AUDIT_S2：缺失 ID/非法 Tag/Effect-Event/链接=0；音频=已挂钩、资源仍缺；未使用 Tag 7 个=预留，不是任务。
+- EditMode 83/83、PlayMode 3/3（pipeline run_tests，运行中编辑器）。报告 **`CONTENT_AUDIT_S3_BATCH1.md`**（本批改出，S2 报告保留为历史）：StatId/ModOp/运行期未知 Stat=0；非法 Tag=0；Effect-Event=0；链接=0；词缀行=0；**Support×技能兼容矩阵=0**（集中×近战/弹道、分裂×近战/范围钉死不兼容；运行时连接暂不阻断，审计层判定）；音频已挂钩；未使用 Tag 7 个=预留，不是任务。
 
 ## 导演门控待输入
 
@@ -64,6 +64,7 @@
 
 | 日期 | HEAD | EditMode | PlayMode | 失败项 |
 |---|---|---|---|---|
+| 2026-09-07 | S3 第一批（回填写入） | 83/83 | 3/3 | 无 |
 | 2026-09-07 | f35586c | 82/82 | 3/3 | 无 |
 
 心跳：2026-09-07 | HEAD=cd16e50 | 工作区干净 | 门控 7 项未开工

@@ -23,6 +23,8 @@ S0 锁定。后续阶段不得在未改本文的情况下推翻这些决定。
 - 5 键战斗 clip 投放·CC0（2026-09-07）：五键全部接入——来源**单一包 80 CC0 RPG SFX**（rubberduck，OpenGameArt，页面 License=CC0）：Cast=spell_fire_04（黑骑士火系）/ Impact=blade_02 / Hit=creature_hurt_01 / Death=creature_die_01 / Loot=item_coins_01，落 `Assets/Resources/Audio/<键>.ogg`（AudioEvents 查找表零逻辑改动，投放即生效）。来源与许可全录 `docs/reviews/audio/SFX_SOURCES.md`。Play 实证：五键 PlayOneShot 逐一 isPlaying=True。包内 fx 208 条留作备选池。
 - UI 方案页已出（2026-09-07）：`docs/ui/UI_PROPOSAL_POE_D3.md`（类 PoE/暗黑 3：深色石质面板+金色细描边+左下双球+底栏技能槽+右侧装备抽屉；含 SliceHud 迁移映射与分轮建议）——**待导演过目点头后才分轮实现**，本轮不改 SliceHud。
 - S3 后续规划已出（2026-09-07）：`docs/reviews/s3/S3_PLAN.md`——阶段 0 永关清单 / 1 内容工厂校验扩展 / 2 组合系增产（R1≤3 词缀，R2 +1 Support 变体）/ 3-5 依赖导演输入（UI 过目、人声指认、精模点名）/ 6 后置项单列开启条件 / 7 1440p 非前置。**开工口令=导演明说「开 S3」**；规划存在本身不构成开工；第一批只允许校验扩展+R1。
+- S3 第一批已开（2026-09-07，导演口令「开 S3」）：只做 S3_PLAN 允许清单——①内容校验扩展 ②R1 组合系词缀 3 条（灼燃=FireDamage 提高+IgniteChance 固定 / 锐击=Accuracy 固定+CritChanceIncreased 提高 / 熔铸=PhysicalDamage 提高+FireDamage 提高；**全部复用已有 StatId/ModOp，新增 Stat/ModOp/Tag/Effect/Event/运行期系统 = 0**）。组合词缀实现：`AffixDef` 第二行（`Format2` 非空=组合；`Stat2/Op2 + Min2/Max2` 独立掷值），`ItemInstance` 增第二值存储（`SecondValue0..3`）；三词缀进现有 4 槽（武器/胸甲/头盔/靴子）掉落池，且进两步 Craft（随机制作=废料重掷池、定向制作=蚀刻剂写入列表）。
+- S3 第一批校验扩展（同日，`ContentAuditS2Tests` 扩展，报告改出 `docs/reviews/s3/CONTENT_AUDIT_S3_BATCH1.md`，S2 报告保留为历史）：①**Support×技能兼容矩阵**（Tag 路径=带 RequiredTags 的 Mod 在该技能 Tag 下必须可满足；机制路径=分裂只接入弹道结算；不兼容必须能失败；钉死 集中×近战/弹道、分裂×近战/范围，矩阵为审计层判定——**运行时 TrySetSupport 暂不阻断非法连接，后续批次另立令**）；②**运行期消费 Stat 白名单**（27/27 全有读取点，Support/Passive/词缀行全部校验，防「报告绿但运行期未知 Stat」）；③词缀行 ModOp 范围校验；④**未使用 Tag 仍只记录不失败**。测试新增断言：本批新增词缀 ≤3 且 Stat 合法；组合词缀两行都进技能属性包。EditMode 83/83、PlayMode 3/3。
 
 ## 工作方式（导演 2026-09-07 追加）
 

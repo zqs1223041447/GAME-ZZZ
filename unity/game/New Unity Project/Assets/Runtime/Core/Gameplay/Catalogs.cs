@@ -23,7 +23,11 @@ namespace Game.Runtime.Core
         FireRes = 7,
         Accuracy = 8,
         Crit = 9,
-        Count = 10
+        // S3 第一批：组合系（全部复用已有 StatId/ModOp，≤3 条）
+        IgniteFire = 10,
+        AccCrit = 11,
+        PhysFire = 12,
+        Count = 13
     }
 
     public enum EquipSlot : byte
@@ -71,6 +75,27 @@ namespace Game.Runtime.Core
         public float Min;
         public float Max;
         public string Format;
+        // 第二行（组合词缀）：Format2 为空 = 单行词缀；非空 = 组合第二行（Stat2/Op2 + Min2/Max2 独立掷值）
+        public StatId Stat2;
+        public ModOp Op2;
+        public float Min2;
+        public float Max2;
+        public string Format2;
+
+        public int RowCount
+        {
+            get { return string.IsNullOrEmpty(Format2) ? 1 : 2; }
+        }
+
+        public StatId RowStat(int row)
+        {
+            return row == 0 ? Stat : Stat2;
+        }
+
+        public ModOp RowOp(int row)
+        {
+            return row == 0 ? Op : Op2;
+        }
     }
 
     public struct PassiveNode
@@ -130,6 +155,11 @@ namespace Game.Runtime.Core
         public float Value2;
         public AffixId Affix3;
         public float Value3;
+        // 组合词缀第二行值（与 Affix0..3 一一对应；单行词缀恒为 0）
+        public float SecondValue0;
+        public float SecondValue1;
+        public float SecondValue2;
+        public float SecondValue3;
 
         public int AffixIdAt(int i)
         {
@@ -147,12 +177,20 @@ namespace Game.Runtime.Core
             return Value3;
         }
 
-        public void SetAffix(int i, AffixId id, float value)
+        public float SecondValueAt(int i)
         {
-            if (i == 0) { Affix0 = id; Value0 = value; }
-            else if (i == 1) { Affix1 = id; Value1 = value; }
-            else if (i == 2) { Affix2 = id; Value2 = value; }
-            else { Affix3 = id; Value3 = value; }
+            if (i == 0) return SecondValue0;
+            if (i == 1) return SecondValue1;
+            if (i == 2) return SecondValue2;
+            return SecondValue3;
+        }
+
+        public void SetAffix(int i, AffixId id, float value, float secondValue)
+        {
+            if (i == 0) { Affix0 = id; Value0 = value; SecondValue0 = secondValue; }
+            else if (i == 1) { Affix1 = id; Value1 = value; SecondValue1 = secondValue; }
+            else if (i == 2) { Affix2 = id; Value2 = value; SecondValue2 = secondValue; }
+            else { Affix3 = id; Value3 = value; SecondValue3 = secondValue; }
         }
     }
 
@@ -307,6 +345,25 @@ namespace Game.Runtime.Core
             _defs[(int)AffixId.FireRes] = new AffixDef { Id = AffixId.FireRes, Name = "火焰抗性", Stat = StatId.FireResistance, Op = ModOp.Flat, Min = 0.08f, Max = 0.18f, Format = "+{0:0%} 火焰抗性" };
             _defs[(int)AffixId.Accuracy] = new AffixDef { Id = AffixId.Accuracy, Name = "命中", Stat = StatId.Accuracy, Op = ModOp.Flat, Min = 20f, Max = 60f, Format = "+{0:0} 命中" };
             _defs[(int)AffixId.Crit] = new AffixDef { Id = AffixId.Crit, Name = "暴击率", Stat = StatId.CritChanceIncreased, Op = ModOp.Increased, Min = 0.20f, Max = 0.50f, Format = "{0:0%} 暴击率" };
+            // S3 第一批组合词缀：全部由已有 StatId/ModOp 组成，无新 Stat/ModOp/Effect/Tag
+            _defs[(int)AffixId.IgniteFire] = new AffixDef
+            {
+                Id = AffixId.IgniteFire, Name = "灼燃",
+                Stat = StatId.FireDamage, Op = ModOp.Increased, Min = 0.12f, Max = 0.28f, Format = "{0:0%} 火焰伤害",
+                Stat2 = StatId.IgniteChance, Op2 = ModOp.Flat, Min2 = 0.10f, Max2 = 0.20f, Format2 = "点燃几率 {0:0%}"
+            };
+            _defs[(int)AffixId.AccCrit] = new AffixDef
+            {
+                Id = AffixId.AccCrit, Name = "锐击",
+                Stat = StatId.Accuracy, Op = ModOp.Flat, Min = 20f, Max = 50f, Format = "+{0:0} 命中",
+                Stat2 = StatId.CritChanceIncreased, Op2 = ModOp.Increased, Min2 = 0.15f, Max2 = 0.30f, Format2 = "暴击率 {0:0%}"
+            };
+            _defs[(int)AffixId.PhysFire] = new AffixDef
+            {
+                Id = AffixId.PhysFire, Name = "熔铸",
+                Stat = StatId.PhysicalDamage, Op = ModOp.Increased, Min = 0.12f, Max = 0.28f, Format = "{0:0%} 物理伤害",
+                Stat2 = StatId.FireDamage, Op2 = ModOp.Increased, Min2 = 0.12f, Max2 = 0.28f, Format2 = "火焰伤害 {0:0%}"
+            };
         }
     }
 
