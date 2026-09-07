@@ -2,7 +2,7 @@
 
 日期：2026-09-07。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit：A=2c8e5bc（test 收口：资源真实验证 + Tag 规则 + 负向测试）+ f40b5ef（docs 收口：Phase 1/2=COMPLETE + CLOSEOUT 审计）/ B=回填本行
+本轮 commit：A=（S3-M1 主体：sentinel 目录硬化 + RUNTIME/STATUS/ROADMAP 事实收敛，由紧随的回填提交写入）/ B=回填本行
 
 ## 门状态
 
@@ -40,11 +40,11 @@
 
 ## 音频
 
-- 5 事件已挂钩（Cast / Impact / Hit / Death / Loot，d32d2b2）；`Resources/Audio` 查找表 5 键全空=静音+限频日志（5s/键）；无中间件；语音 ogg 未接。
+- 当前事实（收口审计 `CONTENT_AUDIT_S3_CLOSEOUT.md` 资源契约为准）：**战斗 SFX 5 键已投放全 CC0（Cast/Impact/Hit/Death/Loot，REQUIRED 6/6 真实加载 PASS，含玩家预制体）**；**人声 VoiceCues 3 键（Cast/Hit/Death）映射仍 GATED（0/3 present，缺失=静音，待导演试听指认）**。单一入口 `AudioEvents.Play` + 独立 `VoiceCues`，无中间件；缺资产=静音+限频日志（降级模式）。
 
 ## 校验
 
-- EditMode 96/96、PlayMode 3/3（pipeline run_tests，运行中编辑器）。报告 **`CONTENT_AUDIT_S3_CLOSEOUT.md`**（测试再生；BATCH1/R2 保留历史）：StatId/ModOp/运行期未知 Stat=0；非法 Tag=0；Effect-Event=0；链接=0；词缀行=0；兼容矩阵=0（3×7 parity 21 组合）；**Skill Tag golden parity=3/3**；**死 Tagged Modifier=0**（4 条全可达）；**资源契约=REQUIRED 6/6 真实加载 PASS（玩家预制体+5 SFX）、GATED 人声 3 键缺失如实记录、VFX 声明引用 0=N/A**。负向 Tag 规则测试通过。阶段 1/2 收口=`S3_PHASE2_CLOSEOUT.md`（Phase 1/2=COMPLETE）。未使用 Tag 4 个（Spell/Projectile/Fire/Duration）=预留，不是任务。
+- EditMode 100/100、PlayMode 3/3（pipeline run_tests，运行中编辑器；M1 维护轮 +4 目录不变量测试）。报告 **`CONTENT_AUDIT_S3_CLOSEOUT.md`**（测试再生；BATCH1/R2 保留历史）：StatId/ModOp/运行期未知 Stat=0；非法 Tag=0；Effect-Event=0；链接=0；词缀行=0；兼容矩阵=0（3×7 parity 21 组合）；**Skill Tag golden parity=3/3**；**死 Tagged Modifier=0**（4 条全可达）；**资源契约=REQUIRED 6/6 真实加载 PASS（玩家预制体+5 SFX）、GATED 人声 3 键缺失如实记录、VFX 声明引用 0=N/A**。负向 Tag 规则测试通过。阶段 1/2 收口=`S3_PHASE2_CLOSEOUT.md`（Phase 1/2=COMPLETE）；M1 事实收敛=`S3_M1_REPO_TRUTH_AUDIT.md`/`S3_M1_REPO_TRUTH_REVIEW.md`（PASS）。未使用 Tag 4 个（Spell/Projectile/Fire/Duration）=预留，不是任务。
 
 ## 导演门控待输入
 
@@ -64,6 +64,7 @@
 
 | 日期 | HEAD | EditMode | PlayMode | 失败项 |
 |---|---|---|---|---|
+| 2026-09-07 | S3-M1（回填写入） | 100/100 | 3/3 | 无 |
 | 2026-09-07 | 2c8e5bc+f40b5ef | 96/96 | 3/3 | 无 |
 | 2026-09-07 | a3572f8+b8a6e2a | 95/95 | 3/3 | 无 |
 | 2026-09-07 | 3a45983 | 89/89 | 3/3 | 无 |

@@ -58,7 +58,7 @@ static class GameLog
 
 输出到 Unity Console，格式：`[tag] message`。
 
-S1 音频无资源时：`[Audio] Cast|Impact|Hit|Death`。性能采样：`[Perf] ...`。音频事件（2026-09-07 挂钩）：单一入口 `AudioEvents.Play`（无中间件），5 事件=Cast（施放起手 `ArenaSim.Resolve`）/ Impact（技能命中 `ArenaSim.PlayImpact`）/ Hit（玩家受击上跳沿 `ArenaDirector`，与 Hit 动画同帧）/ Death（玩家进入 `MapState.Dead` `ArenaDirector`，与 Death 动画同处）/ Loot（掉落生成 `SliceSession.DropGear`）；查找表 `Resources/Audio/<事件名>` 预留 5 键，无资产=静音+限频日志（5s/键），缺音频不报错不卡死；语音 ogg 未接。**战斗 SFX 已投放（2026-09-07，全 CC0）**：Cast/Impact/Hit/Death/Loot 五键各 1 条（来源 80 CC0 RPG SFX / rubberduck / OGA；映射与许可见 `docs/reviews/audio/SFX_SOURCES.md`）；**人声**：独立表 `VoiceCues`（`Resources/Audio/Voice/<键>`，与 5 键 SFX 隔离），Cast=施放喊招（冷却 1.5s）/ Hit=受击呼痛（0.6s）/ Death=倒下（每次 Dead 一次）；清点 609 条 ogg 见 `docs/reviews/audio/DK_VOICE_INVENTORY.md`，映射缺口待导演试听指认，未指认=静音。
+S1 音频无资源时：`[Audio] Cast|Impact|Hit|Death`（**S1 historical baseline**）。性能采样：`[Perf] ...`。音频事件（2026-09-07 挂钩）：单一入口 `AudioEvents.Play`（无中间件），5 事件=Cast（施放起手 `ArenaSim.Resolve`）/ Impact（技能命中 `ArenaSim.PlayImpact`）/ Hit（玩家受击上跳沿 `ArenaDirector`，与 Hit 动画同帧）/ Death（玩家进入 `MapState.Dead` `ArenaDirector`，与 Death 动画同处）/ Loot（掉落生成 `SliceSession.DropGear`）；查找契约=`Resources/Audio/<事件名>`（缺资产=静音+限频日志 5s/键的**降级模式**，不报错不卡死；资产存在性以最新 Resource Audit 为当前快照）；**战斗 SFX 当前已投放（2026-09-07，全 CC0，REQUIRED 资源契约 6/6 PASS）**：Cast/Impact/Hit/Death/Loot 五键各 1 条（来源 80 CC0 RPG SFX / rubberduck / OGA；映射与许可见 `docs/reviews/audio/SFX_SOURCES.md`）；**人声**：独立表 `VoiceCues`（`Resources/Audio/Voice/<键>`，与 5 键 SFX 隔离），Cast=施放喊招（冷却 1.5s）/ Hit=受击呼痛（0.6s）/ Death=倒下（每次 Dead 一次）；清点 609 条 ogg 见 `docs/reviews/audio/DK_VOICE_INVENTORY.md`，**映射仍 GATED**（待导演试听指认，未指认=静音；当前 0/3 present）。
 
 ## ContentId + ContentDatabase（Content，S0）
 
@@ -354,11 +354,11 @@ Helmet 2S → E（1 Support）
 Boots  0S → 只吃词缀
 ```
 
-6 Support：Burning / Brutal / Focused / Swift / Combustion / **Fork（机制：命中后分裂 2 发）**。同一 Support 不能同时装在两条 Link。
+7 Support：Burning / Brutal / Focused / Swift / Combustion / **Fork（机制：命中后分裂 2 发，MechanicSkill=弹道）** / **Fire Conversion（火焰转化：50% 物理转火，`ConvertPhysToFire` Flat 0.50，RequiredTags=Attack|Hit|Physical 驱动兼容——近战/弹道可接、范围拒绝，无专用 Combat 分支）**。同一 Support 不能同时装在两条 Link。Support 安装经 `TrySetSupport` 兼容门（写入前拒绝，失败无半写入）；当前数量以最新 Content Audit 为准。
 
 ### 装备 / 掉落 / Craft
 
-4 槽。Ordinary 2 Affix，Rare 3–4。10 Affix 见 `AffixCatalog`。击杀用 `LootRng`。随机 Craft（Scrap 洗 Rare）+ 定向 Craft（Etching 写入指定 Affix）。
+4 槽。Ordinary 2 Affix，Rare 3–4。词缀见 `AffixCatalog`（当前 13 条，含 3 条组合系：双行 Affix 各自独立掷值，第二值存 `ItemInstance` 第二值，消费路径按 `RowCount` 工作）。击杀用 `LootRng`。随机 Craft（Scrap 洗 Rare）+ 定向 Craft（Etching 写入指定 Affix）。
 
 ### 天赋
 
