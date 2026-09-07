@@ -1,0 +1,22 @@
+namespace Game.Runtime.Core
+{
+    /// <summary>
+    /// Runtime 资源路径单一真相源（S3-M2-RESOURCE-CONTRACT-TRUTH）：只负责路径常量与拼接。
+    /// 不做加载/缓存/管理（加载仍在各消费点）；审计侧「应有哪些 key、哪些允许缺失」保持独立 oracle，
+    /// 不从此类型生成——Runtime 未审批增删 key 会由 declared-key parity 测试变红。
+    /// </summary>
+    public static class RuntimeResourcePaths
+    {
+        public const string PlayerDarkKnight = "Player/DarkKnight";
+
+        public static string CombatSfx(string key)
+        {
+            return "Audio/" + key;
+        }
+
+        public static string Voice(string key)
+        {
+            return "Audio/Voice/" + key;
+        }
+    }
+}

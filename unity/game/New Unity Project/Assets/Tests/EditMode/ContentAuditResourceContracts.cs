@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using Game.Runtime.Core;
 
 namespace Game.Tests.EditMode
 {
@@ -14,14 +15,36 @@ namespace Game.Tests.EditMode
         Optional
     }
 
+    /// <summary>资源路径域（对应 RuntimeResourcePaths 的拼接规则；共享「如何加载」，不共享「应有哪些 key」）。</summary>
+    public enum ResourceDomain
+    {
+        Player,
+        CombatSfx,
+        Voice
+    }
+
     public struct ResourceContract
     {
         public string Logical;
-        public string Key;
+        public ResourceDomain Domain;
+        public string LogicalKey;
         public string TypeName;
         public ResourceClass Class;
         public string GateReason;
         public string Fallback;
+
+        /// <summary>最终 Resource Path 由 Runtime 统一路径契约拼出（不再手写 prefix）。</summary>
+        public string Key
+        {
+            get
+            {
+                if (Domain == ResourceDomain.Player)
+                    return RuntimeResourcePaths.PlayerDarkKnight;
+                if (Domain == ResourceDomain.Voice)
+                    return RuntimeResourcePaths.Voice(LogicalKey);
+                return RuntimeResourcePaths.CombatSfx(LogicalKey);
+            }
+        }
     }
 
     public struct ResourceVerifyResult
@@ -33,35 +56,40 @@ namespace Game.Tests.EditMode
     }
 
     /// <summary>
-    /// 资源契约 golden（S3-P12-AUDIT-CLOSEOUT）：当前 Runtime 全部 Resources 入口的清单与分类。
-    /// 来源=对 Runtime 代码的实际扫描（DarkKnightView / AudioEvents / VoiceCues；VFX 无声明引用）。
-    /// 验证语义与 Runtime 完全同源：同 key、同类型、同拼接方式真实执行 Resources.Load。
+    /// 资源契约 golden（S3-P12 建立；S3-M2 改为共享路径拼接）：当前 Runtime 全部 Resources 入口的清单与分类。
+    /// 独立 oracle 边界：期望有哪些逻辑 key、REQUIRED/GATED 分类、Gate 理由全部人工声明——
+    /// 不得从 Runtime declared keys 自动生成（Runtime 未审批增删 key 由 declared-key parity 测试变红）。
+    /// 验证语义与 Runtime 同源：真实执行 Resources.Load（同类型、同 key、AssetDatabase 真实路径）。
     /// </summary>
     public static class ContentResourceAuditContracts
     {
+        const string VoiceGateReason = "语音映射待导演试听指认（20 候选），未指认=静音";
+        const string SfxFallback = "Runtime 缺失=静音+限频日志（降级）；契约仍 REQUIRED";
+
         public static readonly ResourceContract[] All =
         {
             new ResourceContract
             {
                 Logical = "玩家模型（DarkKnight 预制体）",
-                Key = "Player/DarkKnight",
+                Domain = ResourceDomain.Player,
+                LogicalKey = "DarkKnight",
                 TypeName = "GameObject",
                 Class = ResourceClass.Required,
                 GateReason = null,
                 // 运行时缺失会回退胶囊（DarkKnightView.TryMount），但那是降级模式：正式玩家模型缺失即内容债
                 Fallback = "Runtime 缺失回退胶囊（降级）；契约仍 REQUIRED"
             },
-            new ResourceContract { Logical = "战斗 SFX Cast", Key = "Audio/Cast", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = "Runtime 缺失=静音+限频日志（降级）；契约仍 REQUIRED" },
-            new ResourceContract { Logical = "战斗 SFX Impact", Key = "Audio/Impact", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = "Runtime 缺失=静音+限频日志（降级）；契约仍 REQUIRED" },
-            new ResourceContract { Logical = "战斗 SFX Hit", Key = "Audio/Hit", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = "Runtime 缺失=静音+限频日志（降级）；契约仍 REQUIRED" },
-            new ResourceContract { Logical = "战斗 SFX Death", Key = "Audio/Death", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = "Runtime 缺失=静音+限频日志（降级）；契约仍 REQUIRED" },
-            new ResourceContract { Logical = "战斗 SFX Loot", Key = "Audio/Loot", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = "Runtime 缺失=静音+限频日志（降级）；契约仍 REQUIRED" },
-            new ResourceContract { Logical = "人声 Cast", Key = "Audio/Voice/Cast", TypeName = "AudioClip", Class = ResourceClass.Gated, GateReason = "语音映射待导演试听指认（20 候选），未指认=静音", Fallback = "缺失=静音" },
-            new ResourceContract { Logical = "人声 Hit", Key = "Audio/Voice/Hit", TypeName = "AudioClip", Class = ResourceClass.Gated, GateReason = "语音映射待导演试听指认（20 候选），未指认=静音", Fallback = "缺失=静音" },
-            new ResourceContract { Logical = "人声 Death", Key = "Audio/Voice/Death", TypeName = "AudioClip", Class = ResourceClass.Gated, GateReason = "语音映射待导演试听指认（20 候选），未指认=静音", Fallback = "缺失=静音" }
+            new ResourceContract { Logical = "战斗 SFX Cast", Domain = ResourceDomain.CombatSfx, LogicalKey = "Cast", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = SfxFallback },
+            new ResourceContract { Logical = "战斗 SFX Impact", Domain = ResourceDomain.CombatSfx, LogicalKey = "Impact", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = SfxFallback },
+            new ResourceContract { Logical = "战斗 SFX Hit", Domain = ResourceDomain.CombatSfx, LogicalKey = "Hit", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = SfxFallback },
+            new ResourceContract { Logical = "战斗 SFX Death", Domain = ResourceDomain.CombatSfx, LogicalKey = "Death", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = SfxFallback },
+            new ResourceContract { Logical = "战斗 SFX Loot", Domain = ResourceDomain.CombatSfx, LogicalKey = "Loot", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = SfxFallback },
+            new ResourceContract { Logical = "人声 Cast", Domain = ResourceDomain.Voice, LogicalKey = "Cast", TypeName = "AudioClip", Class = ResourceClass.Gated, GateReason = VoiceGateReason, Fallback = "缺失=静音" },
+            new ResourceContract { Logical = "人声 Hit", Domain = ResourceDomain.Voice, LogicalKey = "Hit", TypeName = "AudioClip", Class = ResourceClass.Gated, GateReason = VoiceGateReason, Fallback = "缺失=静音" },
+            new ResourceContract { Logical = "人声 Death", Domain = ResourceDomain.Voice, LogicalKey = "Death", TypeName = "AudioClip", Class = ResourceClass.Gated, GateReason = VoiceGateReason, Fallback = "缺失=静音" }
         };
 
-        /// <summary>按 Runtime 同语义真实加载一次并取真实资产路径（与代码同 key、同类型、同拼接）。</summary>
+        /// <summary>按 Runtime 同语义真实加载一次并取真实资产路径（同类型、同 key、AssetDatabase 真实路径）。</summary>
         public static ResourceVerifyResult Verify(ResourceContract contract)
         {
             var r = new ResourceVerifyResult();

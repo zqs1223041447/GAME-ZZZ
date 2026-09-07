@@ -10,12 +10,24 @@ namespace Game.Runtime.Core
     /// </summary>
     public static class VoiceCues
     {
-        static readonly Dictionary<string, AudioClip> _table = new Dictionary<string, AudioClip>
+        // 声明键单一真相源（S3-M2）：查找表由它初始化，对外只读；审计期望键集仍为独立 oracle
+        static readonly string[] DeclaredVoiceKeys = { "Cast", "Hit", "Death" };
+
+        public static System.Collections.Generic.IReadOnlyList<string> DeclaredKeys
         {
-            { "Cast", null },
-            { "Hit", null },
-            { "Death", null }
-        };
+            get { return DeclaredVoiceKeys; }
+        }
+
+        static readonly Dictionary<string, AudioClip> _table = BuildTable();
+
+        static Dictionary<string, AudioClip> BuildTable()
+        {
+            var t = new Dictionary<string, AudioClip>();
+            for (int i = 0; i < DeclaredVoiceKeys.Length; i++)
+                t[DeclaredVoiceKeys[i]] = null;
+            return t;
+        }
+
         static readonly HashSet<string> _probed = new HashSet<string>();
         static readonly Dictionary<string, float> _lastPlay = new Dictionary<string, float>();
         static AudioSource _source;
@@ -38,7 +50,7 @@ namespace Game.Runtime.Core
             if (!_probed.Contains(key))
             {
                 _probed.Add(key);
-                _table[key] = Resources.Load<AudioClip>("Audio/Voice/" + key);
+                _table[key] = Resources.Load<AudioClip>(RuntimeResourcePaths.Voice(key));
             }
             return _table[key];
         }

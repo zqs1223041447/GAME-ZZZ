@@ -251,15 +251,25 @@ namespace Game.Runtime.Core
 
     public static class AudioEvents
     {
-        // 预留查找表：5 个键固定写上，值可空=未接资源（查找路径 Resources/Audio/<键名>）
-        static readonly Dictionary<string, AudioClip> _table = new Dictionary<string, AudioClip>
+        // 声明键单一真相源（S3-M2）：查找表由它初始化，对外只读；审计期望键集仍为独立 oracle
+        static readonly string[] DeclaredSfxKeys = { "Cast", "Impact", "Hit", "Death", "Loot" };
+
+        public static System.Collections.Generic.IReadOnlyList<string> DeclaredKeys
         {
-            { "Cast", null },
-            { "Impact", null },
-            { "Hit", null },
-            { "Death", null },
-            { "Loot", null }
-        };
+            get { return DeclaredSfxKeys; }
+        }
+
+        // 查找表：值可空=未接资源（查找契约见 RuntimeResourcePaths.CombatSfx）
+        static readonly Dictionary<string, AudioClip> _table = BuildTable();
+
+        static Dictionary<string, AudioClip> BuildTable()
+        {
+            var t = new Dictionary<string, AudioClip>();
+            for (int i = 0; i < DeclaredSfxKeys.Length; i++)
+                t[DeclaredSfxKeys[i]] = null;
+            return t;
+        }
+
         static readonly HashSet<string> _probed = new HashSet<string>();
         static readonly Dictionary<string, float> _lastLog = new Dictionary<string, float>();
         const float LogIntervalSec = 5f;
@@ -302,7 +312,7 @@ namespace Game.Runtime.Core
             if (!_probed.Contains(name))
             {
                 _probed.Add(name);
-                _table[name] = Resources.Load<AudioClip>("Audio/" + name);
+                _table[name] = Resources.Load<AudioClip>(RuntimeResourcePaths.CombatSfx(name));
             }
             return _table[name];
         }

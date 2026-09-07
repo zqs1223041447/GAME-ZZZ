@@ -5,7 +5,8 @@ namespace Game.Runtime.Core
 {
     public static class DarkKnightView
     {
-        public const string ResourcesNameDarkKnight = "Player/DarkKnight";
+        // 别名指向统一路径契约（S3-M2 单一真相源），保留旧公开名以兼容既有引用
+        public const string ResourcesNameDarkKnight = RuntimeResourcePaths.PlayerDarkKnight;
 
         public const float TargetHeight = 1.16f;
 
