@@ -2,7 +2,7 @@
 
 日期：2026-09-08。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit：A=58544a3（tooling：仓库内无人值守验证 Gate `tools/verify_unattended.ps1`）+ 71601fd（chore：孤儿 define SENTIS_ANALYTICS_ENABLED 归一化，Gate 零污染前提）+ 61813ac（docs：QA 契约 + M4 复核 PASS + DECISIONS 长期规则）/ B=回填本行
+本轮 commit：A=ba3b0dd（tooling：Full Gate 增 `-IncludeBuild` win64 Player Build）+ 6911a3f（test：Build Settings 场景契约锁定 Bootstrap=0/Arena=1）+ b79c77c/3de5d24（chore：构建实例设置资产归一化收口 + define 振荡根因修复 `submitAnalytics: 0`）+ 938d697（docs：QA 契约两级化 + M5 复核 PASS + DECISIONS 长期规则）/ B=回填本行
 
 ## 门状态
 
@@ -44,7 +44,7 @@
 
 ## 校验
 
-- EditMode 113/113、PlayMode 3/3（pipeline run_tests，运行中编辑器；M3 维护轮 +8 failure-safe 契约测试）。报告 **`CONTENT_AUDIT_S3_CLOSEOUT.md`**（测试再生；BATCH1/R2 保留历史）：**顶部 Verdict 块=Audit completed: YES / Verdict: PASS / Failure count: 0**；StatId/ModOp/运行期未知 Stat=0；非法 Tag=0；Effect-Event=0；链接=0；词缀行=0；兼容矩阵=0（3×7 parity 21 组合）；**Skill Tag golden parity=3/3**；**死 Tagged Modifier=0**（4 条全可达）；**结构/契约问题=0**；**资源契约=REQUIRED 6/6 真实加载 PASS（玩家预制体+5 SFX）、GATED 人声 3 键缺失如实记录、VFX 声明引用 0=N/A**。负向 Tag 规则测试通过。阶段 1/2 收口=`S3_PHASE2_CLOSEOUT.md`（Phase 1/2=COMPLETE）；M1 事实收敛=`S3_M1_REPO_TRUTH_AUDIT.md`/`S3_M1_REPO_TRUTH_REVIEW.md`（PASS）；M2 资源路径单一真相源=`RuntimeResourcePaths`，declared-key parity 防未审批增删资源入口（复核=`S3_M2_RESOURCE_CONTRACT_REVIEW.md` PASS）；**M3 failure-safe 审计=Collect→Render→Persist→Assert（持久化先于最终断言，测试红⇒当前快照同轮红；正式报告连跑两遍 sha256 一致），复核=`S3_M3_AUDIT_FAILSAFE_REVIEW.md`（PASS）**；**M4 无人值守验证 Gate=仓库内 canonical command `tools/verify_unattended.ps1`（QA 契约 `docs/qa/UNATTENDED_VERIFICATION.md`；Unity 定位→EditMode→PlayMode→审计 freshness+verdict→XML 动态解析→统一退出码；canonical 连跑 3 次全 PASS，CLOSEOUT sha256 三次一致；不依赖外部会话工具），复核=`S3_M4_UNATTENDED_GATE_REVIEW.md`（PASS）**。未使用 Tag 4 个（Spell/Projectile/Fire/Duration）=预留，不是任务。
+- EditMode 115/115、PlayMode 3/3（canonical Gate `.\tools\verify_unattended.ps1`；M5 维护轮 +2 Build Settings 场景契约测试）。报告 **`CONTENT_AUDIT_S3_CLOSEOUT.md`**（测试再生；BATCH1/R2 保留历史）：**顶部 Verdict 块=Audit completed: YES / Verdict: PASS / Failure count: 0**；StatId/ModOp/运行期未知 Stat=0；非法 Tag=0；Effect-Event=0；链接=0；词缀行=0；兼容矩阵=0（3×7 parity 21 组合）；**Skill Tag golden parity=3/3**；**死 Tagged Modifier=0**（4 条全可达）；**结构/契约问题=0**；**资源契约=REQUIRED 6/6 真实加载 PASS（玩家预制体+5 SFX）、GATED 人声 3 键缺失如实记录、VFX 声明引用 0=N/A**。负向 Tag 规则测试通过。阶段 1/2 收口=`S3_PHASE2_CLOSEOUT.md`（Phase 1/2=COMPLETE）；M1 事实收敛（`S3_M1_REPO_TRUTH_REVIEW.md` PASS）；M2 资源路径单一真相源（`S3_M2_RESOURCE_CONTRACT_REVIEW.md` PASS）；M3 failure-safe 审计（`S3_M3_AUDIT_FAILSAFE_REVIEW.md` PASS）；M4 无人值守 Quick Gate（`S3_M4_UNATTENDED_GATE_REVIEW.md` PASS）；**M5 Full Integration Gate=Quick+win64 Player Build（`.\tools\verify_unattended.ps1 -IncludeBuild`；`-batchmode -quit -buildTarget win64 -buildWindows64Player` 实测；双证据判定；6 次运行全 PASS，exe 667136 bytes/Data 162 文件；Build Settings 场景契约锁定 Bootstrap=0/Arena=1；设置资产归一化收口+define 振荡根因修复 `submitAnalytics: 0`），复核=`S3_M5_WIN64_BUILD_GATE_REVIEW.md`（PASS）**。未使用 Tag 4 个（Spell/Projectile/Fire/Duration）=预留，不是任务。
 
 ## 导演门控待输入
 
@@ -64,6 +64,7 @@
 
 | 日期 | HEAD | EditMode | PlayMode | 失败项 |
 |---|---|---|---|---|
+| 2026-09-08 | 938d697（Full Gate×6：115/115+3/3+win64 build PASS） | 115/115 | 3/3 | 无 |
 | 2026-09-08 | 58544a3+71601fd+61813ac（canonical Gate×3） | 113/113 | 3/3 | 无 |
 | 2026-09-08 | 6ad5679+f2673da | 113/113 | 3/3 | 无 |
 | 2026-09-08 | 9697f65+368ed36 | 105/105 | 3/3 | 无 |
