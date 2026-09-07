@@ -14,16 +14,25 @@ namespace Game.Runtime.Core
         public int Frames;
         public float MainMsAvg;
         public float MainMsP95;
+        public float MainMsP99;
+        public float MainMsP999;
         public float MainMsMax;
         public float GcBytesAvg;
+        public float MemTotalMb;
+        public float FrameCpuMsAvg;
+        public float FrameGpuMsAvg;
+        public bool FrameTimingAvailable;
     }
 
     public sealed class PerfSampler
     {
         readonly List<float> _ms = new List<float>(128);
         readonly List<long> _gc = new List<long>(128);
+        readonly List<float> _cpuMs = new List<float>(128);
+        readonly List<float> _gpuMs = new List<float>(128);
         long _gcLast;
         bool _gcHasLast;
+        bool _frameTimingOk = true;
 
         public static string DefaultPath
         {
@@ -37,6 +46,8 @@ namespace Game.Runtime.Core
         {
             _ms.Clear();
             _gc.Clear();
+            _cpuMs.Clear();
+            _gpuMs.Clear();
             _gcLast = GC.GetAllocatedBytesForCurrentThread();
             _gcHasLast = true;
         }
@@ -55,6 +66,27 @@ namespace Game.Runtime.Core
 
             _gcLast = now;
             _gcHasLast = true;
+
+            if (_frameTimingOk)
+            {
+                try
+                {
+                    FrameTiming[] ft = new FrameTiming[1];
+                    // 尽力而为：未启用 FrameTiming Stats 时拿不到数据，按未采到处理
+                    if (FrameTimingManager.GetLatestTimings(1, ft) > 0)
+                    {
+                        // FrameTiming 的 cpuFrameTime / gpuFrameTime 单位已是毫秒
+                        if (ft[0].cpuFrameTime > 0d)
+                            _cpuMs.Add((float)ft[0].cpuFrameTime);
+                        if (ft[0].gpuFrameTime > 0d)
+                            _gpuMs.Add((float)ft[0].gpuFrameTime);
+                    }
+                }
+                catch (Exception)
+                {
+                    _frameTimingOk = false;
+                }
+            }
         }
 
         public PerfRow End(int dummyCount, int aliveCount)
@@ -65,8 +97,14 @@ namespace Game.Runtime.Core
             row.Frames = _ms.Count;
             row.MainMsAvg = Average(_ms);
             row.MainMsP95 = Percentile(_ms, 0.95f);
+            row.MainMsP99 = Percentile(_ms, 0.99f);
+            row.MainMsP999 = Percentile(_ms, 0.999f);
             row.MainMsMax = Max(_ms);
             row.GcBytesAvg = Average(_gc);
+            row.MemTotalMb = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / (1024f * 1024f);
+            row.FrameCpuMsAvg = Average(_cpuMs);
+            row.FrameGpuMsAvg = Average(_gpuMs);
+            row.FrameTimingAvailable = _cpuMs.Count > 0;
             return row;
         }
 
@@ -74,7 +112,8 @@ namespace Game.Runtime.Core
         {
             var sb = new StringBuilder();
             sb.AppendLine("# S1 PerformanceArena");
-            sb.AppendLine("dummy_count,alive,frames,main_ms_avg,main_ms_p95,main_ms_max,gc_alloc_bytes_avg");
+            sb.AppendLine("# S2P v2: 追加列 cpu_ms_avg/gpu_ms_avg/mem_total_mb/frame_timing_ok（GPU/主线程来自 FrameTimingManager，未启用时为 0/false）");
+            sb.AppendLine("dummy_count,alive,frames,main_ms_avg,main_ms_p95,main_ms_p99,main_ms_p999,main_ms_max,gc_alloc_bytes_avg,cpu_ms_avg,gpu_ms_avg,mem_total_mb,frame_timing_ok");
             for (int i = 0; i < rows.Count; i++)
             {
                 PerfRow r = rows[i];
@@ -88,9 +127,21 @@ namespace Game.Runtime.Core
                 sb.Append(',');
                 sb.Append(r.MainMsP95.ToString("F3", CultureInfo.InvariantCulture));
                 sb.Append(',');
+                sb.Append(r.MainMsP99.ToString("F3", CultureInfo.InvariantCulture));
+                sb.Append(',');
+                sb.Append(r.MainMsP999.ToString("F3", CultureInfo.InvariantCulture));
+                sb.Append(',');
                 sb.Append(r.MainMsMax.ToString("F3", CultureInfo.InvariantCulture));
                 sb.Append(',');
                 sb.Append(r.GcBytesAvg.ToString("F1", CultureInfo.InvariantCulture));
+                sb.Append(',');
+                sb.Append(r.FrameCpuMsAvg.ToString("F3", CultureInfo.InvariantCulture));
+                sb.Append(',');
+                sb.Append(r.FrameGpuMsAvg.ToString("F3", CultureInfo.InvariantCulture));
+                sb.Append(',');
+                sb.Append(r.MemTotalMb.ToString("F1", CultureInfo.InvariantCulture));
+                sb.Append(',');
+                sb.Append(r.FrameTimingAvailable ? "true" : "false");
                 sb.AppendLine();
             }
 

@@ -1,0 +1,4 @@
+# S2P baseline 300 实体（带施法；第二行为无施法站桩参考）
+dummy_count,alive,frames,main_ms_avg,main_ms_p95,main_ms_p99,main_ms_p999,main_ms_max,gc_alloc_bytes_avg,cpu_ms_avg,gpu_ms_avg,mem_total_mb,frame_timing_ok
+300,269,600,3.112,3.844,4.335,5.695,6.823,0.0,3.113,0.106,422.4,true
+300,300,600,3.012,3.499,3.758,4.055,4.146,0.0,3.012,0.110,426.0,true

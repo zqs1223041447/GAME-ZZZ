@@ -1,0 +1,3 @@
+# S2P baseline 200 实体（带施法；首跑被窗口激活巨型卡顿污染，此为前台化重跑）
+dummy_count,alive,frames,main_ms_avg,main_ms_p95,main_ms_p99,main_ms_p999,main_ms_max,gc_alloc_bytes_avg,cpu_ms_avg,gpu_ms_avg,mem_total_mb,frame_timing_ok
+200,173,600,2.838,3.495,4.119,4.655,4.748,0.0,2.838,0.104,429.9,true
