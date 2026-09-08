@@ -23,7 +23,29 @@ namespace Game.Runtime.Core
         bool _styles;
 
         Vector2 _invScroll;
-        string _tooltip;
+        SliceTooltipModel.Card _tipCard;
+        int _tipPri = -1;
+        bool _tipSet;
+        /// <summary>每帧至多一张正式 Tooltip 的确定性优先级（工作令 二十二）：面板 &gt; 抽屉 &gt; 底栏 &gt; 顶栏/导航；同优先级先到先得（稳定）。</summary>
+        public const int TipPriTopNav = 0, TipPriBottomBar = 1, TipPriDrawer = 2, TipPriPanel = 3;
+        /// <summary>编辑器视觉验证辅助：DebugHover=true 时 GUI 指针钉在 DebugHoverPoint（设计空间），正常输入零影响。</summary>
+        public static bool DebugHover;
+        public static Vector2 DebugHoverPoint;
+
+        /// <summary>编辑器验证用单语句入口（unity-cli eval）：钉指针到设计空间点。</summary>
+        public static bool DebugHoverAt(Vector2 designPoint)
+        {
+            DebugHover = true;
+            DebugHoverPoint = designPoint;
+            return true;
+        }
+
+        public static bool DebugHoverOff()
+        {
+            DebugHover = false;
+            return false;
+        }
+
         SupportId _picked;
         SupportId _drag;
         bool _dragging;
@@ -93,7 +115,8 @@ namespace Game.Runtime.Core
             try
             {
                 EnsureStyles();
-                _tooltip = null;
+                _tipSet = false;
+                _tipPri = -1;
 
                 DrawTop(s);
                 DrawNav(s, sim);
@@ -135,6 +158,12 @@ namespace Game.Runtime.Core
         float Dh()
         {
             return Screen.height / _scale;
+        }
+
+        /// <summary>GUI 指针（当前 GUI 空间）；DebugHover 时钉在验证点。</summary>
+        Vector2 Pointer
+        {
+            get { return DebugHover ? DebugHoverPoint : Event.current.mousePosition; }
         }
 
         public void HandleKeys(SliceSession s, ArenaSim sim)
@@ -282,7 +311,7 @@ namespace Game.Runtime.Core
         {
             bool sel = s.SelectedSkill == skill;
             Event e = Event.current;
-            bool hover = e != null && r.Contains(e.mousePosition);
+            bool hover = e != null && r.Contains(Pointer);
             bool press = hover && e != null && e.type == EventType.MouseDown && e.button == 0;
             GUI.Box(r, GUIContent.none, press ? _slotP : (sel ? _slotSel : (hover ? _slotH : _slotN)));
             if (Click(new Rect(r.x, r.y, r.width, 28)))
@@ -312,32 +341,35 @@ namespace Game.Runtime.Core
         {
             bool closed = index >= cap;
             Event e = Event.current;
-            bool hover = !closed && e != null && r.Contains(e.mousePosition);
+            bool hover = !closed && e != null && r.Contains(Pointer);
+            bool over = e != null && r.Contains(Pointer);
             Color old = GUI.color;
             if (closed)
                 GUI.color = new Color(0.55f, 0.55f, 0.58f, 1f);
             GUI.Box(r, GUIContent.none, hover ? _slotH : _slotN);
             GUI.color = old;
             string text;
-            string tip;
             if (closed)
             {
                 text = "无孔";
-                tip = "该技能装备孔不足";
+                if (over)
+                    RequestTip(SliceTooltipModel.TextCard("无孔", "该技能装备孔不足"), TipPriBottomBar);
             }
             else if (filled == SupportId.None)
             {
                 text = "空";
-                tip = "拖入或点击辅助";
+                if (over)
+                    RequestTip(SliceTooltipModel.TextCard("空", "拖入或点击辅助"), TipPriBottomBar);
             }
             else
             {
                 SupportDef def = SupportCatalog.Get(filled);
                 text = def.Name;
-                tip = def.Name + "  " + def.Desc;
+                if (over)
+                    RequestTip(SliceTooltipModel.SupportCard(filled, s), TipPriBottomBar);
             }
 
-            Clipped(new Rect(r.x + 4, r.y + 6, r.width - 8, 34), text, _center, tip);
+            Clipped(new Rect(r.x + 4, r.y + 6, r.width - 8, 34), text, _center);
             if (closed)
                 return;
             HandleSocketInput(s, skill, index, filled, r);
@@ -348,7 +380,7 @@ namespace Game.Runtime.Core
             Event e = Event.current;
             if (e == null)
                 return;
-            bool over = r.Contains(e.mousePosition);
+            bool over = r.Contains(Pointer);
             if (_dragging && e.type == EventType.MouseUp && over)
             {
                 PlaceSupport(s, skill, index, _drag);
@@ -400,21 +432,23 @@ namespace Game.Runtime.Core
             bool used = IsLinked(s, id);
             bool pick = _picked == id;
             Event e = Event.current;
-            bool hover = e != null && r.Contains(e.mousePosition);
+            bool hover = e != null && r.Contains(Pointer);
             GUI.Box(r, GUIContent.none, pick ? _slotSel : (hover ? _slotH : _slotN));
             if (def.ChangesMechanism)
                 Bar(r.x, r.y, 4, r.height, SlicePalette.Cinder);
             string label = def.Name;
-            Clipped(new Rect(r.x + 8, r.y + 12, r.width - 10, r.height - 14), used ? label + "*" : label, _clip, def.Name + "  " + def.Desc);
+            Clipped(new Rect(r.x + 8, r.y + 12, r.width - 10, r.height - 14), used ? label + "*" : label, _clip);
+            if (hover)
+                RequestTip(SliceTooltipModel.SupportCard(id, s), TipPriBottomBar); // 兼容性=canonical runtime（工作令 十六/十七）
             e = Event.current;
-            if (e == null || !r.Contains(e.mousePosition))
+            if (e == null || !r.Contains(Pointer))
                 return;
             if (e.type == EventType.MouseDown && e.button == 0)
             {
                 _picked = id;
                 _drag = id;
                 _dragging = false;
-                _dragStart = e.mousePosition;
+                _dragStart = Pointer;
                 ClickFlash(r);
                 e.Use();
             }
@@ -441,7 +475,7 @@ namespace Game.Runtime.Core
         void DrawMiniSlot(SliceSession s, EquipSlot slot, Rect r)
         {
             Event e = Event.current;
-            bool hover = e != null && r.Contains(e.mousePosition);
+            bool hover = e != null && r.Contains(Pointer);
             bool press = hover && e != null && e.type == EventType.MouseDown && e.button == 0;
             GUI.Box(r, GUIContent.none, press ? _slotP : (hover ? _slotH : _slotN));
             int idx = s.Equipped[(int)slot];
@@ -452,8 +486,10 @@ namespace Game.Runtime.Core
                 ItemInstance it = s.Inventory[idx];
                 GUI.color = it.Rarity == Rarity.Rare ? SlicePalette.Rare : SlicePalette.Ordinary;
                 Clipped(new Rect(r.x + 8, r.y + 24, r.width - 14, 18),
-                    SliceSession.CleanBaseName(it.BaseName), _clip, SliceSession.DescribeItem(it));
+                    SliceSession.CleanBaseName(it.BaseName), _clip);
                 GUI.color = Color.white;
+                if (hover)
+                    RequestTip(SliceTooltipModel.ItemCard(it, s), TipPriDrawer); // 已装备本体=「已装备」卡（工作令 十二）
             }
             else
             {
@@ -502,6 +538,8 @@ namespace Game.Runtime.Core
             }
 
             DrawItemBody(s.Inventory[idx], new Rect(r.x + 10, r.y + 20, r.width - 16, r.height - 24));
+            if (r.Contains(Pointer))
+                RequestTip(SliceTooltipModel.ItemCard(s.Inventory[idx], s), TipPriPanel); // 已装备本体=「已装备」卡
             if (Click(r))
                 s.SelectedInv = idx;
         }
@@ -538,7 +576,9 @@ namespace Game.Runtime.Core
                 Clipped(new Rect(row.x + 10, row.y + 2, row.width - 14, 16),
                     SliceSession.RarityWord(it.Rarity) + "  " + SliceSession.CleanBaseName(it.BaseName), _clip);
                 Clipped(new Rect(row.x + 10, row.y + 18, row.width - 14, 22),
-                    ItemAffixSummary(it), _small, SliceSession.DescribeItem(it));
+                    ItemAffixSummary(it), _small);
+                if (row.Contains(Pointer))
+                    RequestTip(SliceTooltipModel.ItemCard(it, s), TipPriPanel); // 候选 vs canonical 同槽已装备（工作令 七-十）
                 if (GUI.Button(row, GUIContent.none, GUIStyle.none))
                 {
                     s.SelectedInv = i;
@@ -583,7 +623,9 @@ namespace Game.Runtime.Core
                 Fill(nr, new Color(c.r * 0.25f, c.g * 0.25f, c.b * 0.25f, 1f));
                 Bar(nr.x, nr.y, nr.width, 3, c);
                 string label = NodeLabel(n);
-                Clipped(new Rect(nr.x + 4, nr.y + 6, nr.width - 8, nr.height - 8), label, _center, n.Name + "  " + n.Desc);
+                Clipped(new Rect(nr.x + 4, nr.y + 6, nr.width - 8, nr.height - 8), label, _center);
+                if (nr.Contains(Pointer))
+                    RequestTip(SliceTooltipModel.TextCard(n.Name, n.Desc), TipPriPanel);
                 if (Click(nr))
                 {
                     string err;
@@ -672,6 +714,8 @@ namespace Game.Runtime.Core
                 Color edge = it.Rarity == Rarity.Rare ? SlicePalette.Rare : SlicePalette.Ordinary;
                 Bar(_craftResult.x, _craftResult.y, 5, _craftResult.height, edge);
                 DrawItemBody(it, new Rect(_craftResult.x + 12, _craftResult.y + 6, _craftResult.width - 20, _craftResult.height - 10));
+                if (_craftResult.Contains(Pointer))
+                    RequestTip(SliceTooltipModel.ItemCard(it, s), TipPriPanel);
             }
             else
                 Label(new Rect(_craftResult.x + 12, _craftResult.y + 12, 500, 40), "在角色面板点选一件装备。", _body);
@@ -719,7 +763,7 @@ namespace Game.Runtime.Core
                 return;
             if (_drag != SupportId.None && e.type == EventType.MouseDrag)
             {
-                if ((e.mousePosition - _dragStart).sqrMagnitude > 16f)
+                if ((Pointer - _dragStart).sqrMagnitude > 16f)
                     _dragging = true;
             }
 
@@ -737,28 +781,82 @@ namespace Game.Runtime.Core
         {
             if (!_dragging || _drag == SupportId.None)
                 return;
-            Vector2 m = Event.current.mousePosition;
+            Vector2 m = Pointer;
             Rect g = new Rect(m.x - 48, m.y - 12, 96, 24);
             Fill(g, new Color(0.20f, 0.18f, 0.10f, 0.9f));
             Label(g, SupportCatalog.Get(_drag).Name, _center);
         }
 
+        /// <summary>R3 统一 Tooltip 渲染（单一出口）：SliceSkin 石底金边卡 + Rarity 着色标题 + 对比区 + 操作提示；
+        /// 位置=SliceTooltipLayout（pointer 右下/右溢翻左/下溢上翻/钳视口）。不可交互、不新增世界吞区。</summary>
         void DrawTooltip()
         {
-            if (string.IsNullOrEmpty(_tooltip))
+            if (!_tipSet)
                 return;
-            Vector2 m = Event.current.mousePosition;
-            Vector2 size = _body.CalcSize(new GUIContent(_tooltip));
-            float w = Mathf.Min(280f, size.x + 16f);
-            float h = _body.CalcHeight(new GUIContent(_tooltip), w - 12f) + 10f;
-            Rect r = new Rect(m.x + 14, m.y + 16, w, h);
-            if (r.xMax > Dw())
-                r.x = Dw() - r.width - 8;
-            if (r.yMax > Dh())
-                r.y = Dh() - r.height - 8;
-            Fill(r, new Color(0.06f, 0.06f, 0.07f, 0.96f));
-            Bar(r.x, r.y, r.width, 2, SlicePalette.PanelEdge);
-            Label(new Rect(r.x + 6, r.y + 4, r.width - 12, r.height - 8), _tooltip, _body);
+            SliceTooltipModel.Card card = _tipCard;
+            float w = SliceTooltipLayout.BaseW;
+            const float pad = 10f;
+            const float titleH = 20f, lineH = 16f, smallH = 15f;
+            float h = pad * 2f;
+            if (!string.IsNullOrEmpty(card.Title)) h += titleH;
+            if (!string.IsNullOrEmpty(card.Subtitle)) h += lineH;
+            if (!string.IsNullOrEmpty(card.Badge)) h += lineH;
+            if (card.Body != null) h += card.Body.Length * smallH;
+            if (!string.IsNullOrEmpty(card.ContextTitle)) h += 18f;
+            if (card.Context != null) h += card.Context.Length * smallH;
+            if (!string.IsNullOrEmpty(card.Footer)) h += lineH;
+
+            Rect r = SliceTooltipLayout.Place(Pointer, w, h, Dw(), Dh());
+            PanelBg(r);
+            float y = r.y + pad - 2f;
+            float ix = r.x + 12f, iw = w - 24f;
+            if (!string.IsNullOrEmpty(card.Title))
+            {
+                Color old = GUI.color;
+                GUI.color = card.Rarity == Rarity.Rare ? SlicePalette.Rare : SlicePalette.Text;
+                Label(new Rect(ix, y, iw, titleH), card.Title, _title);
+                GUI.color = old;
+                y += titleH;
+            }
+            if (!string.IsNullOrEmpty(card.Subtitle))
+            {
+                Label(new Rect(ix, y, iw, lineH), card.Subtitle, _small);
+                y += lineH;
+            }
+            if (!string.IsNullOrEmpty(card.Badge))
+            {
+                Color old = GUI.color;
+                GUI.color = SlicePalette.Notable;
+                Label(new Rect(ix, y, iw, lineH), card.Badge, _small);
+                GUI.color = old;
+                y += lineH;
+            }
+            if (card.Body != null)
+            {
+                for (int i = 0; i < card.Body.Length; i++)
+                {
+                    Label(new Rect(ix, y, iw, smallH), card.Body[i], _small);
+                    y += smallH;
+                }
+            }
+            if (!string.IsNullOrEmpty(card.ContextTitle))
+            {
+                Color old = GUI.color;
+                GUI.color = SlicePalette.PanelEdge;
+                Label(new Rect(ix, y, iw, 18f), card.ContextTitle, _small);
+                GUI.color = old;
+                y += 18f;
+                if (card.Context != null)
+                {
+                    for (int i = 0; i < card.Context.Length; i++)
+                    {
+                        Label(new Rect(ix, y, iw, smallH), card.Context[i], _small);
+                        y += smallH;
+                    }
+                }
+            }
+            if (!string.IsNullOrEmpty(card.Footer))
+                Label(new Rect(ix, y, iw, lineH), card.Footer, _small);
         }
 
         void DrawBanner(string text, Color c)
@@ -822,7 +920,7 @@ namespace Game.Runtime.Core
         bool NavBtn(Rect r, string text, bool on)
         {
             Event e = Event.current;
-            bool hover = e != null && r.Contains(e.mousePosition);
+            bool hover = e != null && r.Contains(Pointer);
             bool press = hover && e != null && e.type == EventType.MouseDown && e.button == 0;
             GUI.Box(r, GUIContent.none, on ? _slotSel : (press ? _slotP : (hover ? _slotH : _slotN)));
             Label(r, text, _center);
@@ -855,16 +953,22 @@ namespace Game.Runtime.Core
 
         void Clipped(Rect r, string text, GUIStyle style)
         {
-            Clipped(r, text, style, text);
-        }
-
-        void Clipped(Rect r, string text, GUIStyle style, string tip)
-        {
             Label(r, text, style);
             Vector2 size = style.CalcSize(new GUIContent(text));
             bool trunc = size.x > r.width - 2f || text.IndexOf('\n') < 0 && size.x > r.width;
-            if (r.Contains(Event.current.mousePosition) && (trunc || tip != text))
-                _tooltip = tip;
+            if (trunc && r.Contains(Pointer))
+                RequestTip(SliceTooltipModel.TextCard(null, text), TipPriTopNav);
+        }
+
+        /// <summary>R3 单一出口：所有正式 Tooltip 经此请求；同优先级先到先得，高优先级覆盖（工作令 二十二）。</summary>
+        void RequestTip(SliceTooltipModel.Card card, int pri)
+        {
+            if (!_tipSet || pri >= _tipPri)
+            {
+                _tipCard = card;
+                _tipPri = pri;
+                _tipSet = true;
+            }
         }
 
         bool Click(Rect r)
@@ -872,7 +976,7 @@ namespace Game.Runtime.Core
             Event e = Event.current;
             if (e == null || e.type != EventType.MouseDown || e.button != 0)
                 return false;
-            if (!r.Contains(e.mousePosition))
+            if (!r.Contains(Pointer))
                 return false;
             e.Use();
             return true;

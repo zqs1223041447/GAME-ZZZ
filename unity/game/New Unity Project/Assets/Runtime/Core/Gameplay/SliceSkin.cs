@@ -34,7 +34,9 @@ namespace Game.Runtime.Core
 
         public static void Ensure()
         {
-            if (_built)
+            // Unity null 语义=被销毁的贴图视为未建：交互式编辑器无域重载时自愈重建（Gate 批处理新域不受影响）
+            if (_built && _panel != null && _slot != null && _slotHover != null && _slotPress != null &&
+                _slotSelected != null && _orbRing != null && _orbFill != null)
                 return;
             Texture2D stone = BuildStone();
             _panel = BuildPanel(stone);
