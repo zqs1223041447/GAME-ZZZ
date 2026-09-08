@@ -211,7 +211,8 @@ namespace Game.Tests.EditMode
             Assert.AreEqual(CastPhase.Windup, sim.Caster.Phase);
 
             HitResult kill = default;
-            kill.TotalTaken = 9999;
+            // 导演 2026-09-08 玩家基础血量=9999999，致死量同步抬升（死亡路径行为断言不变）
+            kill.TotalTaken = 99999999;
             sim.Session.ApplyPlayerHit(kill);
             Assert.IsFalse(sim.Session.Alive);
             sim.Tick(Dt, PlayerCommand.None());
