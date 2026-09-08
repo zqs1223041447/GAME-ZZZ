@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "profileId": "formal-enemy-visual-stress-v1",
+  "baseContract": "PERFORMANCE_GATE.json",
+  "selectionMode": "DistinctMappedFormalVisuals",
+  "assignmentMode": "RoundRobinByEnemyKind",
+  "gameplayKind": "Dummy",
+  "useEnemyVisualPresenter": true,
+  "cliArg": "-arenaArtVisuals",
+  "_notes": "S3-P5-ART-R7 formal art stress profile（presentation workload 描述，非第二份硬件/预算契约）。硬件/环境/预算全部继承 baseContract（PERFORMANCE_GATE.json 唯一硬件与预算真相源）。正式视觉集合来自 EnemyVisualCatalog + RuntimeResourcePaths（本文件不复制资源路径 truth）；catalog 内容增加属正式 presentation 变化，Art Gate 自动覆盖为预期行为。selectionMode/assignment/workload 语义变更须正式工作令。"
+}

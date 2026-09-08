@@ -2,7 +2,7 @@
 
 日期：2026-09-08。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit（Phase 5 Art Trial R6）：A=fb2e463（art(s3)：Bruce 由 Trial 派生正式视觉资产 BruceVisual.prefab 入 Resources，Trial 历史保留，资源契约 8/8→9/9）+ 2f641c3（feat(art)：Warden 经共享 Catalog 绑定 Bruce 正式视觉（第三正式视觉，零特例系统）+ **导演 2026-09-08 四项指示落地**——玩家血量 80→9999999/出图后不再围玩家生成木桩群/runInBackground=true 切后台不冻结/RequestState 每帧重启 clip 根因修复（怪物移动动画收口））+ b230dbf（test(art)：+7 Bruce 契约+1 Warden 真实运行；SliceLoopTests 致死量随血量指示同步）+ 本行前一笔 docs(art)（R6 复核+DECISIONS+初筛 Bruce 行）；上轮 Phase 5 Art Trial R5 三笔（1dd6405+9b88403+f71ee14）已回填于下方绿灯表 / B=回填本行
+本轮 commit（Phase 5 Art Trial R7）：A=77360f2（feat(perf)：formal enemy visual stress profile——ArenaPerfHarness -arenaArtVisuals 基准视觉层（300 槽池化/round-robin 三套正式视觉/真实动画+R5 反馈/证据头）+ART_PERFORMANCE_PROFILE.json）+ 321d9b4（tooling(qa)：-IncludeArtPerformance 第五层门（独立 ArtPerformanceVerdict/summary/exit，预算 100% 继承 canonical）+快照 Operator 扩展 ArtPerformance+SelfTest art 15 项+Operator art 3 项）+ **双 Gate 同 sourceCommit=321d9b4 全 PASS**（canonical 9/9+Art 9/9，art worst p99=7.628ms=91.6%）→ 证据冻结入库 `docs/reviews/s3/art-performance-r7/`（gate-a|gate-b 各 15 files，MANIFEST 校验 OK）；docs(perf) 复核报告+DECISIONS 规则⑭+STATUS 回填随后提交；上轮 R6 五笔（fb2e463+2f641c3+b230dbf+8288259+35f96b1+7569d3e 补遗）已回填于下方绿灯表 / B=回填本行
 
 ## 门状态
 
@@ -36,7 +36,7 @@
 
 ## 测量
 
-- `ArenaPerfHarness` 默认关；正式游玩路径不得自动开启。1080p 独立包三档 p99 最高 2.508ms（历史证据保留，`docs/reviews/s2p/`）。**1440p/120 已于 M7 在锁定硬件下 CLOSED（2026-09-08）**：真实 2560×1440 / fullscreen / D3D12 / PC / vSync=0 / targetFps=-1，2 个 canonical Gate ×3 Run ×3 Density=18 测量全 PASS，worst p99=2.388ms=预算 8.33 的 28.7%；证据 `docs/reviews/s2p/1440p-120-m7/`。结论只适用锁定 M7 硬件（Ryzen 7 5700X3D / RTX 5070）+ canonical 契约，**不代表所有 Windows PC 保证 120FPS**；其它机器须按 `docs/qa/PERFORMANCE_GATE.json` 显式更新并重建 baseline。
+- `ArenaPerfHarness` 默认关；正式游玩路径不得自动开启。1080p 独立包三档 p99 最高 2.508ms（历史证据保留，`docs/reviews/s2p/`）。**1440p/120 已于 M7 在锁定硬件下 CLOSED（2026-09-08）**：真实 2560×1440 / fullscreen / D3D12 / PC / vSync=0 / targetFps=-1，2 个 canonical Gate ×3 Run ×3 Density=18 测量全 PASS，worst p99=2.388ms=预算 8.33 的 28.7%；证据 `docs/reviews/s2p/1440p-120-m7/`。结论只适用锁定 M7 硬件（Ryzen 7 5700X3D / RTX 5070）+ canonical 契约，**不代表所有 Windows PC 保证 120FPS**；其它机器须按 `docs/qa/PERFORMANCE_GATE.json` 显式更新并重建 baseline。**R7 新增第五层 Formal Art Performance Gate（`-IncludeArtPerformance`）**：正式敌人渲染/动画成本由独立 Art Gate 覆盖（canonical 仍 Dummy baseline），双 Gate 同 HEAD 全 PASS（300 正式 visual stress worst p99=7.628ms=91.6%），证据 `docs/reviews/s3/art-performance-r7/`。
 
 ## 音频
 
@@ -49,7 +49,7 @@
 ## 导演门控待输入
 
 - 表在 `docs/ROADMAP.md`「导演门控待输入」节（7 项，每项「无输入则不做」，不得当自动任务开工）。
-- **S3 已开工（历史「开 S3」口令已于 2026-09-07 消费）**：Phase 1/2=COMPLETE；**Phase 3 UI=进行中（导演 2026-09-08 批准正式开工；R1 底栏双球/R2 右侧装备抽屉/R3 统一 Tooltip 均已落地+规划 AI 验收，R4 天赋树=Stage0 禁区待规划审查）**；Phase 4 人声=「本阶段暂不搞」GATED；**Phase 5 精模=进行中 · Art Trial R6（授权已由导演解决不再作为 Gate=DECISIONS 规则⑪；导演 2026-09-08 核心规则追加=无人值守自动执行 GPT 下发的工作安排；R1 Bruce=Role-Specific 候选；R2 巨魔 Troll_2=**默认视觉锚点（规则⑫）**；R3=Troll 正式接入 Brute 视觉位=INTEGRATED；R4=Lion Head 接入 Stinger 视觉位=INTEGRATED；R5=Hit/Ignite 反馈统一=Formal enemy visual feedback parity established（规则⑬）；R6=Warden→Bruce 第三正式视觉=INTEGRATED——**three formal enemy visuals integrated**；导演同日四项指示（玩家血量 9999999/出图木桩移除/runInBackground/移动动画根因修复）随 R6 入库；狼=真实 mismatch 否决存档、蝙蝠×2 关闭、Ashling 仍 placeholder 待规划裁定**）；**新一批内容（含第 8 Support/新词缀/新怪）不得自行启动**——需规划 AI/导演新立工作令；规划见 `docs/reviews/s3/S3_PLAN.md`（S3 整体未结束，不写成 COMPLETE）。
+- **S3 已开工（历史「开 S3」口令已于 2026-09-07 消费）**：Phase 1/2=COMPLETE；**Phase 3 UI=进行中（导演 2026-09-08 批准正式开工；R1 底栏双球/R2 右侧装备抽屉/R3 统一 Tooltip 均已落地+规划 AI 验收，R4 天赋树=Stage0 禁区待规划审查）**；Phase 4 人声=「本阶段暂不搞」GATED；**Phase 5 精模=进行中 · Art Trial R7（授权已由导演解决不再作为 Gate=DECISIONS 规则⑪；导演 2026-09-08 核心规则追加=无人值守自动执行 GPT 下发的工作安排；R1 Bruce=Role-Specific 候选；R2 巨魔 Troll_2=**默认视觉锚点（规则⑫）**；R3=Troll 正式接入 Brute 视觉位=INTEGRATED；R4=Lion Head 接入 Stinger 视觉位=INTEGRATED；R5=Hit/Ignite 反馈统一=Formal enemy visual feedback parity established（规则⑬）；R6=Warden→Bruce 第三正式视觉=INTEGRATED；**R7=Formal Art Density Performance Gate=ESTABLISHED（规则⑭，双 Gate 同 HEAD 全 PASS，300 正式 visual stress worst p99=7.628ms=91.6%）**；导演同日四项指示随 R6 入库；狼=真实 mismatch 否决存档、蝙蝠×2 关闭、Ashling 仍 placeholder 待规划裁定**）；**新一批内容（含第 8 Support/新词缀/新怪）不得自行启动**——需规划 AI/导演新立工作令；规划见 `docs/reviews/s3/S3_PLAN.md`（S3 整体未结束，不写成 COMPLETE）。
 
 ## 已对齐（本轮只改文档）
 
@@ -64,6 +64,7 @@
 
 | 日期 | HEAD | EditMode | PlayMode | 失败项 |
 |---|---|---|---|---|
+| 2026-09-08 | 本轮 R7（Formal Art Density Performance Gate=ESTABLISHED：-IncludeArtPerformance 第五层，双 Gate 同 sourceCommit=321d9b4 全 PASS，canonical 9/9+Art 9/9，art worst p99=7.628ms=91.6%；证据冻结 docs/reviews/s3/art-performance-r7/；SelfTest art 15+3 项全绿；ART_VISUAL_RENDER_COST_NOT_REPRESENTED_BY_CANONICAL_HARNESS 关闭并替换为精确表述） | 191/191 | 9/9 | 无 |
 | 2026-09-08 | 本轮 R6（Warden→Bruce 第三正式视觉=INTEGRATED，three formal enemy visuals integrated；导演四项指示入库；Gate PASS 191/191+9/9+Build+PlayerRun exit=0+Performance 9/9 PASS worst p99=5.403ms=64.8%，Harness 代表性=NO 如实记录） | 191/191 | 9/9 | 无 |
 | 2026-09-08 | 本轮 R5（Troll/FireLion 正式视觉 Hit/Ignite 反馈统一=Formal enemy visual feedback parity established；MaterialPropertyBlock 零 gameplay 写；Gate PASS 184/184+8/8+Build+PlayerRun exit=0+Performance 9/9 PASS worst p99=2.778ms=33.4%，Harness 代表性=NO 如实记录） | 184/184 | 8/8 | 无 |
 | 2026-09-08 | 本轮 R4（第二敌人视觉 Lion Head 经通用 Catalog 接入 Stinger 位=INTEGRATED；修复 R3 遗留 Mount scale 覆写；Gate PASS 176/176+6/6+Build（resources.assets 检索实证 FireLionVisual 入构建）+PlayerRun exit=0+Performance 9/9 PASS worst p99=2.458ms=29.5%，Harness 代表性=NO 如实记录） | 176/176 | 6/6 | 无 |
