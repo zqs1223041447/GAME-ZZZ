@@ -1,0 +1,46 @@
+{
+  "schema": "CONTENT_PRODUCTION_REPORT_V1",
+  "schemaVersion": 1,
+  "generatedBy": "Game.Tests.EditMode.ProductionContentReportTests（EditMode 测试再生；collector=ContentAuditS2Tests.CollectCurrentRepositoryAudit）",
+  "verdict": "PASS",
+  "audit": { "completed": true, "failureCount": 0, "executionError": null },
+  "counts": {
+    "skills": 3,
+    "supports": 7,
+    "affixes": 13,
+    "passives": 16,
+    "enemyKinds": 5,
+    "mapMods": 3,
+    "equipmentSlots": 4
+  },
+  "runtimeCoverage": {
+    "declaredStats": ["Accuracy", "AddedFire", "AddedPhysical", "AreaDamageMore", "AreaRadiusMore", "Armour", "AttackSpeed", "ConvertPhysToFire", "CritChanceIncreased", "Dexterity", "Evasion", "FireDamage", "FireResistance", "Fork", "IgniteChance", "Intelligence", "Life", "MorePhysical", "PhysicalDamage", "Strength"],
+    "consumedStats": ["Life", "Mana", "Strength", "Dexterity", "Intelligence", "Armour", "Evasion", "Accuracy", "FireResistance", "MaxFireResistance", "Damage", "PhysicalDamage", "FireDamage", "MoreDamage", "MorePhysical", "MoreFire", "AddedPhysical", "AddedFire", "ConvertPhysToFire", "CritChanceBase", "CritChanceAdded", "CritChanceIncreased", "CritMultiAdded", "IgniteChance", "AreaRadiusMore", "AreaDamageMore", "AttackSpeed", "Fork"],
+    "unconsumedDeclaredStats": [],
+    "declaredTags": ["Attack", "Spell", "Melee", "Projectile", "Area", "Hit", "Physical", "Fire", "Duration"],
+    "unusedTags": ["Spell", "Projectile", "Fire", "Duration"]
+  },
+  "supportCompatibility": { "total": 21, "compatible": 16, "incompatible": 5, "oracleParityStatus": "OK" },
+  "passiveGraph": { "nodeCount": 16, "edgeCount": 20, "disconnectedCount": 0 },
+  "resources": {
+    "requiredPresent": 10,
+    "requiredMissing": 0,
+    "gatedPresent": 0,
+    "gatedMissing": 3,
+    "missingRequired": [],
+    "voiceStatus": "GATED / DEFERRED BY DIRECTOR（人声 3 键缺失不失败，如实记录）"
+  },
+  "enemyVisuals": {
+    "formalCount": 4,
+    "missingFormalNonBenchmark": 0,
+    "dummyExcluded": true,
+    "mappings": [
+      { "enemyKind": "Dummy", "resourceKey": null, "formal": false },
+      { "enemyKind": "Brute", "resourceKey": "Enemies/TrollWarriorVisual", "formal": true },
+      { "enemyKind": "Stinger", "resourceKey": "Enemies/FireLionVisual", "formal": true },
+      { "enemyKind": "Ashling", "resourceKey": "Enemies/GargoyleVisual", "formal": true },
+      { "enemyKind": "Warden", "resourceKey": "Enemies/BruceVisual", "formal": true }
+    ]
+  },
+  "failPolicyNote": "verdict 只继承 canonical audit 真相；unused reserved Tag / GATED Voice / Stage0 内容不存在不构成 FAIL；REQUIRED 资源缺失、运行期未知 Stat、兼容矩阵违规、canonical Passive 边破坏、正式视觉缺失均 FAIL（经 audit 失败类别）"
+}

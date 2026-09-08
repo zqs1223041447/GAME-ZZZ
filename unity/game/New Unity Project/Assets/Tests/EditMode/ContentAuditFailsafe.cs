@@ -49,6 +49,8 @@ namespace Game.Tests.EditMode
         public readonly List<string> NewAffixRows = new List<string>();
         /// <summary>已声明但当前内容未引用的 Tag（预留记录，不是失败项）。</summary>
         public readonly List<string> UnusedTags = new List<string>();
+        /// <summary>内容引用的 Stat 全集（Support/Passive Mod + 词缀行收集；Production Report 汇总用，不参与失败判定）。</summary>
+        public readonly HashSet<string> DeclaredStats = new HashSet<string>();
 
         public int ActiveSkillCount;
         public int SupportCount;

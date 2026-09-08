@@ -28,8 +28,9 @@ namespace Game.Tests.EditMode
         /// <summary>S2 收口时 Support 基线（6 条）。R2 新增 = SupportCatalog.Count - 基线，工作令要求恰好 1（火焰转化）。</summary>
         const int S2BaselineSupportCount = 6;
 
-        /// <summary>运行期消费 Stat 白名单（读取点见注释）。内容引用白名单之外的 Stat = 「报告绿但运行期未知 Stat」，必须失败。</summary>
-        static readonly StatId[] RuntimeConsumedStats = new[]
+        /// <summary>运行期消费 Stat 白名单（读取点见注释）。内容引用白名单之外的 Stat = 「报告绿但运行期未知 Stat」，必须失败。
+        /// internal：Production Content Report（S4-P1）引用同一白名单汇总 runtime coverage，不建第二份 truth。</summary>
+        internal static readonly StatId[] RuntimeConsumedStats = new[]
         {
             // 面板/防御：SliceSession.RecalcPlayer -> PlayerStats（BuildEnemyHit 消费）
             StatId.Life, StatId.Mana, StatId.Strength, StatId.Dexterity, StatId.Intelligence,
@@ -76,6 +77,7 @@ namespace Game.Tests.EditMode
                 foreach (var m in mods)
                 {
                     modCount++;
+                    result.DeclaredStats.Add(m.Stat.ToString());
                     if ((int)m.Stat < 0 || (int)m.Stat >= (int)StatId.Count)
                         result.MissingStat.Add(owner + " -> StatId " + m.Stat);
                     if (!IsRuntimeConsumed(m.Stat))
@@ -125,6 +127,7 @@ namespace Game.Tests.EditMode
                 for (int r = 0; r < def.RowCount; r++)
                 {
                     StatId stat = def.RowStat(r);
+                    result.DeclaredStats.Add(stat.ToString());
                     string owner = "Affix." + def.Name + " 行" + (r + 1);
                     if ((int)stat < 0 || (int)stat >= (int)StatId.Count)
                         result.BadAffix.Add(owner + " -> StatId " + stat);
