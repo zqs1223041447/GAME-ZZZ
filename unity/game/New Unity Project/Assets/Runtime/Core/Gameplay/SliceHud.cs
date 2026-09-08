@@ -10,6 +10,16 @@ namespace Game.Runtime.Core
         GUIStyle _small;
         GUIStyle _center;
         GUIStyle _clip;
+        GUIStyle _panelBg;
+        GUIStyle _slotN;
+        GUIStyle _slotH;
+        GUIStyle _slotP;
+        GUIStyle _slotSel;
+        GUIStyle _orbText;
+        Rect _flashRect;
+        float _flashUntil;
+        /// <summary>全局等比缩放（设计空间=1920x1080 基准，方案页布局）；设计坐标=屏幕坐标/_scale。</summary>
+        float _scale = 1f;
         bool _styles;
 
         Vector2 _invScroll;
@@ -51,7 +61,7 @@ namespace Game.Runtime.Core
                 return true;
             if (_dragging)
                 return true;
-            Vector2 gui = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
+            Vector2 gui = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y) / _scale;
             return _topBar.Contains(gui) || _nav.Contains(gui) || _skillHud.Contains(gui) ||
                    _tray.Contains(gui) || _panel.Contains(gui);
         }
@@ -63,32 +73,54 @@ namespace Game.Runtime.Core
             if (s == null)
                 return;
 
-            EnsureStyles();
-            _tooltip = null;
+            // 全局等比缩放：布局按 1920x1080 设计空间书写（方案页基准），任意窗口按比例缩放
+            _scale = Mathf.Clamp(Mathf.Min(Screen.width / 1920f, Screen.height / 1080f), 0.4f, 1.4f);
+            Matrix4x4 oldMatrix = GUI.matrix;
+            GUIUtility.ScaleAroundPivot(new Vector2(_scale, _scale), Vector2.zero);
+            try
+            {
+                EnsureStyles();
+                _tooltip = null;
 
-            DrawTop(s);
-            DrawNav(s, sim);
-            DrawBars(s);
-            DrawSkillHud(s);
-            DrawSupportTray(s);
+                DrawTop(s);
+                DrawNav(s, sim);
+                DrawSkillHud(s);
+                DrawSupportTray(s);
 
-            if (s.Panel == SlicePanel.Build)
-                DrawBuild(s, sim);
-            else if (s.Panel == SlicePanel.Map)
-                DrawMap(s, sim);
-            else if (s.Panel == SlicePanel.Craft)
-                DrawCraft(s);
-            else
-                _panel = default;
+                if (s.Panel == SlicePanel.Build)
+                    DrawBuild(s, sim);
+                else if (s.Panel == SlicePanel.Map)
+                    DrawMap(s, sim);
+                else if (s.Panel == SlicePanel.Craft)
+                    DrawCraft(s);
+                else
+                    _panel = default;
 
-            if (s.State == MapState.Dead)
-                DrawBanner(SliceCopy.DeadRespec, new Color(0.55f, 0.12f, 0.10f, 0.92f));
-            else if (s.State == MapState.Cleared)
-                DrawBanner(SliceCopy.Cleared, new Color(0.12f, 0.38f, 0.18f, 0.92f));
+                if (s.State == MapState.Dead)
+                    DrawBanner(SliceCopy.DeadRespec, new Color(0.55f, 0.12f, 0.10f, 0.92f));
+                else if (s.State == MapState.Cleared)
+                    DrawBanner(SliceCopy.Cleared, new Color(0.12f, 0.38f, 0.18f, 0.92f));
 
-            EndDragIfNeeded(s);
-            DrawDragGhost();
-            DrawTooltip();
+                EndDragIfNeeded(s);
+                DrawDragGhost();
+                DrawFlash();
+                DrawTooltip();
+            }
+            finally
+            {
+                GUI.matrix = oldMatrix;
+            }
+        }
+
+        /// <summary>设计空间宽/高（方案页 1920x1080 基准坐标）。</summary>
+        float Dw()
+        {
+            return Screen.width / _scale;
+        }
+
+        float Dh()
+        {
+            return Screen.height / _scale;
         }
 
         public void HandleKeys(SliceSession s, ArenaSim sim)
@@ -161,66 +193,89 @@ namespace Game.Runtime.Core
                 alignment = TextAnchor.MiddleLeft,
                 normal = { textColor = SlicePalette.Text }
             };
+            // Phase3 换皮（SliceSkin 程序化石质贴图；border 必须与贴图九宫格边框一致）
+            RectOffset pb = new RectOffset(SliceSkin.PanelBorder, SliceSkin.PanelBorder, SliceSkin.PanelBorder, SliceSkin.PanelBorder);
+            RectOffset sb = new RectOffset(SliceSkin.SlotBorder, SliceSkin.SlotBorder, SliceSkin.SlotBorder, SliceSkin.SlotBorder);
+            _panelBg = new GUIStyle { border = pb, normal = { background = SliceSkin.Panel } };
+            _slotN = new GUIStyle { border = sb, normal = { background = SliceSkin.SlotNormal } };
+            _slotH = new GUIStyle { border = sb, normal = { background = SliceSkin.SlotHover } };
+            _slotP = new GUIStyle { border = sb, normal = { background = SliceSkin.SlotPress } };
+            _slotSel = new GUIStyle { border = sb, normal = { background = SliceSkin.SlotSelected } };
+            _orbText = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 12,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                clipping = TextClipping.Clip,
+                normal = { textColor = SliceSkin.TextCream }
+            };
             _styles = true;
         }
 
         void DrawTop(SliceSession s)
         {
-            _topBar = new Rect(12, 10, 560, 78);
-            Fill(_topBar, SlicePalette.Panel);
-            Bar(_topBar.x, _topBar.y, _topBar.width, 3, SlicePalette.PanelEdge);
-            Label(new Rect(_topBar.x + 12, _topBar.y + 8, 360, 20), s.StatusCopy, _title);
-            Label(new Rect(_topBar.x + 12, _topBar.y + 30, 360, 18),
+            _topBar = new Rect(12, 10, 560, 84);
+            PanelBg(_topBar);
+            Label(new Rect(_topBar.x + 16, _topBar.y + 14, 360, 20), s.StatusCopy, _title);
+            Label(new Rect(_topBar.x + 16, _topBar.y + 38, 528, 16),
                 "稳定度 " + s.Stability + "    收益 x" + s.RewardMultiplier.ToString("0.00") +
                 "    废料 " + s.Scrap + "    蚀刻剂 " + s.Etching +
                 "    天赋点 " + s.Unspent + "/" + s.TotalPoints, _small);
-            Clipped(new Rect(_topBar.x + 12, _topBar.y + 50, 536, 22),
+            Clipped(new Rect(_topBar.x + 16, _topBar.y + 58, 528, 20),
                 s.LastMessage + (string.IsNullOrEmpty(s.LastLoot) ? "" : "  ·  " + s.LastLoot),
                 _small);
         }
 
         void DrawNav(SliceSession s, ArenaSim sim)
         {
-            _nav = new Rect(Screen.width - 292, 10, 280, 36);
-            Fill(_nav, SlicePalette.Panel);
-            float x = _nav.x + 4;
-            if (NavBtn(new Rect(x, 14, 88, 28), "角色", s.Panel == SlicePanel.Build))
+            _nav = new Rect(Dw() - 296, 10, 284, 44);
+            PanelBg(_nav);
+            float x = _nav.x + 6;
+            if (NavBtn(new Rect(x, _nav.y + 8, 88, 28), "角色", s.Panel == SlicePanel.Build))
                 s.Panel = s.Panel == SlicePanel.Build ? SlicePanel.None : SlicePanel.Build;
-            if (NavBtn(new Rect(x + 92, 14, 88, 28), "地图", s.Panel == SlicePanel.Map))
+            if (NavBtn(new Rect(x + 92, _nav.y + 8, 88, 28), "地图", s.Panel == SlicePanel.Map))
                 s.Panel = s.Panel == SlicePanel.Map ? SlicePanel.None : SlicePanel.Map;
-            if (NavBtn(new Rect(x + 184, 14, 88, 28), "制作", s.Panel == SlicePanel.Craft))
+            if (NavBtn(new Rect(x + 184, _nav.y + 8, 88, 28), "制作", s.Panel == SlicePanel.Craft))
                 s.Panel = s.Panel == SlicePanel.Craft ? SlicePanel.None : SlicePanel.Craft;
-        }
-
-        void DrawBars(SliceSession s)
-        {
-            float life = s.MaxLife > 0f ? s.Life / s.MaxLife : 0f;
-            float mana = s.MaxMana > 0f ? s.Mana / s.MaxMana : 0f;
-            DrawMeter(14, 94, 280, 16, life, SlicePalette.Life,
-                "生命 " + Mathf.CeilToInt(s.Life) + "/" + Mathf.CeilToInt(s.MaxLife));
-            DrawMeter(14, 114, 280, 14, mana, SlicePalette.Mana,
-                "法力 " + Mathf.CeilToInt(s.Mana) + "/" + Mathf.CeilToInt(s.MaxMana));
         }
 
         void DrawSkillHud(SliceSession s)
         {
-            float w = 178f;
-            float total = w * 3f + 16f;
-            _skillHud = new Rect((Screen.width - total) * 0.5f, Screen.height - 118, total, 104);
-            Fill(_skillHud, SlicePalette.Panel);
-            Bar(_skillHud.x, _skillHud.y, _skillHud.width, 3, SlicePalette.PanelEdge);
-            DrawSkillCell(s, SkillId.Melee, new Rect(_skillHud.x + 8, _skillHud.y + 10, w - 8, 86));
-            DrawSkillCell(s, SkillId.Projectile, new Rect(_skillHud.x + w + 12, _skillHud.y + 10, w - 8, 86));
-            DrawSkillCell(s, SkillId.Area, new Rect(_skillHud.x + w * 2 + 16, _skillHud.y + 10, w - 8, 86));
+            const float cellW = 178f;
+            const float orbD = 92f;
+            const float gemW = 84f;
+            const float gemH = 44f;
+            const float gemGap = 6f;
+            float cells = cellW * 3f + 16f;
+            float stripW = 4f * gemW + 3f * gemGap;
+            float total = 10f + orbD * 2f + 10f + cells + 14f + stripW + 10f;
+            float x0 = Mathf.Max(12f, (Dw() - total) * 0.5f);
+            _skillHud = new Rect(x0, Dh() - 118, total, 104);
+            PanelBg(_skillHud);
+            float life = s.MaxLife > 0f ? s.Life / s.MaxLife : 0f;
+            float mana = s.MaxMana > 0f ? s.Mana / s.MaxMana : 0f;
+            DrawOrb(new Rect(x0 + 10f, _skillHud.y + 6f, orbD, orbD), life, SlicePalette.Life, s.Life, s.MaxLife);
+            DrawOrb(new Rect(x0 + 10f + orbD + 10f, _skillHud.y + 6f, orbD, orbD), mana, SlicePalette.Mana, s.Mana, s.MaxMana);
+            float cx = x0 + 10f + orbD * 2f + 10f;
+            DrawSkillCell(s, SkillId.Melee, new Rect(cx + 8f, _skillHud.y + 9f, cellW - 8f, 86f));
+            DrawSkillCell(s, SkillId.Projectile, new Rect(cx + cellW + 12f, _skillHud.y + 9f, cellW - 8f, 86f));
+            DrawSkillCell(s, SkillId.Area, new Rect(cx + cellW * 2f + 16f, _skillHud.y + 9f, cellW - 8f, 86f));
+            _tray = new Rect(x0 + 10f + orbD * 2f + 10f + cells + 14f, _skillHud.y + 5f, stripW, 94f);
+            DrawSupportTray(s);
         }
 
         void DrawSkillCell(SliceSession s, SkillId skill, Rect r)
         {
             bool sel = s.SelectedSkill == skill;
-            Fill(r, sel ? new Color(0.16f, 0.17f, 0.14f, 1f) : new Color(0.12f, 0.13f, 0.15f, 1f));
-            Bar(r.x, r.y, 4, r.height, sel ? SlicePalette.PanelEdge : SlicePalette.Dim);
+            Event e = Event.current;
+            bool hover = e != null && r.Contains(e.mousePosition);
+            bool press = hover && e != null && e.type == EventType.MouseDown && e.button == 0;
+            GUI.Box(r, GUIContent.none, press ? _slotP : (sel ? _slotSel : (hover ? _slotH : _slotN)));
             if (Click(new Rect(r.x, r.y, r.width, 28)))
+            {
                 s.SelectedSkill = skill;
+                ClickFlash(r);
+            }
 
             string name = SliceSession.SkillDisplayName(skill);
             string key = SliceSession.SkillHotkey(skill);
@@ -242,7 +297,13 @@ namespace Game.Runtime.Core
         void DrawSocket(SliceSession s, SkillId skill, int index, int cap, SupportId filled, Rect r)
         {
             bool closed = index >= cap;
-            Fill(r, closed ? new Color(0.08f, 0.08f, 0.09f, 1f) : new Color(0.18f, 0.18f, 0.20f, 1f));
+            Event e = Event.current;
+            bool hover = !closed && e != null && r.Contains(e.mousePosition);
+            Color old = GUI.color;
+            if (closed)
+                GUI.color = new Color(0.55f, 0.55f, 0.58f, 1f);
+            GUI.Box(r, GUIContent.none, hover ? _slotH : _slotN);
+            GUI.color = old;
             string text;
             string tip;
             if (closed)
@@ -277,6 +338,7 @@ namespace Game.Runtime.Core
             if (_dragging && e.type == EventType.MouseUp && over)
             {
                 PlaceSupport(s, skill, index, _drag);
+                ClickFlash(r);
                 e.Use();
                 return;
             }
@@ -287,6 +349,7 @@ namespace Game.Runtime.Core
             if (_picked != SupportId.None)
             {
                 PlaceSupport(s, skill, index, _picked);
+                ClickFlash(r);
                 e.Use();
                 return;
             }
@@ -297,24 +360,23 @@ namespace Game.Runtime.Core
                 if (!s.TrySetSupport(skill, index, SupportId.None, out err) && err != null)
                     s.LastMessage = err;
                 _picked = filled;
+                ClickFlash(r);
                 e.Use();
             }
         }
 
         void DrawSupportTray(SliceSession s)
         {
-            _tray = new Rect(12, Screen.height - 146, 210, 132);
-            Fill(_tray, SlicePalette.Panel);
-            Bar(_tray.x, _tray.y, _tray.width, 3, SlicePalette.PanelEdge);
-            Label(new Rect(_tray.x + 8, _tray.y + 6, 194, 16), "辅助", _small);
-            int n = 0;
+            // Proposal Round1：辅助 tray 并入底栏右侧（_tray 由 DrawSkillHud 设定）；拾取/拖拽输入流不变
+            const float gw = 84f;
+            const float gh = 44f;
+            const float gap = 6f;
+            const int cols = 4;
             for (int i = 1; i <= SupportCatalog.Count; i++)
             {
-                int col = n % 2;
-                int row = n / 2;
-                Rect g = new Rect(_tray.x + 8 + col * 100, _tray.y + 24 + row * 26, 96, 24);
+                int idx0 = i - 1;
+                Rect g = new Rect(_tray.x + (idx0 % cols) * (gw + gap), _tray.y + (idx0 / cols) * (gh + gap), gw, gh);
                 DrawGem(s, (SupportId)i, g);
-                n++;
             }
         }
 
@@ -323,13 +385,14 @@ namespace Game.Runtime.Core
             SupportDef def = SupportCatalog.Get(id);
             bool used = IsLinked(s, id);
             bool pick = _picked == id;
-            Color bg = pick ? new Color(0.32f, 0.28f, 0.12f, 1f) : new Color(0.16f, 0.16f, 0.18f, 1f);
+            Event e = Event.current;
+            bool hover = e != null && r.Contains(e.mousePosition);
+            GUI.Box(r, GUIContent.none, pick ? _slotSel : (hover ? _slotH : _slotN));
             if (def.ChangesMechanism)
                 Bar(r.x, r.y, 4, r.height, SlicePalette.Cinder);
-            Fill(r, bg);
             string label = def.Name;
-            Clipped(new Rect(r.x + 8, r.y, r.width - 10, r.height), used ? label + "*" : label, _clip, def.Name + "  " + def.Desc);
-            Event e = Event.current;
+            Clipped(new Rect(r.x + 8, r.y + 12, r.width - 10, r.height - 14), used ? label + "*" : label, _clip, def.Name + "  " + def.Desc);
+            e = Event.current;
             if (e == null || !r.Contains(e.mousePosition))
                 return;
             if (e.type == EventType.MouseDown && e.button == 0)
@@ -338,6 +401,7 @@ namespace Game.Runtime.Core
                 _drag = id;
                 _dragging = false;
                 _dragStart = e.mousePosition;
+                ClickFlash(r);
                 e.Use();
             }
         }
@@ -627,10 +691,10 @@ namespace Game.Runtime.Core
             float w = Mathf.Min(280f, size.x + 16f);
             float h = _body.CalcHeight(new GUIContent(_tooltip), w - 12f) + 10f;
             Rect r = new Rect(m.x + 14, m.y + 16, w, h);
-            if (r.xMax > Screen.width)
-                r.x = Screen.width - r.width - 8;
-            if (r.yMax > Screen.height)
-                r.y = Screen.height - r.height - 8;
+            if (r.xMax > Dw())
+                r.x = Dw() - r.width - 8;
+            if (r.yMax > Dh())
+                r.y = Dh() - r.height - 8;
             Fill(r, new Color(0.06f, 0.06f, 0.07f, 0.96f));
             Bar(r.x, r.y, r.width, 2, SlicePalette.PanelEdge);
             Label(new Rect(r.x + 6, r.y + 4, r.width - 12, r.height - 8), _tooltip, _body);
@@ -638,34 +702,73 @@ namespace Game.Runtime.Core
 
         void DrawBanner(string text, Color c)
         {
-            Rect r = new Rect(Screen.width * 0.5f - 220, 86, 440, 36);
+            Rect r = new Rect(Dw() * 0.5f - 220, 86, 440, 36);
             Fill(r, c);
             Label(r, text, _center);
         }
 
         void PanelChrome(Rect r, string title)
         {
-            Fill(r, SlicePalette.Panel);
-            Bar(r.x, r.y, r.width, 3, SlicePalette.PanelEdge);
-            Label(new Rect(r.x + 12, r.y + 6, r.width - 24, 22), title, _title);
+            PanelBg(r);
+            Label(new Rect(r.x + 16, r.y + 10, r.width - 32, 22), title, _title);
         }
 
-        void DrawMeter(float x, float y, float w, float h, float u, Color c, string label)
+        /// <summary>PoE 式双球：底部按比例填充（Group 裁剪）+ 石环金边框 + 球心数值。</summary>
+        void DrawOrb(Rect r, float u, Color c, float cur, float max)
         {
             if (u < 0f) u = 0f;
             if (u > 1f) u = 1f;
-            Fill(new Rect(x, y, w, h), new Color(0.08f, 0.08f, 0.08f, 0.9f));
-            Fill(new Rect(x, y, w * u, h), c);
-            Label(new Rect(x + 6, y - 1, w - 8, h + 2), label, _small);
+            GUI.BeginGroup(r);
+            float d = r.width;
+            float fh = Mathf.Round(d * u);
+            if (fh > 0f)
+            {
+                GUI.BeginGroup(new Rect(0f, d - fh, d, fh));
+                Color old = GUI.color;
+                GUI.color = c;
+                GUI.DrawTexture(new Rect(0f, -(d - fh), d, d), SliceSkin.OrbFill);
+                GUI.color = old;
+                GUI.EndGroup();
+            }
+            GUI.DrawTexture(new Rect(0f, 0f, d, d), SliceSkin.OrbRing);
+            GUI.EndGroup();
+            Label(new Rect(r.x, r.y + r.height * 0.5f - 8f, r.width, 16f),
+                Mathf.CeilToInt(cur) + "/" + Mathf.CeilToInt(max), _orbText);
+        }
+
+        /// <summary>点击效：金色高亮闪（约 0.16s 衰减），命中元素上叠加绘制。</summary>
+        void ClickFlash(Rect r)
+        {
+            _flashRect = r;
+            _flashUntil = Time.realtimeSinceStartup + 0.16f;
+        }
+
+        void DrawFlash()
+        {
+            float remain = _flashUntil - Time.realtimeSinceStartup;
+            if (remain <= 0f)
+                return;
+            float k = remain / 0.16f;
+            Fill(_flashRect, new Color(1f, 0.87f, 0.45f, 0.30f * k));
+        }
+
+        /// <summary>石质面板底（SliceSkin 九宫格；替代旧纯色 Fill+边条）。</summary>
+        void PanelBg(Rect r)
+        {
+            GUI.Box(r, GUIContent.none, _panelBg);
         }
 
         bool NavBtn(Rect r, string text, bool on)
         {
-            Fill(r, on ? new Color(0.28f, 0.24f, 0.12f, 1f) : new Color(0.16f, 0.16f, 0.18f, 1f));
-            if (on)
-                Bar(r.x, r.y, r.width, 2, SlicePalette.PanelEdge);
+            Event e = Event.current;
+            bool hover = e != null && r.Contains(e.mousePosition);
+            bool press = hover && e != null && e.type == EventType.MouseDown && e.button == 0;
+            GUI.Box(r, GUIContent.none, on ? _slotSel : (press ? _slotP : (hover ? _slotH : _slotN)));
             Label(r, text, _center);
-            return Click(r);
+            bool clicked = Click(r);
+            if (clicked)
+                ClickFlash(r);
+            return clicked;
         }
 
         void Fill(Rect r, Color c)
