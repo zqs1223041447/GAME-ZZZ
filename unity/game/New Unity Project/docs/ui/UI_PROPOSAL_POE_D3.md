@@ -1,6 +1,6 @@
 # UI_PROPOSAL_POE_D3（正式 UI 方案页 · 待导演过目）
 
-日期：2026-09-07。状态：**导演已批准（2026-09-08：正式 UI 开工，本阶段目标=贴图+点击效，声音暂不做）。第 1 轮（底栏+双球+程序化石质贴图+点击效）已落地（规划 AI 已验收）；第 2 轮（右侧装备抽屉：Build/Craft 迁入+常驻 4 槽）已落地**——实现方式与第 4 节建议一致（仍 IMGUI/SliceHud 换皮，未上 UI Toolkit/新 Canvas；贴图=SliceSkin 程序化合成，授权干净；抽屉几何=SliceDrawerLayout 纯几何层）。
+日期：2026-09-07。状态：**导演已批准（2026-09-08：正式 UI 开工，本阶段目标=贴图+点击效，声音暂不做）。第 1 轮（底栏+双球+程序化石质贴图+点击效）已落地（规划 AI 已验收）；第 2 轮（右侧装备抽屉：Build/Craft 迁入+常驻 4 槽）已落地（规划 AI 判定 PASS）；第 3 轮（统一 Tooltip+装备词缀对比+Support 兼容提示）已落地**——实现方式与第 4 节建议一致（仍 IMGUI/SliceHud 换皮，未上 UI Toolkit/新 Canvas；贴图=SliceSkin 程序化合成，授权干净；抽屉几何=SliceDrawerLayout 纯几何层；Tooltip=SliceTooltipModel 纯表现模型+SliceTooltipLayout 纯几何+单一渲染器）。**第 4 轮（天赋树重排）NOT STARTED / 需规划 AI 对照 Stage0「大天赋树」禁区重新审查（现有小型 passive UI 整理 vs 新增/扩大 passive tree），执行 AI 不得自行解释为已解锁**。
 
 ## 1. 风格基调（类 PoE / 暗黑 3）
 
@@ -56,12 +56,12 @@
 | 按键路由（Tab/F6/F8/QWE/左键） | **本轮不动**（数据与输入层原样） |
 | 无可删块 | 现 HUD 无死块；全部有去向 |
 
-## 4. 分轮实现建议（第 1/2 轮已施工落地，3/4 待规划 AI 安排）
+## 4. 分轮实现建议（第 1/2/3 轮已施工落地，第 4 轮待规划 AI 对照 Stage0 禁区审查）
 
 1. **第一轮：底栏+双球**（已完成，R1）——DrawBars→球、SkillHud 贴皮、Support 摘要行。
 2. **第二轮：右侧装备抽屉**（已完成，R2）——Build/Craft 面板迁移（右锚于抽屉列左侧，单一渲染器）+常驻 4 槽缩略（只读 canonical EquipSlot，点击=开 Build 面板）。
-3. **第三轮：Tooltip 系统升级**（未开始）——词缀对比/兼容提示统一样式。
-4. **第四轮（远）**：天赋树界面重排（现 Tree 先原样迁入抽屉）。
+3. **第三轮：Tooltip 系统升级**（已完成，R3）——统一 Tooltip（SliceTooltipModel 纯表现+单一渲染器）+候选装备同槽对比（union，key=StatId+ModOp，equipped-only 损失可见）+Support 兼容提示（canonical IsSupportCompatible，零硬编码）。
+4. **第四轮（远）：天赋树界面重排**——NOT STARTED；Stage0 禁「大天赋树」，需规划 AI 审查边界后才能开工。
 - 实现技术：仍 IMGUI（`SliceHud` 内换皮），**不上 UI Toolkit/新 Canvas**；免费石质/金边九宫格贴图可后置（先纯色+描边，贴图后补）。
 
 ## 5. 非目标（明确不做）

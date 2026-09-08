@@ -384,7 +384,7 @@ S1 键保留（按住走、按住 Q/W/E 连发）。S2 UI：顶栏「角色 / �
 
 死亡出图必须 `Alive=true`、施放重置为 Idle，禁止卡在挥击里。稳定度 = 持久完整度 − 词缀消耗；死亡与清场会降低完整度。
 
-**HUD 分轮换皮（Phase 3 开工，2026-09-08）。** 第 1 轮已落（导演批准：正式 UI 开工，本阶段目标=贴图+点击效，声音暂不做）：`SliceSkin` 程序化石质/金边贴图层（确定性合成，零外部资源）+ SliceHud 底栏重排（PoE 式左下双球=生命/法力、Q/W/E 槽石质槽位、辅助条并入底栏 2×4、导航/面板贴皮）+ 点击效（hover 金线点亮 / press 压暗 / 点击金闪约 0.16s）；全局等比缩放（设计空间 1920×1080 基准）。第 2 轮已落（右侧装备抽屉）：`SliceDrawerLayout` 纯几何层（设计空间纯函数）+ SliceHud 常驻抽屉列（右缘 300×232：2×2 迷你装备槽只读 canonical EquipSlot=Weapon/Body/Helmet/Boots，点击=开 Build 面板）+ Build（760×430）/Craft（560×340）面板右锚迁移（单一渲染器移动而非复制，`s.Panel` 唯一状态，Tab/F6/F8/Escape 路由不变）+ `BlocksWorldInput` 纯函数纳入抽屉吞区。数据与输入层（按键路由/Tab/F6/F8/QWE/拖拽装 Support）原样未动。**未完备部分**：Tooltip 词缀对比（第 3 轮）、天赋树重排（第 4 轮）——见 `docs/ui/UI_PROPOSAL_POE_D3.md` 分轮建议。
+**HUD 分轮换皮（Phase 3 开工，2026-09-08）。** 第 1 轮已落（导演批准：正式 UI 开工，本阶段目标=贴图+点击效，声音暂不做）：`SliceSkin` 程序化石质/金边贴图层（确定性合成，零外部资源）+ SliceHud 底栏重排（PoE 式左下双球=生命/法力、Q/W/E 槽石质槽位、辅助条并入底栏 2×4、导航/面板贴皮）+ 点击效（hover 金线点亮 / press 压暗 / 点击金闪约 0.16s）；全局等比缩放（设计空间 1920×1080 基准）。第 2 轮已落（右侧装备抽屉）：`SliceDrawerLayout` 纯几何层（设计空间纯函数）+ SliceHud 常驻抽屉列（右缘 300×232：2×2 迷你装备槽只读 canonical EquipSlot=Weapon/Body/Helmet/Boots，点击=开 Build 面板）+ Build（760×430）/Craft（560×340）面板右锚迁移（单一渲染器移动而非复制，`s.Panel` 唯一状态，Tab/F6/F8/Escape 路由不变）+ `BlocksWorldInput` 纯函数纳入抽屉吞区。第 3 轮已落（统一 Tooltip）：`SliceTooltipModel` 纯表现模型（装备卡=名称/稀有度/槽位/词缀行 canonical AffixLine；候选 vs 同槽已装备 union 对比 key=(StatId,ModOp) 仅 delta!=0、equipped-only 损失可见、同物品=「已装备」零噪音；Support 卡=描述+逐技能 ✓/× 兼容行+「可装配到当前技能/与当前技能不兼容」全部经 canonical `IsSupportCompatible`）+ `SliceTooltipLayout` 纯几何（pointer 右下默认/右溢翻左/下溢上翻/钳视口）+ 单一渲染器（每帧至多一卡，确定性优先级 面板>抽屉>底栏>顶栏；不可交互、不新增世界吞区）。数据与输入层（按键路由/Tab/F6/F8/QWE/拖拽装 Support）原样未动。**未完备部分**：天赋树重排（第 4 轮=Stage0 禁区待规划审查）——见 `docs/ui/UI_PROPOSAL_POE_D3.md` 分轮建议。
 
 ### 对象池
 
