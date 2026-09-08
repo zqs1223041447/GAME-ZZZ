@@ -1,0 +1,34 @@
+# 精模素材初筛报告 R1（Phase 5 前置 · 供导演/规划 AI 决策）
+
+日期：2026-09-08。来源：`G:\GAME-ZZZ\素材初筛，等待验收\`（导演指示：从该文件夹找可用素材，拿不准的问 GPT）。基线：Phase 5 范围锁死=**玩家 / 核心技能 / Boss / 代表怪 / 关键地标**（`S3_PLAN.md` 阶段 8）；现有玩家=DarkKnight（BDO 包，Humanoid 重定向，已入库在用）。
+
+## 一、素材库现状（初筛说明+实际盘点）
+
+- 总量 8.0 GB；四大类：01_技能特效（32 包 unitypackage）/ 02_场景环境（已拷贝+仅预览大件）/ 03_角色怪物（已拷贝+仅预览大件）/ 04_UI与工具。
+- 03_角色怪物·已拷贝（可直接试装的）：Dragon Warlord Bruce（龙领主）、Lion Head Monster、巨魔×2、原始部族、狼、野生动物昆虫、critterpack 小动物、蝙蝠×2（RoamingBats）、女性战士角色与装备、POLYGON 系（Dungeons / Knights / Samurai / MINI Fantasy / Fantasy Horde Dwarfs / Orc Pack Bundle 等 9+ 包）、NPC 人体通用动画（42MB）。
+- 03_仅预览（原件在库，未解压）：**PBR 石像鬼/骨龙/蛇战士（4.8GB，初筛说明标注「最值得优先解压验收的怪物包」）**、PBR Characters Orcs（647MB）、LIVING DEAD PACK（545MB 僵尸系）、All Star Character Collection（847MB）。
+- 04_UI与工具：21 组 PNG 透明 GUI 图标（56.7MB .rar 未解压）、ActionGameStarterKit / ORK Kit / Dungeon Breaker（源码参考）。
+
+## 二、对 Phase 5 范围的初选映射（建议，未导入）
+
+| Phase 5 需求 | 初选候选 | 状态 | 理由 |
+|---|---|---|---|
+| Boss | **Dragon Warlord Bruce**（龙领主） | 已拷贝，可直接导入评估 | 体量小、名字直接对应 Boss 位；与「监守」精英现有位置衔接 |
+| Boss 备选 | PBR 石像鬼/骨龙/蛇战士包 | 仅预览（4.8GB） | 初筛说明自荐优先验收；但需解压+导入评估成本高 |
+| 代表怪 | **Lion Head Monster / 巨魔×2 / 狼 / 蝙蝠×2** | 已拷贝，体量小 | 各覆盖一只代表怪位（近战重甲/野性/飞行），可逐只「入库检查+换模挂载+贴地验证」 |
+| 批量普通怪 | **POLYGON Knights / Samurai / Dwarfs / Orc Pack Bundle** | 已拷贝 | 低模统一风格、可批量出普通怪（现普通怪=色块基元） |
+| 玩家外观备选 | 女性战士角色与装备 | 已拷贝 | 备用；现有 DarkKnight 不动 |
+| 动画 | NPC 人体通用动画（42MB） | 已拷贝 | 与 Humanoid 重定向管线（现 DarkKnight 六态）同路数，可扩怪物动作 |
+
+## 三、不确定项（按导演指示，提请 GPT/导演裁定）
+
+1. **PBR 石像鬼/骨龙/蛇战士（4.8GB，仅预览）**：是否现在就解压验收？解压+导入评估成本高（4.8GB），若 Boss 只选 Dragon Warlord 则可暂缓。
+2. **风格混用**：POLYGON 系为低模卡通向，与现玩家 DarkKnight（写实向）同框风格差明显——普通怪用 POLYGON 是否可接受？或代表怪/Boss 只从写实包（PBR/Lion Head/巨魔）里选？
+3. **许可确认（最重要）**：素材包为导演个人汇集下载（含 Synty POLYGON 等商业资产）。现有先例=DarkKnight（BDO 包）已入库；新增模型资产**是否允许入库仓库**需要导演明确授权范围（只进本地工程不入仓库 vs 入仓库）。涉及重分发风险，不能由执行 AI 自行决定。
+4. **UI 图标包（21 组 PNG，56.7MB 未解压）**：本轮 UI 换皮未用图标（技能槽沿用文字+按键角标，符合方案页第一轮范围）。若要上真实技能/物品图标，需先解压并确认许可；是否列入下一轮？
+5. **动物/小动物包（critterpack 等）**：当前无对应玩法位（无宠物/中立生物），建议仅记录不导入。
+
+## 四、执行边界声明
+
+- 本报告只盘点与建议，**未导入任何模型资产、未动 Packages/工程文件**；所有已拷贝包在工程外目录（历轮惯例不动）。
+- 导入任何候选前需导演/规划 AI 明确第 3 项许可边界，然后走既有「入库检查 + 换模挂载 + 贴地验证」管线。
