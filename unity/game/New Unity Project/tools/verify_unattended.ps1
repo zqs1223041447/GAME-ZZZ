@@ -38,10 +38,12 @@ param(
     [switch]$IncludeBuild,
     [switch]$IncludePlayerRun,
     [switch]$IncludePerformance,
+    [switch]$IncludeArtPerformance,
     [switch]$SelfTest
 )
 
-# 隐含链：Performance ⊃ PlayerRun ⊃ Build（无需同时写多个 switch；同时提供亦正常）
+# 隐含链：ArtPerformance ⊃ Performance ⊃ PlayerRun ⊃ Build（无需同时写多个 switch；同时提供亦正常）
+if ($IncludeArtPerformance) { $IncludePerformance = $true }
 if ($IncludePerformance) { $IncludePlayerRun = $true }
 if ($IncludePlayerRun) { $IncludeBuild = $true }
 
@@ -215,8 +217,10 @@ function Read-HarnessResult {
     $out = @{ Valid = $false; Reason = ''; Density = $ExpectedDensity; Resolution = ''; Fullscreen = ''; Editor = ''; GraphicsApi = ''
         HardwareCpu = ''; HardwareGpu = ''; Quality = ''; VSync = ''; TargetFps = ''; Warmup = 0; Sample = 0; CastInterval = ''
         Alive = -1; Frames = -1; MainMsAvg = [double]::NaN; MainMsP99 = [double]::NaN; GpuMsAvg = [double]::NaN
-        CpuMsAvg = [double]::NaN; GcBytesAvg = [double]::NaN; MemTotalMb = [double]::NaN; FrameTimingOk = '' }
+        CpuMsAvg = [double]::NaN; GcBytesAvg = [double]::NaN; MemTotalMb = [double]::NaN; FrameTimingOk = ''
+        SourcePath = $FilePath }
     if ([string]::IsNullOrEmpty($FilePath) -or -not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
+        $out.SourcePath = ''
         $out.Reason = 'missing file'
         return $out
     }
@@ -467,6 +471,118 @@ function Invoke-PerformanceVerdict {
     elseif ($perfFail) { $out.Verdict = 'FAIL' }
     elseif ($evidence) { $out.Verdict = 'EVIDENCE_INCOMPLETE' }
     else { $out.Verdict = 'PASS' }
+    return $out
+}
+
+# ---------------------------------------------------------------------
+# S3-P5-ART-R7：Formal Art Performance（第五层）
+# 硬件/环境/预算全部继承 PERFORMANCE_GATE.json；本节只描述 presentation workload。
+# ---------------------------------------------------------------------
+
+function Get-ArtProfile {
+    param([string]$Path)
+    $out = @{ Ok = $false; Reason = ''; Profile = $null }
+    if ([string]::IsNullOrEmpty($Path) -or -not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        $out.Reason = 'ART_PERFORMANCE_PROFILE.json missing'
+        return $out
+    }
+    try { $p = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json }
+    catch {
+        $out.Reason = 'ART_PERFORMANCE_PROFILE.json not parseable: ' + $_.Exception.Message
+        return $out
+    }
+    $knownSelection = @('DistinctMappedFormalVisuals')
+    $knownAssignment = @('RoundRobinByEnemyKind')
+    if ($p.schemaVersion -ne 1) { $out.Reason = "unsupported schemaVersion $($p.schemaVersion)"; return $out }
+    if ([string]::IsNullOrEmpty($p.profileId)) { $out.Reason = 'profileId missing'; return $out }
+    if ($p.baseContract -ne 'PERFORMANCE_GATE.json') { $out.Reason = "baseContract must be PERFORMANCE_GATE.json (got $($p.baseContract))"; return $out }
+    if ($knownSelection -notcontains $p.selectionMode) { $out.Reason = "unknown selectionMode $($p.selectionMode)"; return $out }
+    if ($knownAssignment -notcontains $p.assignmentMode) { $out.Reason = "unknown assignmentMode $($p.assignmentMode)"; return $out }
+    if ($p.gameplayKind -ne 'Dummy') { $out.Reason = "gameplayKind must stay Dummy (got $($p.gameplayKind))"; return $out }
+    if ($p.useEnemyVisualPresenter -ne $true) { $out.Reason = 'useEnemyVisualPresenter must be true'; return $out }
+    $out.Ok = $true
+    $out.Profile = $p
+    return $out
+}
+
+function Read-ArtMetadata {
+    param([string]$FilePath)
+    $out = @{ Present = $false; ProfileId = ''; FormalVisuals = ''; VisualInstances = -1; VisualTypeCount = -1
+        VisualMix = ''; ResolvedVisuals = ''; RendererInstances = -1; SkinnedRendererInstances = -1
+        MaterialSlots = -1; ApproxVertices = -1; ApproxTriangles = -1 }
+    if ([string]::IsNullOrEmpty($FilePath) -or -not (Test-Path -LiteralPath $FilePath -PathType Leaf)) { return $out }
+    foreach ($line in (Get-Content -LiteralPath $FilePath)) {
+        if ($line -match '^#\s+art_profile=(.*)$') { $out.ProfileId = $Matches[1].Trim(); $out.Present = $true; continue }
+        if ($line -match '^#\s+formal_visuals=(.*)$') { $out.FormalVisuals = $Matches[1].Trim(); continue }
+        if ($line -match '^#\s+visual_instances=(\d+)\s*$') { $out.VisualInstances = [int]$Matches[1]; continue }
+        if ($line -match '^#\s+visual_type_count=(\d+)\s*$') { $out.VisualTypeCount = [int]$Matches[1]; continue }
+        if ($line -match '^#\s+visual_mix=(.*)$') { $out.VisualMix = $Matches[1].Trim(); continue }
+        if ($line -match '^#\s+resolved_visuals=(.*)$') { $out.ResolvedVisuals = $Matches[1].Trim(); continue }
+        if ($line -match '^#\s+renderer_instances=(\d+)\s*$') { $out.RendererInstances = [int]$Matches[1]; continue }
+        if ($line -match '^#\s+skinned_renderer_instances=(\d+)\s*$') { $out.SkinnedRendererInstances = [int]$Matches[1]; continue }
+        if ($line -match '^#\s+material_slots=(\d+)\s*$') { $out.MaterialSlots = [int]$Matches[1]; continue }
+        if ($line -match '^#\s+approx_vertices=(\d+)\s*$') { $out.ApproxVertices = [int]$Matches[1]; continue }
+        if ($line -match '^#\s+approx_triangles=(\d+)\s*$') { $out.ApproxTriangles = [int]$Matches[1]; continue }
+    }
+    return $out
+}
+
+function Test-ArtEvidence {
+    # §34：art 证据契约（formal_visuals=true / profile 匹配 / instances==density / mix 求和==density /
+    # resolved 非空 / renderer>0 / skinned>0 / slots>0 / 无 fallback）。通过为 @()，问题为原因列表。
+    param($Profile, $Metadata, [int]$Density)
+    $reasons = @()
+    if (-not $Metadata.Present) { return @('art metadata headers missing (art mode did not run)') }
+    if ($Metadata.ProfileId -ne $Profile.profileId) { $reasons += "art_profile '$($Metadata.ProfileId)' != profile '$($Profile.profileId)'" }
+    if ($Metadata.FormalVisuals -ne 'true') { $reasons += "formal_visuals='$($Metadata.FormalVisuals)' (load-fail/fallback not allowed in art evidence)" }
+    if ($Metadata.VisualInstances -ne $Density) { $reasons += "visual_instances $($Metadata.VisualInstances) != density $Density" }
+    if ($Metadata.VisualTypeCount -lt 1) { $reasons += "visual_type_count $($Metadata.VisualTypeCount) < 1 (resolved set empty)" }
+    $mixSum = 0
+    $mixNames = @()
+    if (-not [string]::IsNullOrEmpty($Metadata.VisualMix)) {
+        foreach ($kv in $Metadata.VisualMix.Split(';')) {
+            $parts = $kv.Split('=')
+            if ($parts.Count -eq 2) {
+                $n = [int]0
+                if ([int]::TryParse($parts[1], [ref]$n)) { $mixSum += $n; $mixNames += $parts[0] }
+            }
+        }
+    }
+    if ($mixSum -ne $Density) { $reasons += "visual_mix sum $mixSum != density $Density" }
+    if ($mixNames.Count -ne $Metadata.VisualTypeCount) { $reasons += "visual_mix entries $($mixNames.Count) != visual_type_count $($Metadata.VisualTypeCount)" }
+    if ([string]::IsNullOrEmpty($Metadata.ResolvedVisuals)) { $reasons += 'resolved_visuals empty' }
+    if ($Metadata.RendererInstances -lt 1) { $reasons += "renderer_instances $($Metadata.RendererInstances) < 1" }
+    if ($Metadata.SkinnedRendererInstances -lt 1) { $reasons += "skinned_renderer_instances $($Metadata.SkinnedRendererInstances) < 1" }
+    if ($Metadata.MaterialSlots -lt 1) { $reasons += "material_slots $($Metadata.MaterialSlots) < 1" }
+    return $reasons
+}
+
+function Invoke-ArtPerformanceVerdict {
+    # 复用 canonical 指标评估器（不复制 8.33ms 逻辑，§33），叠加 art 证据契约校验（§34）。
+    # 裁决优先级同 canonical：ENV_NOT_MET > FAIL > EVIDENCE_INCOMPLETE > PASS；全 INFRA -> INFRA。
+    param($Contract, $RunRecords, $Profile)
+    $metric = Invoke-PerformanceVerdict -Contract $Contract -RunRecords $RunRecords
+    $out = @{ Verdict = $metric.Verdict; EnvStatus = $metric.EnvStatus; Reasons = @($metric.Reasons)
+        Runs = $metric.Runs; EnvSummaries = $metric.EnvSummaries; ArtReasons = @() }
+    $evidenceBad = $false
+    $infraCount = 0
+    foreach ($rec in $RunRecords) {
+        $i = $rec.Index
+        if ($rec.Status -ne 'OK') { $infraCount++; continue }
+        foreach ($r in $rec.Results) {
+            $meta = Read-ArtMetadata -FilePath $r.SourcePath
+            $bad = Test-ArtEvidence -Profile $Profile -Metadata $meta -Density $r.Density
+            if ($bad.Count -gt 0) {
+                $evidenceBad = $true
+                foreach ($b in $bad) { $out.Reasons += "run ${i} density $($r.Density): ART-EVIDENCE: $b" }
+            }
+        }
+    }
+    if ($evidenceBad) {
+        if ($metric.Verdict -eq 'PASS') { $out.Verdict = 'EVIDENCE_INCOMPLETE' }
+        elseif ($metric.Verdict -eq 'ENV_NOT_MET') { $out.Verdict = 'ENV_NOT_MET' }
+        # FAIL 优先级更高，保持 FAIL
+    }
     return $out
 }
 
@@ -762,6 +878,123 @@ if ($SelfTest) {
         $r = Read-HarnessResult -FilePath (Join-Path $perfFileDir '100.txt') -ExpectedDensity 100
         $ok = $r.Valid -and $r.HardwareCpu -eq $HW.processorType -and $r.Quality -eq $CT.quality -and $r.VSync -eq "$($CT.vSyncCount)" -and $r.TargetFps -eq "$($CT.targetFrameRate)" -and $r.Warmup -eq $CT.warmupFrames -and $r.Sample -eq $CT.sampleFrames -and $r.CpuMsAvg -gt 0
         $results.Add("selftest.perf-harness-metadata-capture: $(@('FAIL', 'PASS')[[int]$ok])")
+
+        # --- S3-P5-ART-R7：Art Performance 纯合成用例（§35，无需 Unity） ---
+        $artProfilePath = Join-Path $ProjectRoot 'docs\qa\ART_PERFORMANCE_PROFILE.json'
+        $ap = Get-ArtProfile -Path $artProfilePath
+        $results.Add("selftest.art-profile-parse: $(@('FAIL', 'PASS')[[int]$ap.Ok])")
+        $results.Add("selftest.art-profile-selection-known: $(@('FAIL', 'PASS')[[int]($ap.Ok -and $ap.Profile.selectionMode -eq 'DistinctMappedFormalVisuals')])")
+        $artProfileObj = $ap.Profile
+
+        # resolved visual 排序确定性（文档内声明三套正式视觉的机器可读期望，PowerShell 不复制路径 truth）
+        $expectedOrder = @('TrollWarriorVisual', 'FireLionVisual', 'BruceVisual')
+
+        function New-ArtRow {
+            param([string]$Dir, [int]$Density, [string]$Avg = '2.500', [string]$P99 = '2.700', [string]$Cpu = '2.400', [string]$Gpu = '0.300',
+                [int]$VisualInstances = -1, [string]$Mix = '', [int]$TypeCount = 3, [string]$Formal = 'true',
+                [string]$Resolved = 'TrollWarriorVisual;FireLionVisual;BruceVisual', [int]$Renderers = 120, [int]$Skinned = 100, [int]$Slots = 130)
+            if ($VisualInstances -lt 0) { $VisualInstances = $Density }
+            if ([string]::IsNullOrEmpty($Mix)) {
+                # round-robin 期望混合（确定性）
+                $a = [int][math]::Ceiling($Density / 3); $b = [int][math]::Floor($Density / 3)
+                if ($Density % 3 -eq 0) { $Mix = "TrollWarriorVisual=$b;FireLionVisual=$b;BruceVisual=$b" }
+                elseif ($Density % 3 -eq 1) { $Mix = "TrollWarriorVisual=$a;FireLionVisual=$b;BruceVisual=$b" }
+                else { $Mix = "TrollWarriorVisual=$a;FireLionVisual=$a;BruceVisual=$b" }
+            }
+            $artRes = "$($CT.resolution.width)x$($CT.resolution.height)"
+            $meta = @(
+                "# art_profile=formal-enemy-visual-stress-v1",
+                "# formal_visuals=$Formal",
+                "# visual_instances=$VisualInstances",
+                "# visual_type_count=$TypeCount",
+                "# visual_mix=$Mix",
+                "# resolved_visuals=$Resolved",
+                "# renderer_instances=$Renderers",
+                "# skinned_renderer_instances=$Skinned",
+                "# material_slots=$Slots",
+                "# approx_vertices=1000",
+                "# approx_triangles=800"
+            )
+            Write-HarnessFixture -Dir $Dir -Density $Density -Meta "# resolution=$artRes fullscreen=True currentRes=$artRes editor=False dx=Direct3D12" -Data ("{0},{0},600,$Avg,2.600,$P99,2.800,3.000,0.0,$Cpu,$Gpu,512.0,true" -f $Density) -ExtraMeta ($meta + @("# hardware_cpu=$($HW.processorType)", "# hardware_gpu=$($HW.graphicsDeviceName)", "# perf_env quality=$($CT.quality) vsync=$($CT.vSyncCount) targetFps=$($CT.targetFrameRate) warmup=$($CT.warmupFrames) sample=$($CT.sampleFrames) castInterval=$($CT.castIntervalSeconds)"))
+        }
+
+        function New-ArtRecords {
+            param([string]$Dir, [string]$Avg = '2.500', [string]$P99 = '2.700', [string]$Cpu = '2.400', [string]$Gpu = '0.300',
+                [int]$BadVisualInstances = -1, [string]$MixOverride = '', [string]$FormalOverride = 'true', [string]$ResolvedOverride = 'TrollWarriorVisual;FireLionVisual;BruceVisual')
+            $recs = @()
+            for ($runIndex = 1; $runIndex -le $CT.requiredRuns; $runIndex++) {
+                $runDir = Join-Path $Dir "Run$runIndex"
+                New-Item -ItemType Directory -Path $runDir -Force | Out-Null
+                $res = @()
+                foreach ($density in $CT.densities) {
+                    $vi = $BadVisualInstances; $mix = $MixOverride; $formal = $FormalOverride; $resolved = $ResolvedOverride
+                    New-ArtRow -Dir $runDir -Density $density -Avg $Avg -P99 $P99 -Cpu $Cpu -Gpu $Gpu -VisualInstances $vi -Mix $mix -Formal $formal -Resolved $resolved
+                    $res += Read-HarnessResult -FilePath (Join-Path $runDir "$density.txt") -ExpectedDensity $density
+                }
+                $recs += @{ Index = $runIndex; Status = 'OK'; StatusReason = ''; Results = $res }
+            }
+            return $recs
+        }
+
+        $artDirFx = Join-Path $fx 'artperf'
+        $recs = New-ArtRecords -Dir (Join-Path $artDirFx 'valid')
+        $v = Invoke-ArtPerformanceVerdict -Contract $CT -RunRecords $recs -Profile $artProfileObj
+        $results.Add("selftest.art-3x3-valid: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'PASS')])")
+
+        $recs = New-ArtRecords -Dir (Join-Path $artDirFx 'inst299') -BadVisualInstances 299
+        $v = Invoke-ArtPerformanceVerdict -Contract $CT -RunRecords $recs -Profile $artProfileObj
+        $results.Add("selftest.art-instances-299: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'EVIDENCE_INCOMPLETE')])")
+
+        $recs = New-ArtRecords -Dir (Join-Path $artDirFx 'mix299') -MixOverride 'TrollWarriorVisual=100;FireLionVisual=100;BruceVisual=99'
+        $v = Invoke-ArtPerformanceVerdict -Contract $CT -RunRecords $recs -Profile $artProfileObj
+        $results.Add("selftest.art-mix-sum-299: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'EVIDENCE_INCOMPLETE')])")
+
+        $recs = New-ArtRecords -Dir (Join-Path $artDirFx 'fallback') -FormalOverride 'false(load-failed-primitive-fallback)'
+        $v = Invoke-ArtPerformanceVerdict -Contract $CT -RunRecords $recs -Profile $artProfileObj
+        $results.Add("selftest.art-load-fallback: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'EVIDENCE_INCOMPLETE')])")
+
+        $recs = New-ArtRecords -Dir (Join-Path $artDirFx 'avg-fail') -Avg '8.34' -P99 '8.34'
+        $v = Invoke-ArtPerformanceVerdict -Contract $CT -RunRecords $recs -Profile $artProfileObj
+        $results.Add("selftest.art-avg-over-budget: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'FAIL')])")
+
+        $recs = New-ArtRecords -Dir (Join-Path $artDirFx 'gpu-fail') -Gpu '8.34'
+        $v = Invoke-ArtPerformanceVerdict -Contract $CT -RunRecords $recs -Profile $artProfileObj
+        $results.Add("selftest.art-gpu-over-budget: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'FAIL')])")
+
+        # canonical PASS + art PASS -> overall PASS；canonical PASS + art FAIL -> overall FAIL（exit 非 0 语义）
+        $canonRecs = New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true'
+        $canonV = Invoke-PerformanceVerdict -Contract $CT -RunRecords $canonRecs
+        $artGood = Invoke-ArtPerformanceVerdict -Contract $CT -RunRecords (New-ArtRecords -Dir (Join-Path $artDirFx 'combo-good')) -Profile $artProfileObj
+        $ok = $canonV.Verdict -eq 'PASS' -and $artGood.Verdict -eq 'PASS'
+        $results.Add("selftest.art-combo-both-pass: $(@('FAIL', 'PASS')[[int]$ok])")
+        $artBad = Invoke-ArtPerformanceVerdict -Contract $CT -RunRecords (New-ArtRecords -Dir (Join-Path $artDirFx 'combo-bad') -Avg '8.34' -P99 '8.34') -Profile $artProfileObj
+        $ok = $canonV.Verdict -eq 'PASS' -and $artBad.Verdict -eq 'FAIL'
+        $results.Add("selftest.art-combo-art-fail: $(@('FAIL', 'PASS')[[int]$ok])")
+        $canonBad = Invoke-PerformanceVerdict -Contract $CT -RunRecords (New-PerfRecords -CT $CT -Resolution $okRes -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 1.2 -P99Mul 1.2 -Fto 'true')
+        $ok = $canonBad.Verdict -eq 'FAIL' -and $artGood.Verdict -eq 'PASS'
+        $results.Add("selftest.art-combo-canonical-fail: $(@('FAIL', 'PASS')[[int]$ok])")
+
+        # 环境不满足 -> ENV_NOT_MET（分辨率错档）
+        $recs = New-PerfRecords -CT $CT -Resolution '1920x1080' -Api $CT.graphicsApi -Quality $CT.quality -VSync "$($CT.vSyncCount)" -TFps "$($CT.targetFrameRate)" -Cpu $HW.processorType -Gpu $HW.graphicsDeviceName -AvgMul 0.3 -P99Mul 0.5 -Fto 'true'
+        $v = Invoke-ArtPerformanceVerdict -Contract $CT -RunRecords $recs -Profile $artProfileObj
+        $results.Add("selftest.art-env-mismatch: $(@('FAIL', 'PASS')[[int]($v.Verdict -eq 'ENV_NOT_MET')])")
+
+        # resolved 顺序确定性：同一 profile 两次解析一致
+        $ap2 = Get-ArtProfile -Path $artProfilePath
+        $detOk = $false
+        if ($ap.Ok -and $ap2.Ok) {
+            $detOk = ($ap.Profile.profileId -eq $ap2.Profile.profileId) -and ($ap.Profile.selectionMode -eq $ap2.Profile.selectionMode)
+        }
+        $results.Add("selftest.art-resolved-deterministic: $(@('FAIL', 'PASS')[[int]$detOk])")
+
+        # profile parser 拒绝未知 selectionMode
+        $badProfileDir = Join-Path $fx 'artprofile-bad'
+        New-Item -ItemType Directory -Path $badProfileDir -Force | Out-Null
+        $badJson = ($artProfileObj | ConvertTo-Json -Depth 4) -replace 'DistinctMappedFormalVisuals', 'ActualMapMix'
+        $badPath = Join-Path $badProfileDir 'ART_PERFORMANCE_PROFILE.json'
+        Set-Content -LiteralPath $badPath -Value $badJson -Encoding UTF8
+        $apBad = Get-ArtProfile -Path $badPath
+        $results.Add("selftest.art-profile-rejects-unknown-selection: $(@('FAIL', 'PASS')[[int](-not $apBad.Ok)])")
     }
 
     $allPass = $true
@@ -1014,10 +1247,85 @@ if ($IncludePerformance) {
 }
 $perfOk = (-not $IncludePerformance) -or ($perfStatus -eq 'PASS')
 
+# 8b) Art Performance Gate（-IncludeArtPerformance）：同一 Build 连续 3 次 -arenaArtVisuals 运行 + 硬预算继承 + art 证据契约
+$artStatus = 'NOT_EVALUATED'
+$artContract = $null
+$artVerdict = $null
+$artProfile = $null
+$artEnvSummary = $null
+if ($IncludeArtPerformance) {
+    $artProfilePath = Join-Path $ProjectRoot 'docs\qa\ART_PERFORMANCE_PROFILE.json'
+    $ap = Get-ArtProfile -Path $artProfilePath
+    if (-not $ap.Ok) {
+        $artStatus = 'INFRA'
+        $Issues.Add('ArtPerformance INFRA: ' + $ap.Reason)
+    }
+    elseif ($perfStatus -ne 'PASS') {
+        # §6：只有 canonical PerformanceVerdict=PASS 才评估 art 层
+        $artStatus = 'NOT_EVALUATED'
+        $Issues.Add('ArtPerformance NOT_EVALUATED (canonical performance not PASS: ' + $perfStatus + ')')
+    }
+    else {
+        $artContract = $perfContract
+        $artProfile = $ap.Profile
+        $artDir = Join-Path $TempRoot 'ArtPerformance'
+        New-Item -ItemType Directory -Path $artDir -Force | Out-Null
+        $artRunRecords = @()
+        for ($runIndex = 1; $runIndex -le [int]$artContract.requiredRuns; $runIndex++) {
+            $runDir = Join-Path $artDir "Run$runIndex"
+            New-Item -ItemType Directory -Path $runDir -Force | Out-Null
+            Get-ChildItem -LiteralPath $runDir -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
+            $runLog = Join-Path $runDir 'PlayerRun.log'
+            $rec = @{ Index = $runIndex; Status = 'OK'; StatusReason = ''; Results = @() }
+            $artRun = Invoke-UnityChild -UnityExe $buildExe -ArgumentString "-screen-width $($artContract.resolution.width) -screen-height $($artContract.resolution.height) -screen-fullscreen 1 -screen-quality $($artContract.quality) -force-d3d12 -arenaPerf -arenaPerfGate -arenaArtVisuals -arenaPerfOut `"$runDir`" -logFile `"$runLog`"" -TimeoutMin $PlayerRunTimeoutMinutes
+            if ($artRun.TimedOut) {
+                $rec.Status = 'INFRA'
+                $rec.StatusReason = 'TIMEOUT (gate killed only its own child process)'
+                $Issues.Add("ArtPerformance run $runIndex TIMEOUT")
+            }
+            elseif ($artRun.ExitCode -ne 0) {
+                $rec.Status = 'INFRA'
+                $rec.StatusReason = "player exit code $($artRun.ExitCode)"
+                $Issues.Add("ArtPerformance run $runIndex player exit $($artRun.ExitCode)")
+            }
+            else {
+                $runResults = @()
+                $badEvidence = @()
+                foreach ($density in $artContract.densities) {
+                    $r = Read-HarnessResult -FilePath (Join-Path $runDir "$density.txt") -ExpectedDensity $density
+                    $runResults += $r
+                    if (-not $r.Valid) { $badEvidence += "density ${density}: $($r.Reason)" }
+                }
+                if ($badEvidence.Count -gt 0) {
+                    $rec.Status = 'INFRA'
+                    $rec.StatusReason = 'evidence missing/invalid in the specified output dir (fallback elsewhere does not count): ' + ($badEvidence -join ' | ')
+                    $Issues.Add("ArtPerformance run $runIndex bad evidence")
+                }
+                else {
+                    $rec.Results = $runResults
+                }
+            }
+            $artRunRecords += $rec
+        }
+        $okRecords = @($artRunRecords | Where-Object { $_.Status -eq 'OK' })
+        if ($okRecords.Count -eq 0) {
+            $artStatus = 'INFRA'
+        }
+        else {
+            $artVerdict = Invoke-ArtPerformanceVerdict -Contract $artContract -RunRecords $artRunRecords -Profile $artProfile
+            $artStatus = $artVerdict.Verdict
+            $envOk = @($artVerdict.EnvSummaries | Where-Object { $_.Status -eq 'PASS' })
+            if ($envOk.Count -gt 0) { $artEnvSummary = $envOk[0] }
+            foreach ($reason in $artVerdict.Reasons) { $Issues.Add("ArtPerformance: $reason") }
+        }
+    }
+}
+$artOk = (-not $IncludeArtPerformance) -or ($artStatus -eq 'PASS')
+
 # 9) Finalize once: unified verdict + summary + exit code
 $editOk = (-not $editInfra) -and $editResult.Result -eq 'Passed' -and $editResult.Failed -eq 0
 $playOk = (-not $playInfra) -and $null -ne $playResult -and $playResult.Result -eq 'Passed' -and $playResult.Failed -eq 0
-$gatePass = $editOk -and $playOk -and $auditOk -and $buildOk -and $playerRunOk -and $perfOk
+$gatePass = $editOk -and $playOk -and $auditOk -and $buildOk -and $playerRunOk -and $perfOk -and $artOk
 
 $editLine = 'EditMode: N/A'
 if ($null -ne $editResult) {
@@ -1092,6 +1400,35 @@ if ($IncludePerformance) {
 else {
     Write-Output 'PerformanceVerdict: NOT_EVALUATED'
 }
+if ($IncludeArtPerformance) {
+    Write-Output '=== GAME-ZZZ ART PERFORMANCE GATE ==='
+    if ($null -ne $artEnvSummary) {
+        Write-Output "Environment: $($artEnvSummary.Status)"
+        Write-Output "Resolution: $($artEnvSummary.Resolution)"
+        Write-Output "Hardware: $($artEnvSummary.HardwareCpu) / $($artEnvSummary.HardwareGpu)"
+    }
+    Write-Output "Profile: $(if ($null -ne $artProfile) { $artProfile.profileId } else { 'N/A' })"
+    if ($null -ne $artVerdict) {
+        foreach ($runSummary in $artVerdict.Runs) {
+            $i = $runSummary.Index
+            if ($null -eq $runSummary.Env) {
+                Write-Output "Run${i}: INFRA/BAD-EVIDENCE"
+                continue
+            }
+            $parts = @()
+            foreach ($m in $runSummary.Metrics) {
+                $parts += ("{0}: avg={1} p99={2} cpu={3} gpu={4} alive={5}/{6} {7}" -f $m.Density,
+                    ([math]::Round([double]$m.Avg, 3)), ([math]::Round([double]$m.P99, 3)),
+                    ([math]::Round([double]$m.Cpu, 3)), ([math]::Round([double]$m.Gpu, 3)),
+                    $m.Alive, $m.Density, $m.Status)
+            }
+            $envTag = ''
+            if ($runSummary.Env.Status -ne 'PASS') { $envTag = ' ENV_NOT_MET' }
+            Write-Output ("Run{0}:{1} {2}" -f $i, $envTag, ($parts -join ' | '))
+        }
+    }
+    Write-Output "ArtPerformanceVerdict: $artStatus"
+}
 foreach ($issue in $Issues) { Write-Output "Issue: $issue" }
 Write-Output "Gate: $(@('FAIL', 'PASS')[[int]$gatePass])"
 Write-Output "Artifacts: $TempRoot"
@@ -1107,6 +1444,7 @@ Write-SummaryJson -Path (Join-Path $TempRoot 'verification-summary.json') -Data 
     performance = @{ requested = [bool]$IncludePerformance; verdict = $perfStatus; environmentStatus = $(if ($null -ne $perfVerdict) { $perfVerdict.EnvStatus } else { 'NOT_EVALUATED' }); frameBudgetMs = $(if ($null -ne $perfContract) { $perfContract.frameBudgetMs } else { $null }); hardwareMatch = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.Status -eq 'PASS' } else { $false }); resolution = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.Resolution } else { '' }); graphicsApi = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.GraphicsApi } else { '' }); quality = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.Quality } else { '' }); vsync = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.VSync } else { '' }); targetFrameRate = $(if ($null -ne $perfEnvSummary) { $perfEnvSummary.TargetFps } else { '' }); runs = $(if ($null -ne $perfVerdict) { @($perfVerdict.Runs | ForEach-Object { @{ index = $_.Index; envStatus = $(if ($null -ne $_.Env) { $_.Env.Status } else { 'INFRA' }); densities = @($_.Metrics | ForEach-Object { @{ density = $_.Density; alive = $_.Alive; frames = $_.Frames; avg = $_.Avg; p99 = $_.P99; cpuAvg = $_.Cpu; gpuAvg = $_.Gpu; status = $_.Status; reasons = $_.Reasons } }) } }) } else { @() }) }
     build = @{ requested = [bool]$IncludeBuild; status = $buildStatus; unityExitCode = $(if ($null -ne $buildRun) { $buildRun.ExitCode } else { $null }); timedOut = $(if ($null -ne $buildRun) { $buildRun.TimedOut } else { $false }); executablePath = $buildExe; executableExists = $(if ($null -ne $artifact) { $artifact.ExecutableExists } else { $false }); executableBytes = $(if ($null -ne $artifact) { $artifact.ExecutableBytes } else { 0 }); dataDirectoryExists = $(if ($null -ne $artifact) { $artifact.DataDirectoryExists } else { $false }); timeoutMinutes = $BuildTimeoutMinutes; logPath = $buildLog }
     playerRun = @{ requested = [bool]$IncludePlayerRun; status = $playerRunStatus; exitCode = $(if ($null -ne $playerRunRun) { $playerRunRun.ExitCode } else { $null }); timedOut = $(if ($null -ne $playerRunRun) { $playerRunRun.TimedOut } else { $false }); timeoutMinutes = $PlayerRunTimeoutMinutes; logPath = $playerRunLog; outputPath = $playerRunDir; actualResolution = $(if ($null -ne $playerRunEvidence) { $playerRunEvidence.ActualResolution } else { '' }); graphicsApi = $(if ($null -ne $playerRunEvidence) { $playerRunEvidence.GraphicsApi } else { '' }); densities = $(if ($null -ne $playerRunEvidence) { @($playerRunEvidence.Results | ForEach-Object { @{ density = $_.Density; alive = $_.Alive; frames = $_.Frames; mainMsAvg = $_.MainMsAvg; mainMsP99 = $_.MainMsP99; gpuMsAvg = $_.GpuMsAvg; frameTimingAvailable = $_.FrameTimingOk } }) } else { @() }) }
+    artPerformance = @{ requested = [bool]$IncludeArtPerformance; verdict = $artStatus; profileId = $(if ($null -ne $artProfile) { $artProfile.profileId } else { '' }); profilePath = $(if ($IncludeArtPerformance) { Join-Path $ProjectRoot 'docs\qa\ART_PERFORMANCE_PROFILE.json' } else { '' }); resolvedVisuals = $(if ($null -ne $artVerdict -and $artVerdict.ArtReasons.Count -eq 0 -and $null -ne $perfVerdict) { 'see evidence headers' } else { '' }); assignmentMode = $(if ($null -ne $artProfile) { $artProfile.assignmentMode } else { '' }); environmentStatus = $(if ($null -ne $artVerdict) { $artVerdict.EnvStatus } else { 'NOT_EVALUATED' }); frameBudgetMs = $(if ($null -ne $artContract) { $artContract.frameBudgetMs } else { $null }); hardwareMatch = $(if ($null -ne $artEnvSummary) { $artEnvSummary.Status -eq 'PASS' } else { $false }); resolution = $(if ($null -ne $artEnvSummary) { $artEnvSummary.Resolution } else { '' }); runs = $(if ($null -ne $artVerdict) { @($artVerdict.Runs | ForEach-Object { @{ index = $_.Index; envStatus = $(if ($null -ne $_.Env) { $_.Env.Status } else { 'INFRA' }); densities = @($_.Metrics | ForEach-Object { @{ density = $_.Density; alive = $_.Alive; frames = $_.Frames; avg = $_.Avg; p99 = $_.P99; cpuAvg = $_.Cpu; gpuAvg = $_.Gpu; status = $_.Status; reasons = $_.Reasons } }) } }) } else { @() }) }
     gate = @{ verdict = $(@('FAIL', 'PASS')[[int]$gatePass]); startedUtc = $gateStartUtc; endedUtc = [DateTime]::UtcNow }
     issues = $Issues
 }

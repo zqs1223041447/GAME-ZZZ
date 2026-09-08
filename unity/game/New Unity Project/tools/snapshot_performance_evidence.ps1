@@ -26,6 +26,8 @@ param(
     [string]$SourceRoot = "",
     [string]$ContractPath = "",
     [string]$VerifyArchive = "",
+    [ValidateSet('Performance', 'ArtPerformance')]
+    [string]$EvidenceKind = 'Performance',
     [switch]$SelfTest
 )
 
@@ -68,7 +70,7 @@ function Get-ValidatedContract {
 # Summary preconditions: refuse anything that is not a complete PASS run.
 # ---------------------------------------------------------------------
 function Test-SummaryPassPreconditions {
-    param($Summary, $Contract)
+    param($Summary, $Contract, [switch]$ArtMode)
     if ($null -eq $Summary) { return @{ Ok = $false; Reason = 'verification-summary.json missing' } }
     $perf = $Summary.performance
     if ($null -eq $perf) { return @{ Ok = $false; Reason = 'summary has no performance section' } }
@@ -120,6 +122,15 @@ function Test-SummaryPassPreconditions {
     }
     $gate = $Summary.gate
     if ($null -eq $gate -or "$($gate.verdict)" -ne 'PASS') { return @{ Ok = $false; Reason = "gate verdict is $($gate.verdict)" } }
+    if ($ArtMode) {
+        # S3-P5-ART-R7：art 快照额外要求 artPerformance 层完整 PASS（canonical performance PASS 已在上方检查）
+        $art = $Summary.artPerformance
+        if ($null -eq $art) { return @{ Ok = $false; Reason = 'summary has no artPerformance section (not an -IncludeArtPerformance run)' } }
+        if (-not $art.requested) { return @{ Ok = $false; Reason = 'artPerformance.requested is false' } }
+        if ("$($art.verdict)" -ne 'PASS') { return @{ Ok = $false; Reason = "artPerformance verdict is $($art.verdict) (only PASS art evidence may be frozen)" } }
+        if ("$($art.environmentStatus)" -ne 'PASS') { return @{ Ok = $false; Reason = "artPerformance environmentStatus is $($art.environmentStatus)" } }
+        if ([string]::IsNullOrEmpty("$($art.profileId)")) { return @{ Ok = $false; Reason = 'artPerformance.profileId empty' } }
+    }
     if (@($Summary.issues).Count -gt 0) { return @{ Ok = $false; Reason = "summary records $($Summary.issues.Count) issue(s): $($Summary.issues -join ' | ')" } }
     return @{ Ok = $true; Reason = '' }
 }
@@ -128,7 +139,7 @@ function Test-SummaryPassPreconditions {
 # Raw evidence headers vs contract (cannot trust the summary alone).
 # ---------------------------------------------------------------------
 function Test-EvidenceFileAgainstContract {
-    param([string]$FilePath, [int]$ExpectedDensity, $Contract)
+    param([string]$FilePath, [int]$ExpectedDensity, $Contract, [switch]$ArtMode)
     if (-not (Test-Path -LiteralPath $FilePath)) { return @{ Ok = $false; Reason = "missing raw evidence file: $([System.IO.Path]::GetFileName($FilePath))" } }
     $lines = @(Get-Content -LiteralPath $FilePath -Encoding UTF8)
     if ($lines.Count -lt 3) { return @{ Ok = $false; Reason = "$([System.IO.Path]::GetFileName($FilePath)) too short (<3 lines)" } }
@@ -175,6 +186,24 @@ function Test-EvidenceFileAgainstContract {
     $dataRows = @($lines[($csvIndex + 1)..($lines.Count - 1)] | Where-Object { $_.Trim().Length -gt 0 })
     if ($dataRows.Count -lt 1) { return @{ Ok = $false; Reason = "$([System.IO.Path]::GetFileName($FilePath)) has no data row" } }
     if ($dataRows[0].Split(',').Count -ne 13) { return @{ Ok = $false; Reason = "$([System.IO.Path]::GetFileName($FilePath)) data row does not have 13 columns" } }
+    if ($ArtMode) {
+        # S3-P5-ART-R7：art 证据头校验（机器可读，art_profile/formal_visuals/instances/mix/renderer）
+        $get = { param($pattern) $m = [regex]::Match($text, $pattern); if ($m.Success) { return $m.Groups[1].Value } else { return $null } }
+        $profileId = & $get 'art_profile=(\S+)'
+        if ([string]::IsNullOrEmpty($profileId)) { return @{ Ok = $false; Reason = "$([System.IO.Path]::GetFileName($FilePath)) missing art_profile header" } }
+        $fv = & $get 'formal_visuals=(\S+)'
+        if ("$fv" -ne 'true') { return @{ Ok = $false; Reason = "$([System.IO.Path]::GetFileName($FilePath)) formal_visuals='$fv' != 'true' (fallback/misconfigured art evidence)" } }
+        $vi = [int](& $get 'visual_instances=(\d+)')
+        if ($vi -ne $ExpectedDensity) { return @{ Ok = $false; Reason = "$([System.IO.Path]::GetFileName($FilePath)) visual_instances=$vi != density $ExpectedDensity" } }
+        $mix = & $get 'visual_mix=(\S+)'
+        $mixSum = 0
+        if (-not [string]::IsNullOrEmpty("$mix")) { foreach ($kv in ("$mix").Split(';')) { $p2 = $kv.Split('='); if ($p2.Count -eq 2) { $n2 = [int]0; if ([int]::TryParse($p2[1], [ref]$n2)) { $mixSum += $n2 } } } }
+        if ($mixSum -ne $ExpectedDensity) { return @{ Ok = $false; Reason = "$([System.IO.Path]::GetFileName($FilePath)) visual_mix sum $mixSum != density $ExpectedDensity" } }
+        $ri = [int](& $get 'renderer_instances=(\d+)')
+        if ($ri -lt 1) { return @{ Ok = $false; Reason = "$([System.IO.Path]::GetFileName($FilePath)) renderer_instances=$ri < 1" } }
+        $rv = & $get 'resolved_visuals=(\S+)'
+        if ([string]::IsNullOrEmpty("$rv")) { return @{ Ok = $false; Reason = "$([System.IO.Path]::GetFileName($FilePath)) resolved_visuals empty" } }
+    }
     return @{ Ok = $true; Reason = '' }
 }
 
@@ -222,9 +251,11 @@ function New-PerformanceSnapshot {
         [string]$SourceRoot,
         [string]$Destination,
         [string]$ContractPath,
+        [string]$EvidenceKind = 'Performance',
         [switch]$SkipGitCheck
     )
     $result = @{ Ok = $false; Reason = ''; SourceCommit = ''; FilesCopied = 0; ManifestPath = '' }
+    $artMode = ($EvidenceKind -eq 'ArtPerformance')
 
     if (-not (Test-Path -LiteralPath $SourceRoot)) { $result.Reason = "source root not found: $SourceRoot"; return $result }
     $summaryPath = Join-Path $SourceRoot 'verification-summary.json'
@@ -238,26 +269,27 @@ function New-PerformanceSnapshot {
     $summary = $null
     try { $summary = Read-JsonFile -Path $summaryPath -What 'verification-summary' }
     catch { $result.Reason = $_.Exception.Message; return $result }
-    $pre = Test-SummaryPassPreconditions -Summary $summary -Contract $contract
+    $pre = Test-SummaryPassPreconditions -Summary $summary -Contract $contract -ArtMode:$artMode
     if (-not $pre.Ok) { $result.Reason = $pre.Reason; return $result }
 
     # Raw evidence inventory BEFORE any copying: requiredRuns x (densities + PlayerRun.log).
+    $runDirName = $(if ($artMode) { 'ArtPerformance' } else { 'Performance' })
     $densities = @($contract.densities)
     $runSources = @()
     for ($run = 1; $run -le [int]$contract.requiredRuns; $run++) {
-        $runDir = Join-Path $SourceRoot "Performance\Run$run"
-        if (-not (Test-Path -LiteralPath $runDir)) { $result.Reason = "missing run directory: Performance\Run$run"; return $result }
+        $runDir = Join-Path $SourceRoot "$runDirName\Run$run"
+        if (-not (Test-Path -LiteralPath $runDir)) { $result.Reason = "missing run directory: $runDirName\Run$run"; return $result }
         $files = @()
         foreach ($d in $densities) {
             $files += @{ Source = (Join-Path $runDir "$d.txt"); Relative = "Run$run/$d.txt" }
         }
         $files += @{ Source = (Join-Path $runDir 'PlayerRun.log'); Relative = "Run$run/PlayerRun.log" }
         foreach ($f in $files) {
-            if (-not (Test-Path -LiteralPath $f.Source)) { $result.Reason = "missing raw evidence: Performance\Run$run\$([System.IO.Path]::GetFileName($f.Source))"; return $result }
+            if (-not (Test-Path -LiteralPath $f.Source)) { $result.Reason = "missing raw evidence: $runDirName\Run$run\$([System.IO.Path]::GetFileName($f.Source))"; return $result }
             $name = [System.IO.Path]::GetFileNameWithoutExtension($f.Source)
             $d = 0
             if ([int]::TryParse($name, [ref]$d)) {
-                $check = Test-EvidenceFileAgainstContract -FilePath $f.Source -ExpectedDensity $d -Contract $contract
+                $check = Test-EvidenceFileAgainstContract -FilePath $f.Source -ExpectedDensity $d -Contract $contract -ArtMode:$artMode
                 if (-not $check.Ok) { $result.Reason = $check.Reason; return $result }
             }
         }
@@ -285,6 +317,13 @@ function New-PerformanceSnapshot {
         $copied += 'verification-summary.json'
         Copy-Item -LiteralPath $ContractPath -Destination (Join-Path $Destination 'PERFORMANCE_GATE.json') -Force
         $copied += 'PERFORMANCE_GATE.json'
+        if ($artMode) {
+            # §48：art 归档额外冻结 ART_PERFORMANCE_PROFILE.json（manifest 记 artProfileSha256）
+            $artProfilePath = Join-Path $ProjectRoot 'docs\qa\ART_PERFORMANCE_PROFILE.json'
+            if (-not (Test-Path -LiteralPath $artProfilePath)) { throw 'ART_PERFORMANCE_PROFILE.json missing (art snapshot requires it)' }
+            Copy-Item -LiteralPath $artProfilePath -Destination (Join-Path $Destination 'ART_PERFORMANCE_PROFILE.json') -Force
+            $copied += 'ART_PERFORMANCE_PROFILE.json'
+        }
     }
     catch {
         $result.Reason = "copy failed: $($_.Exception.Message)"
@@ -303,6 +342,7 @@ function New-PerformanceSnapshot {
     $manifest = [ordered]@{
         schemaVersion = 1
         sourceCommit = $commit
+        evidenceKind = $EvidenceKind
         contractSha256 = $contractHash
         verificationSummarySha256 = $summaryHash
         expectedRuns = [int]$contract.requiredRuns
@@ -311,6 +351,12 @@ function New-PerformanceSnapshot {
         environmentStatus = "$($summary.performance.environmentStatus)"
         capturedAtUtc = [DateTime]::UtcNow.ToString('o')
         files = $files
+    }
+    if ($artMode) {
+        $manifest.artPerformanceVerdict = "$($summary.artPerformance.verdict)"
+        $manifest.artPerformanceEnvironmentStatus = "$($summary.artPerformance.environmentStatus)"
+        $manifest.artPerformanceProfileId = "$($summary.artPerformance.profileId)"
+        $manifest.artProfileSha256 = ($files | Where-Object { $_.relativePath -eq 'ART_PERFORMANCE_PROFILE.json' }).sha256
     }
     $manifestPath = Join-Path $Destination 'MANIFEST.json'
     $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
@@ -326,7 +372,7 @@ function New-PerformanceSnapshot {
 # Archive verification (read-only): manifest/files/sizes/SHA-256/contract.
 # ---------------------------------------------------------------------
 function Test-EvidenceArchive {
-    param([string]$ArchivePath)
+    param([string]$ArchivePath, [string]$EvidenceKind = 'Performance')
     $reasons = @()
     $manifestPath = Join-Path $ArchivePath 'MANIFEST.json'
     if (-not (Test-Path -LiteralPath $manifestPath)) { return @{ Ok = $false; Reasons = @("MANIFEST.json not found in $ArchivePath"); FileCount = 0 } }
@@ -351,6 +397,15 @@ function Test-EvidenceArchive {
     }
     else { $reasons += 'contract snapshot PERFORMANCE_GATE.json missing' }
     if (-not (Test-Path -LiteralPath (Join-Path $ArchivePath 'verification-summary.json'))) { $reasons += 'verification-summary.json missing' }
+    if ($EvidenceKind -eq 'ArtPerformance') {
+        $artSnap = Join-Path $ArchivePath 'ART_PERFORMANCE_PROFILE.json'
+        if (-not (Test-Path -LiteralPath $artSnap)) { $reasons += 'ART_PERFORMANCE_PROFILE.json missing (art archive)' }
+        elseif ("$($manifest.artProfileSha256)" -ne '') {
+            $h = (Get-FileHash -LiteralPath $artSnap -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($h -ne "$($manifest.artProfileSha256)".ToLowerInvariant()) { $reasons += 'artProfileSha256 mismatch' }
+        }
+        else { $reasons += 'manifest missing artProfileSha256 (art archive)' }
+    }
 
     return @{ Ok = ($reasons.Count -eq 0); Reasons = $reasons; FileCount = $files.Count }
 }
@@ -402,7 +457,7 @@ $density,$alive,600,1.0,1.5,2.0,2.5,3.0,0.0,1.0,0.5,100.0,true
     }
 
     function New-FixtureTree {
-        param([string]$Root, [string]$Verdict, [string]$EnvStatus, [int[]]$SkipRuns = @(), [string]$DropFile = '', [string]$Cpu = 'Test CPU X1', [string]$Gpu = 'Test GPU X2')
+        param([string]$Root, [string]$Verdict, [string]$EnvStatus, [int[]]$SkipRuns = @(), [string]$DropFile = '', [string]$Cpu = 'Test CPU X1', [string]$Gpu = 'Test GPU X2', [switch]$Art, [string]$Formal = 'true')
         if (Test-Path -LiteralPath $Root) { Remove-Item -LiteralPath $Root -Recurse -Force }
         New-Item -ItemType Directory -Path $Root -Force | Out-Null
         $perf = @{
@@ -429,14 +484,30 @@ $density,$alive,600,1.0,1.5,2.0,2.5,3.0,0.0,1.0,0.5,100.0,true
             gate = @{ verdict = 'PASS' }
             issues = @()
         }
+        if ($Art) {
+            $summary.artPerformance = @{
+                requested = $true; verdict = $Verdict; environmentStatus = $EnvStatus; profileId = 'formal-enemy-visual-stress-v1'
+                assignmentMode = 'RoundRobinByEnemyKind'; frameBudgetMs = 8.33; hardwareMatch = $true
+                resolution = '1280x720'; runs = $perf.runs
+            }
+        }
         $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $Root 'verification-summary.json') -Encoding UTF8
+        $runDirBase = $(if ($Art) { 'ArtPerformance' } else { 'Performance' })
         foreach ($r in @(1, 2)) {
             if ($SkipRuns -contains $r) { continue }
-            $runDir = Join-Path $Root "Performance\Run$r"
+            $runDir = Join-Path $Root "$runDirBase\Run$r"
             New-Item -ItemType Directory -Path $runDir -Force | Out-Null
             foreach ($d in @(100, 200, 300)) {
                 if ($DropFile -eq "Run$r/$d.txt") { continue }
-                (& $evidence $d $Cpu $Gpu) | Set-Content -LiteralPath (Join-Path $runDir "$d.txt") -Encoding UTF8
+                $line = (& $evidence $d $Cpu $Gpu)
+                if ($Art) {
+                    $a = [int][math]::Ceiling($d / 3); $b = [int][math]::Floor($d / 3)
+                    if ($d % 3 -eq 0) { $mix = "TrollWarriorVisual=$b;FireLionVisual=$b;BruceVisual=$b" }
+                    elseif ($d % 3 -eq 1) { $mix = "TrollWarriorVisual=$a;FireLionVisual=$b;BruceVisual=$b" }
+                    else { $mix = "TrollWarriorVisual=$a;FireLionVisual=$a;BruceVisual=$b" }
+                    $line = ($line -replace '(?m)^# density strategy:', "# art_profile=formal-enemy-visual-stress-v1`n# formal_visuals=$Formal`n# visual_instances=$d`n# visual_type_count=3`n# visual_mix=$mix`n# resolved_visuals=TrollWarriorVisual;FireLionVisual;BruceVisual`n# renderer_instances=120`n# skinned_renderer_instances=100`n# material_slots=130`n# density strategy:")
+                }
+                $line | Set-Content -LiteralPath (Join-Path $runDir "$d.txt") -Encoding UTF8
             }
             if ($DropFile -ne "Run$r/PlayerRun.log") { Set-Content -LiteralPath (Join-Path $runDir 'PlayerRun.log') -Value 'PlayerRun log line' -Encoding UTF8 }
         }
@@ -506,8 +577,32 @@ $density,$alive,600,1.0,1.5,2.0,2.5,3.0,0.0,1.0,0.5,100.0,true
     $r9 = New-PerformanceSnapshot -SourceRoot $src9 -Destination (Join-Path $fx 'dest-issues') -ContractPath $contractPath -SkipGitCheck
     if ($r9.Ok) { $cases.Add('FAIL 9 summary with issues was accepted'); $failed++ } else { $cases.Add("OK    9  refuse summary with issues ($($r9.Reason))") }
 
+    # 10) art 模式：ArtPerformance 快照 OK + VerifyArchive(ArtPerformance) OK；canonical 仍 PASS 不受影响。
+    $src10 = Join-Path $fx 'src-art'; New-FixtureTree -Root $src10 -Verdict 'PASS' -EnvStatus 'PASS' -Art
+    $dst10 = Join-Path $fx 'dest-art'
+    $r10 = New-PerformanceSnapshot -SourceRoot $src10 -Destination $dst10 -ContractPath $contractPath -EvidenceKind 'ArtPerformance' -SkipGitCheck
+    if (-not $r10.Ok) { $cases.Add("FAIL 10a art snapshot: $($r10.Reason)"); $failed++ }
+    else {
+        $v10 = Test-EvidenceArchive -ArchivePath $dst10 -EvidenceKind 'ArtPerformance'
+        if (-not $v10.Ok) { $cases.Add("FAIL 10b art archive verify: $($v10.Reasons -join ' | ')"); $failed++ }
+        else { $cases.Add('OK    10  art snapshot + archive verify') }
+    }
+
+    # 11) art 模式：formal_visuals=false（fallback）证据 -> refuse。
+    $src11 = Join-Path $fx 'src-artfb'; New-FixtureTree -Root $src11 -Verdict 'PASS' -EnvStatus 'PASS' -Art -Formal 'false(load-failed-primitive-fallback)'
+    $r11 = New-PerformanceSnapshot -SourceRoot $src11 -Destination (Join-Path $fx 'dest-artfb') -ContractPath $contractPath -EvidenceKind 'ArtPerformance' -SkipGitCheck
+    if ($r11.Ok) { $cases.Add('FAIL 11 art fallback evidence was accepted'); $failed++ } else { $cases.Add("OK    11  refuse art fallback evidence ($($r11.Reason))") }
+
+    # 12) art 归档缺 ART_PERFORMANCE_PROFILE.json -> VerifyArchive 抓到。
+    if (Test-Path -LiteralPath (Join-Path $dst10 'ART_PERFORMANCE_PROFILE.json')) {
+        Remove-Item -LiteralPath (Join-Path $dst10 'ART_PERFORMANCE_PROFILE.json') -Force
+        $v12 = Test-EvidenceArchive -ArchivePath $dst10 -EvidenceKind 'ArtPerformance'
+        if ($v12.Ok) { $cases.Add('FAIL 12 missing art profile NOT detected'); $failed++ }
+        else { $cases.Add('OK    12  art archive missing profile detected') }
+    }
+
     foreach ($line in $cases) { Write-Output $line }
-    Write-Output ("SelfTest: {0}/9 PASS" -f (9 - $failed))
+    Write-Output ("SelfTest: {0}/{1} PASS" -f ($cases.Count - $failed), $cases.Count)
     if ($failed -gt 0) { exit 1 }
     exit 0
 }
@@ -523,7 +618,7 @@ if ($SelfTest) {
 if ($VerifyArchive -ne '') {
     if (-not [System.IO.Path]::IsPathRooted($VerifyArchive)) { $VerifyArchive = Join-Path $ProjectRoot $VerifyArchive }
     if (-not (Test-Path -LiteralPath $VerifyArchive)) { Write-Output "VerifyArchive: FAIL (archive not found: $VerifyArchive)"; exit 1 }
-    $v = Test-EvidenceArchive -ArchivePath $VerifyArchive
+    $v = Test-EvidenceArchive -ArchivePath $VerifyArchive -EvidenceKind $EvidenceKind
     foreach ($r in $v.Reasons) { Write-Output "Archive issue: $r" }
     Write-Output ("VerifyArchive: {0} ({1} manifest files)" -f (@('FAIL', 'OK')[[int]$v.Ok]), $v.FileCount)
     if ($v.Ok) { exit 0 } else { exit 1 }
@@ -537,15 +632,16 @@ if ($SourceRoot -eq '') { $SourceRoot = $DefaultSourceRoot }
 if ($ContractPath -eq '') { $ContractPath = $DefaultContractPath }
 
 Write-Output "Snapshot: source=$SourceRoot"
+Write-Output "Snapshot: evidenceKind=$EvidenceKind"
 Write-Output "Snapshot: contract=$ContractPath"
-$snap = New-PerformanceSnapshot -SourceRoot $SourceRoot -Destination $Destination -ContractPath $ContractPath
+$snap = New-PerformanceSnapshot -SourceRoot $SourceRoot -Destination $Destination -ContractPath $ContractPath -EvidenceKind $EvidenceKind
 if (-not $snap.Ok) {
     Write-Output "Snapshot: REFUSED — $($snap.Reason)"
     exit 1
 }
 Write-Output "Snapshot: source commit $($snap.SourceCommit)"
 Write-Output "Snapshot: copied $($snap.FilesCopied) files -> $Destination"
-$v = Test-EvidenceArchive -ArchivePath $Destination
+$v = Test-EvidenceArchive -ArchivePath $Destination -EvidenceKind $EvidenceKind
 if (-not $v.Ok) { Write-Output "Snapshot: post-copy verify FAILED — $($v.Reasons -join ' | ')"; exit 1 }
 Write-Output 'Snapshot: OK (manifest written, archive verified)'
 exit 0
