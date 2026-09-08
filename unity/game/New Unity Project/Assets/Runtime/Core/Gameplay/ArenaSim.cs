@@ -387,6 +387,7 @@ namespace Game.Runtime.Core
                 if (!Dummies.Items[i].Occupied || !Dummies.Items[i].Alive || !Dummies.Items[i].AttackReady)
                     continue;
                 Dummies.Items[i].AttackReady = false;
+                Dummies.Items[i].AttackExecutions++; // R3 观察计数：攻击执行事件（视觉表现层读，gameplay 行为零变化）
                 HitRequest req = Session.BuildEnemyHit(Dummies.Items[i]);
                 HitResult result = CombatMath.ResolveHit(req);
                 if (!result.Hit)

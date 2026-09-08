@@ -9,6 +9,9 @@ namespace Game.Runtime.Core
     {
         public const string PlayerDarkKnight = "Player/DarkKnight";
 
+        /// <summary>敌人视觉预制体（S3-P5-ART-R3）：Brute 槽位的正式怪物视觉，缺失回退基元（降级）。</summary>
+        public const string EnemyTrollVisual = "Enemies/TrollWarriorVisual";
+
         public static string CombatSfx(string key)
         {
             return "Audio/" + key;

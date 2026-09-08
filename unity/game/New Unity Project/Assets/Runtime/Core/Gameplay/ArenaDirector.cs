@@ -31,6 +31,8 @@ namespace Game.Runtime.Core
         GameObject[] _dummyGo;
         MeshRenderer[] _dummyRenderer;
         MeshFilter[] _dummyFilter;
+        GameObject _enemyVisualPrefab;
+        EnemyVisualPresenter[] _enemyPresenter;
         Transform[] _projView;
         Transform[] _fbView;
         MeshRenderer[] _fbRenderer;
@@ -171,6 +173,13 @@ namespace Game.Runtime.Core
                 _dummyRenderer[i] = mr;
                 _dummyFilter[i] = mf;
             }
+
+            // R3：敌人通用视觉表现层（Brute 槽位=正式怪物视觉；预制体缺失回退基元=降级模式，契约仍 REQUIRED）
+            _enemyVisualPrefab = Resources.Load<GameObject>(RuntimeResourcePaths.EnemyTrollVisual);
+            _enemyPresenter = new EnemyVisualPresenter[CombatRules.DummyPoolSize];
+            GameLog.Info("Arena", _enemyVisualPrefab != null
+                ? "enemy visual presenter ready (Brute slot)"
+                : "no enemy visual prefab -> primitive enemy visuals");
 
             _projView = new Transform[CombatRules.ProjectilePoolSize];
             for (int i = 0; i < _projView.Length; i++)
@@ -412,6 +421,7 @@ namespace Game.Runtime.Core
                 GameObject go = _dummyGo[i];
                 if (!d.Occupied)
                 {
+                    ReleaseEnemyVisual(i);
                     if (go.activeSelf)
                         go.SetActive(false);
                     continue;
@@ -419,6 +429,12 @@ namespace Game.Runtime.Core
 
                 if (!go.activeSelf)
                     go.SetActive(true);
+
+                // R3：Brute 槽位走通用视觉表现层（正式怪物视觉，动画由已有 gameplay 信号驱动）；其余 kind 保持基元视觉
+                if (d.Kind == EnemyKind.Brute && TryPresentEnemyVisual(i, go, d))
+                    continue;
+
+                ReleaseEnemyVisual(i);
                 _dummyFilter[i].sharedMesh = MeshFor(d.Kind);
                 float y = HeightFor(d.Kind, d.Scale);
                 go.transform.SetPositionAndRotation(
@@ -459,6 +475,55 @@ namespace Game.Runtime.Core
                     continue;
                 ApplyFeedbackVisual(_fbView[i], _fbFilter[i], _fbRenderer[i], fbs[i]);
             }
+        }
+
+        // R3：通用敌人视觉表现层接线。只读 gameplay 状态（Anim/HitFlash/AttackExecutions），零 gameplay 写入；
+        // 美术 scale 不作用于 gameplay root（root scale 恒 1），贴地用预制体自带的 R2 验证 offset。
+        bool TryPresentEnemyVisual(int slot, GameObject go, Dummy d)
+        {
+            if (_enemyVisualPrefab == null)
+                return false;
+            EnemyVisualPresenter presenter = _enemyPresenter[slot];
+            if (presenter == null)
+            {
+                presenter = EnemyVisualPresenter.Mount(_enemyVisualPrefab, go.transform);
+                if (presenter == null)
+                {
+                    _enemyVisualPrefab = null; // 挂载失败即回退基元视觉，不逐帧重试
+                    return false;
+                }
+                _enemyPresenter[slot] = presenter;
+            }
+
+            presenter.Show();
+            go.transform.SetPositionAndRotation(
+                new Vector3(d.X, 0f, d.Z),
+                Quaternion.Euler(0f, d.YawDeg, 0f));
+            if (go.transform.localScale != Vector3.one)
+                go.transform.localScale = Vector3.one;
+            if (_dummyRenderer[slot].enabled)
+                _dummyRenderer[slot].enabled = false; // 隐藏基元 placeholder（slot 换 kind 时恢复）
+            presenter.Present(d.Alive, d.Anim, d.HitFlash, d.AttackExecutions, Time.time);
+            return true;
+        }
+
+        void ReleaseEnemyVisual(int slot)
+        {
+            EnemyVisualPresenter presenter = _enemyPresenter[slot];
+            if (presenter == null)
+                return;
+            presenter.Hide();
+            presenter.ResetObservation();
+            if (_dummyRenderer[slot] != null)
+                _dummyRenderer[slot].enabled = true;
+        }
+
+        /// <summary>只读观察钩子（测试/QA）：指定槽位的敌人视觉表现层，未挂载为 null。</summary>
+        public EnemyVisualPresenter EnemyVisualFor(int slot)
+        {
+            if (_enemyPresenter == null || slot < 0 || slot >= _enemyPresenter.Length)
+                return null;
+            return _enemyPresenter[slot];
         }
 
         void ApplyFeedbackVisual(Transform t, MeshFilter mf, MeshRenderer mr, Feedback fb)

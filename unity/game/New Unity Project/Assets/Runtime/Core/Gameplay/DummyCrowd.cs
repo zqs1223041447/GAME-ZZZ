@@ -27,6 +27,9 @@ namespace Game.Runtime.Core
         public float AttackTimer;
         public bool CanAttack;
         public bool AttackReady;
+        /// <summary>R3 观察字段（表现层只读）：攻击执行序号——ArenaSim.ResolveEnemyAttacks 消费 AttackReady 时 +1。
+        /// 单调递增、不参与任何 gameplay 判定，仅供视觉表现层检测攻击边沿。</summary>
+        public int AttackExecutions;
         public float Speed;
         public float Scale;
         public float IgniteDps;
@@ -101,6 +104,7 @@ namespace Game.Runtime.Core
                 d.AttackTimer = 0f;
                 d.CanAttack = false;
                 d.AttackReady = false;
+                d.AttackExecutions = 0;
                 d.Speed = CombatRules.DummySpeed;
                 d.Scale = 1f;
                 d.IgniteDps = 0f;
