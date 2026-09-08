@@ -48,6 +48,7 @@ namespace Game.Tests.EditMode
             Assert.AreEqual("Enemies/TrollWarriorVisual", RuntimeResourcePaths.EnemyTrollVisual);
             Assert.AreEqual("Enemies/FireLionVisual", RuntimeResourcePaths.EnemyFireLionVisual);
             Assert.AreEqual("Enemies/BruceVisual", RuntimeResourcePaths.EnemyBruceVisual);
+            Assert.AreEqual("Enemies/GargoyleVisual", RuntimeResourcePaths.EnemyGargoyleVisual);
             Assert.AreEqual("Audio/Cast", RuntimeResourcePaths.CombatSfx("Cast"));
             Assert.AreEqual("Audio/Loot", RuntimeResourcePaths.CombatSfx("Loot"));
             Assert.AreEqual("Audio/Voice/Cast", RuntimeResourcePaths.Voice("Cast"));
@@ -97,8 +98,8 @@ namespace Game.Tests.EditMode
             }
             Assert.AreEqual(1, playerCount, "玩家预制体契约必须恰好 1 条");
             Assert.IsNull(ValidateCoverage(
-                new[] { RuntimeResourcePaths.EnemyTrollVisual, RuntimeResourcePaths.EnemyFireLionVisual, RuntimeResourcePaths.EnemyBruceVisual },
-                enemyExpected), "敌人视觉契约覆盖不一致（S3-P5-ART-R3/R4/R6）");
+                new[] { RuntimeResourcePaths.EnemyTrollVisual, RuntimeResourcePaths.EnemyFireLionVisual, RuntimeResourcePaths.EnemyBruceVisual, RuntimeResourcePaths.EnemyGargoyleVisual },
+                enemyExpected), "敌人视觉契约覆盖不一致（S3-P5-ART-R3/R4/R6/R9）");
             Assert.IsNull(ValidateCoverage(AudioEvents.DeclaredKeys, sfxExpected), "战斗 SFX 契约覆盖不一致");
             Assert.IsNull(ValidateCoverage(VoiceCues.DeclaredKeys, voiceExpected), "人声契约覆盖不一致");
         }
