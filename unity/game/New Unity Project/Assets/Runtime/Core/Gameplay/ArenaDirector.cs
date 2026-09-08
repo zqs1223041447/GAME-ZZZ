@@ -512,6 +512,8 @@ namespace Game.Runtime.Core
             if (_dummyRenderer[slot].enabled)
                 _dummyRenderer[slot].enabled = false; // 隐藏基元 placeholder（slot 换 kind 时恢复）
             presenter.Present(d.Alive, d.Anim, d.HitFlash, d.AttackExecutions, Time.time);
+            // R5：战斗反馈 tint——只读观察既有 canonical truth（HitFlash/IgniteRemain>0），零 gameplay 写入
+            presenter.ApplyFeedback(d.Alive, d.HitFlash, d.IgniteRemain > 0f);
             return true;
         }
 

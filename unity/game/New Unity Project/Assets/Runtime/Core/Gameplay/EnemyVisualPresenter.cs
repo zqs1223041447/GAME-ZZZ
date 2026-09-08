@@ -14,6 +14,7 @@ namespace Game.Runtime.Core
     {
         readonly GameObject _root;
         readonly Animator _animator;
+        readonly EnemyVisualFeedback _feedback;
         readonly bool _hasIdle;
         readonly bool _hasRun;
         readonly bool _hasAttack;
@@ -33,6 +34,7 @@ namespace Game.Runtime.Core
         {
             _root = root;
             _animator = animator;
+            _feedback = new EnemyVisualFeedback(root); // R5：战斗反馈 tint（原色缓存/仅状态变化写，无 gameplay 写）
             RuntimeAnimatorController ctrl = _animator != null ? _animator.runtimeAnimatorController : null;
             _hasClips = ctrl != null && ctrl.animationClips != null && ctrl.animationClips.Length > 0;
             if (ctrl == null)
@@ -162,6 +164,23 @@ namespace Game.Runtime.Core
             _deathShown = false;
             _actionUntil = 0f;
             _lastRequestedState = null;
+        }
+
+        /// <summary>
+        /// 战斗反馈 tint（R5）：只读消费 canonical gameplay truth——hitFlash 来自 HitFlash、ignited 由调用方
+        /// 从 IgniteRemain&gt;0 派生；本类不派生/不倒计时/不写回。优先级 Hit &gt; Ignite &gt; Normal 在 feedback 内。
+        /// </summary>
+        public void ApplyFeedback(bool alive, float hitFlash, bool ignited)
+        {
+            if (_feedback == null)
+                return;
+            _feedback.Apply(alive, hitFlash, ignited);
+        }
+
+        /// <summary>只读观察：最近应用的战斗反馈状态（测试/QA 验证钩子；未挂载视觉时为 Normal）。</summary>
+        public EnemyFeedbackState LastFeedbackState
+        {
+            get { return _feedback != null ? _feedback.LastState : EnemyFeedbackState.Normal; }
         }
 
         /// <summary>移动姿态映射（纯函数）：Run→"Run"，其余→"Idle"。</summary>
