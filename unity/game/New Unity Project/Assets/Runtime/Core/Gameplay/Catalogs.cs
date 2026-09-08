@@ -208,7 +208,8 @@ namespace Game.Runtime.Core
         public const int MaxAffixesRare = 4;
         public const int PassiveCount = 16;
         public const int StartPoints = 8;
-        public const float PlayerBaseLife = 80f;
+        // 导演 2026-09-08：QA/游玩期玩家血量提升至 9999999（原 80）——玩家不再被围杀打断表现验证
+        public const float PlayerBaseLife = 9999999f;
         public const float PlayerBaseMana = 40f;
         public const float PlayerBaseAccuracy = 120f;
         public const float PlayerBaseArmour = 10f;

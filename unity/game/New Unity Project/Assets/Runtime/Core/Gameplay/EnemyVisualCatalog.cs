@@ -15,6 +15,8 @@ namespace Game.Runtime.Core
                     return RuntimeResourcePaths.EnemyTrollVisual;
                 case EnemyKind.Stinger:
                     return RuntimeResourcePaths.EnemyFireLionVisual;
+                case EnemyKind.Warden:
+                    return RuntimeResourcePaths.EnemyBruceVisual;
                 default:
                     return null;
             }

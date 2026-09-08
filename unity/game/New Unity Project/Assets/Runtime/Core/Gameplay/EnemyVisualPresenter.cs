@@ -29,6 +29,7 @@ namespace Game.Runtime.Core
         bool _observed;
         bool _deathShown;
         string _lastRequestedState;
+        string _lastPlayState;
 
         EnemyVisualPresenter(GameObject root, Animator animator)
         {
@@ -121,7 +122,7 @@ namespace Game.Runtime.Core
                 {
                     _deathShown = true;
                     if (_hasDeath)
-                        RequestState("Death");
+                        RequestState("Death", true);
                 }
                 return;
             }
@@ -132,7 +133,7 @@ namespace Game.Runtime.Core
             _lastAttackSerial = attackSerial;
             if (_hasAttack && attackEdge)
             {
-                RequestState("Attack");
+                RequestState("Attack", true);
                 _actionUntil = now + _attackLen;
                 return;
             }
@@ -140,7 +141,7 @@ namespace Game.Runtime.Core
             bool hitEdge = hitFlash > 0.02f;
             if (_hasHit && hitEdge && anim == AnimState.Hit && _lastRequestedState != "Hit")
             {
-                RequestState("Hit");
+                RequestState("Hit", true);
                 _actionUntil = now + _hitLen;
                 return;
             }
@@ -164,6 +165,7 @@ namespace Game.Runtime.Core
             _deathShown = false;
             _actionUntil = 0f;
             _lastRequestedState = null;
+            _lastPlayState = null;
         }
 
         /// <summary>
@@ -191,10 +193,22 @@ namespace Game.Runtime.Core
 
         void RequestState(string state)
         {
+            RequestState(state, false);
+        }
+
+        /// <summary>
+        /// force=true（攻击/受击/死亡边沿）必须重播；同状态默认不重播——否则每帧 Play(state,0,0f)
+        /// 会把循环 clip 反复从头重启，视觉上表现为「怪物没有移动动画」（导演 2026-09-08 反馈根因）。
+        /// </summary>
+        void RequestState(string state, bool force)
+        {
             _lastRequestedState = state;
             if (_animator == null || !_animator.enabled || !_hasClips)
                 return;
             _animator.speed = 1f;
+            if (!force && state == _lastPlayState)
+                return;
+            _lastPlayState = state;
             _animator.Play(state, 0, 0f);
         }
 

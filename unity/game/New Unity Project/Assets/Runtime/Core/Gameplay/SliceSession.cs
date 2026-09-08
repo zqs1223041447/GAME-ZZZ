@@ -538,7 +538,7 @@ namespace Game.Runtime.Core
             sim.Feedback.Clear();
             sim.Dummies.Clear();
             sim.SpawnedCount = 0;
-            sim.SpawnDummies(8, CombatRules.ArenaSeed);
+            // 导演 2026-09-08：出图后不再在玩家周围生成木桩群（原 SpawnDummies(8, ...) 已移除）
             if (death)
             {
                 ApplyStabilityLoss(SliceRules.DeathStabilityLoss + SliceRules.DeathStabilityPerAffix * EnabledAffixCount());

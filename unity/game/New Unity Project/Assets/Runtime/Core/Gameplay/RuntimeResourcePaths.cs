@@ -15,6 +15,9 @@ namespace Game.Runtime.Core
         /// <summary>敌人视觉预制体（S3-P5-ART-R4）：Stinger 槽位的正式怪物视觉（火狮），缺失回退基元（降级）。</summary>
         public const string EnemyFireLionVisual = "Enemies/FireLionVisual";
 
+        /// <summary>敌人视觉预制体（S3-P5-ART-R6）：Warden 槽位的正式怪物视觉（Bruce，role-specific 高价值位），缺失回退基元（降级）。</summary>
+        public const string EnemyBruceVisual = "Enemies/BruceVisual";
+
         public static string CombatSfx(string key)
         {
             return "Audio/" + key;

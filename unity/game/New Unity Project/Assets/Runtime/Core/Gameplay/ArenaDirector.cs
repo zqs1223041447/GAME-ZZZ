@@ -78,6 +78,8 @@ namespace Game.Runtime.Core
 
         void Awake()
         {
+            // 导演 2026-09-08：切后台不冻结（编辑器/Player 均生效）
+            Application.runInBackground = true;
             BuildIfNeeded();
         }
 
@@ -218,7 +220,7 @@ namespace Game.Runtime.Core
                 Sim.Caster.Defs = Sim.Session.ResolveSkillDef;
             }
 
-            Sim.SpawnDummies(8, CombatRules.ArenaSeed);
+            // 导演 2026-09-08：Town/出图后不再自动在玩家周围生成木桩群（基准量仍可 F1/F2/F3 手动开）
             GameLog.Info("Arena", "S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。");
 
             // 测量钩子：默认无操作，仅独立包 -arenaPerf 参数或显式调用时启动
