@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "6572fbd432baed883023adf8c66cd4f4a87263cc",
+  "evidenceKind": "ArtPerformance",
+  "contractSha256": "72caf4865300b5abccc438a003da0b52b6c58f8fb6d2e67e303eafe834e59464",
+  "verificationSummarySha256": "e2e97751989c3370d1ef8bf5754f0084d91240eda2ddb1f2d1c7b505df45aad8",
+  "expectedRuns": 3,
+  "expectedDensities": [
+    100,
+    200,
+    300
+  ],
+  "performanceVerdict": "PASS",
+  "environmentStatus": "PASS",
+  "capturedAtUtc": "2026-09-08T19:52:44.9881852Z",
+  "files": [
+    {
+      "relativePath": "Run1/100.txt",
+      "sha256": "165177ac9a29cd9bf974c5ba132c6f0c16413129cbe72280b87b126400d4b2e2",
+      "bytes": 1023
+    },
+    {
+      "relativePath": "Run1/200.txt",
+      "sha256": "0f5f5f17c4a3281e19c050b4243f3d57410dc8724ab7756e411c477a9818b717",
+      "bytes": 1023
+    },
+    {
+      "relativePath": "Run1/300.txt",
+      "sha256": "a98850866558d77add7deedaf17cd6f1e33cbf055ebcfbb3742ba7c27b2702f5",
+      "bytes": 1024
+    },
+    {
+      "relativePath": "Run1/PlayerRun.log",
+      "sha256": "27e1105f353075f0d1545afe43a439d14e9cf371a437c6cd5dad777513561386",
+      "bytes": 59629
+    },
+    {
+      "relativePath": "Run2/100.txt",
+      "sha256": "a195670d8ff295b471666fc19b925686d6d3c30513766b795a3800982c338bc2",
+      "bytes": 1023
+    },
+    {
+      "relativePath": "Run2/200.txt",
+      "sha256": "4b2ea3078e7a2dd35ebeb9f52a1c96498fbe1c11e12644e4a6d3c2c18a5a5db2",
+      "bytes": 1023
+    },
+    {
+      "relativePath": "Run2/300.txt",
+      "sha256": "50170519340f1d50a4a5749278e579201ee017a03e6d2554ff082e324ba7e5c6",
+      "bytes": 1024
+    },
+    {
+      "relativePath": "Run2/PlayerRun.log",
+      "sha256": "58eb9adfb688d1ac879104cb9bd09618ee85feee360f0f8f33622cdc9b697093",
+      "bytes": 59629
+    },
+    {
+      "relativePath": "Run3/100.txt",
+      "sha256": "606b205779c0f28a7cefdd9da8541a42974b5327ca21230a11d2a17472fa2411",
+      "bytes": 1022
+    },
+    {
+      "relativePath": "Run3/200.txt",
+      "sha256": "0996b8caa4d97676e6aae35c6c6db846e9bcc4c8a59c49869faf037b5b860e7c",
+      "bytes": 1023
+    },
+    {
+      "relativePath": "Run3/300.txt",
+      "sha256": "2625152d83028eab7850d191eceb906b6bea94bc2de57d4135e9c5fa14dd67d6",
+      "bytes": 1024
+    },
+    {
+      "relativePath": "Run3/PlayerRun.log",
+      "sha256": "0505da54f5ed21c7b869cfe74ad804f0809ceea7d08cb23575797072be3f9c36",
+      "bytes": 59494
+    },
+    {
+      "relativePath": "verification-summary.json",
+      "sha256": "e2e97751989c3370d1ef8bf5754f0084d91240eda2ddb1f2d1c7b505df45aad8",
+      "bytes": 8357
+    },
+    {
+      "relativePath": "PERFORMANCE_GATE.json",
+      "sha256": "72caf4865300b5abccc438a003da0b52b6c58f8fb6d2e67e303eafe834e59464",
+      "bytes": 749
+    },
+    {
+      "relativePath": "ART_PERFORMANCE_PROFILE.json",
+      "sha256": "7111e7ce4dc8075483f72bbf9acf5086cd4d39fbfa2a2d131cfb5cfb8272edde",
+      "bytes": 805
+    }
+  ],
+  "artPerformanceVerdict": "PASS",
+  "artPerformanceEnvironmentStatus": "PASS",
+  "artPerformanceProfileId": "formal-enemy-visual-stress-v1",
+  "artProfileSha256": "7111e7ce4dc8075483f72bbf9acf5086cd4d39fbfa2a2d131cfb5cfb8272edde"
+}
