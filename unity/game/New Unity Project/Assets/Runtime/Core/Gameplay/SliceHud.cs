@@ -33,6 +33,7 @@ namespace Game.Runtime.Core
         Rect _skillHud;
         Rect _tray;
         Rect _panel;
+        Rect _drawer;
         Rect _craftResult;
 
         static readonly Vector2[] TreePos =
@@ -57,13 +58,25 @@ namespace Game.Runtime.Core
 
         public bool ShouldBlockWorld(SliceSession s)
         {
-            if (s != null && s.Panel != SlicePanel.None)
+            bool panelOpen = s != null && s.Panel != SlicePanel.None;
+            return BlocksWorldInput(panelOpen, _dragging, _topBar, _nav, _skillHud, _tray, _drawer,
+                new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y) / _scale);
+        }
+
+        /// <summary>纯函数：给定设计空间区域与 GUI 点，判定是否吞掉世界点击（R2 抽屉纳入；供几何测试）。</summary>
+        public static bool BlocksWorldInput(bool panelOpen, bool dragging, Rect topBar, Rect nav, Rect skillHud,
+            Rect tray, Rect drawer, Vector2 guiPoint)
+        {
+            if (panelOpen || dragging)
                 return true;
-            if (_dragging)
-                return true;
-            Vector2 gui = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y) / _scale;
-            return _topBar.Contains(gui) || _nav.Contains(gui) || _skillHud.Contains(gui) ||
-                   _tray.Contains(gui) || _panel.Contains(gui);
+            return topBar.Contains(guiPoint) || nav.Contains(guiPoint) || skillHud.Contains(guiPoint) ||
+                   tray.Contains(guiPoint) || drawer.Contains(guiPoint);
+        }
+
+        /// <summary>全局等比缩放因子（1920×1080 设计基准；供缩放几何测试与 Draw 共用）。</summary>
+        public static float DesignScale(float screenW, float screenH)
+        {
+            return Mathf.Clamp(Mathf.Min(screenW / 1920f, screenH / 1080f), 0.4f, 1.4f);
         }
 
         public void Draw(ArenaDirector director)
@@ -74,7 +87,7 @@ namespace Game.Runtime.Core
                 return;
 
             // 全局等比缩放：布局按 1920x1080 设计空间书写（方案页基准），任意窗口按比例缩放
-            _scale = Mathf.Clamp(Mathf.Min(Screen.width / 1920f, Screen.height / 1080f), 0.4f, 1.4f);
+            _scale = DesignScale(Screen.width, Screen.height);
             Matrix4x4 oldMatrix = GUI.matrix;
             GUIUtility.ScaleAroundPivot(new Vector2(_scale, _scale), Vector2.zero);
             try
@@ -86,6 +99,7 @@ namespace Game.Runtime.Core
                 DrawNav(s, sim);
                 DrawSkillHud(s);
                 DrawSupportTray(s);
+                DrawDrawer(s);
 
                 if (s.Panel == SlicePanel.Build)
                     DrawBuild(s, sim);
@@ -406,9 +420,56 @@ namespace Game.Runtime.Core
             }
         }
 
+        /// <summary>R2 右侧装备抽屉：常驻列=标题+2×2 迷你槽+Build/Craft tab。单渲染器原则：Build/Craft 内容在列左侧面板迁移呈现（move, not duplicate），列永远可见。</summary>
+        void DrawDrawer(SliceSession s)
+        {
+            float dw = Dw();
+            _drawer = SliceDrawerLayout.Column(dw);
+            PanelBg(_drawer);
+            Label(new Rect(_drawer.x + 8, _drawer.y + 6, _drawer.width - 16, 18), "装备", _small);
+            DrawMiniSlot(s, EquipSlot.Weapon, SliceDrawerLayout.Slot(0, dw));
+            DrawMiniSlot(s, EquipSlot.Body, SliceDrawerLayout.Slot(1, dw));
+            DrawMiniSlot(s, EquipSlot.Helmet, SliceDrawerLayout.Slot(2, dw));
+            DrawMiniSlot(s, EquipSlot.Boots, SliceDrawerLayout.Slot(3, dw));
+            if (NavBtn(SliceDrawerLayout.Tab(0, dw), "角色", s.Panel == SlicePanel.Build))
+                s.Panel = s.Panel == SlicePanel.Build ? SlicePanel.None : SlicePanel.Build;
+            if (NavBtn(SliceDrawerLayout.Tab(1, dw), "制作", s.Panel == SlicePanel.Craft))
+                s.Panel = s.Panel == SlicePanel.Craft ? SlicePanel.None : SlicePanel.Craft;
+        }
+
+        /// <summary>迷你装备槽：只读现有 canonical 装备状态（EquipSlot/Inventory），点击=打开 Build 面板；无新图标资源（文字+程序化槽位皮肤）。</summary>
+        void DrawMiniSlot(SliceSession s, EquipSlot slot, Rect r)
+        {
+            Event e = Event.current;
+            bool hover = e != null && r.Contains(e.mousePosition);
+            bool press = hover && e != null && e.type == EventType.MouseDown && e.button == 0;
+            GUI.Box(r, GUIContent.none, press ? _slotP : (hover ? _slotH : _slotN));
+            int idx = s.Equipped[(int)slot];
+            bool has = idx >= 0 && idx < s.InventoryCount;
+            Label(new Rect(r.x + 8, r.y + 6, r.width - 14, 16), SliceSession.SlotName(slot), _small);
+            if (has)
+            {
+                ItemInstance it = s.Inventory[idx];
+                GUI.color = it.Rarity == Rarity.Rare ? SlicePalette.Rare : SlicePalette.Ordinary;
+                Clipped(new Rect(r.x + 8, r.y + 24, r.width - 14, 18),
+                    SliceSession.CleanBaseName(it.BaseName), _clip, SliceSession.DescribeItem(it));
+                GUI.color = Color.white;
+            }
+            else
+            {
+                Label(new Rect(r.x + 8, r.y + 24, r.width - 14, 18), "空", _small);
+            }
+            if (Click(r))
+            {
+                if (s.Panel != SlicePanel.Build)
+                    s.Panel = SlicePanel.Build;
+                ClickFlash(r);
+            }
+        }
+
         void DrawBuild(SliceSession s, ArenaSim sim)
         {
-            _panel = new Rect(12, 140, 760, 430);
+            _panel = SliceDrawerLayout.BuildPanel(Dw());
             PanelChrome(_panel, "角色  ·  " + s.StatusCopy);
             DrawGearRow(s, new Rect(_panel.x + 12, _panel.y + 32, 736, 118));
             DrawInventory(s, new Rect(_panel.x + 12, _panel.y + 154, 360, 260));
@@ -598,7 +659,7 @@ namespace Game.Runtime.Core
 
         void DrawCraft(SliceSession s)
         {
-            _panel = new Rect(12, 140, 560, 340);
+            _panel = SliceDrawerLayout.CraftPanel(Dw());
             PanelChrome(_panel, "制作  ·  " + s.StatusCopy);
             Label(new Rect(_panel.x + 16, _panel.y + 32, 528, 18),
                 "废料 " + s.Scrap + "    蚀刻剂 " + s.Etching, _title);
