@@ -31,8 +31,9 @@ namespace Game.Runtime.Core
         GameObject[] _dummyGo;
         MeshRenderer[] _dummyRenderer;
         MeshFilter[] _dummyFilter;
-        GameObject _enemyVisualPrefab;
         EnemyVisualPresenter[] _enemyPresenter;
+        string[] _enemyPresenterPath;
+        readonly Dictionary<string, GameObject> _enemyVisualPrefabs = new Dictionary<string, GameObject>();
         Transform[] _projView;
         Transform[] _fbView;
         MeshRenderer[] _fbRenderer;
@@ -174,12 +175,9 @@ namespace Game.Runtime.Core
                 _dummyFilter[i] = mf;
             }
 
-            // R3：敌人通用视觉表现层（Brute 槽位=正式怪物视觉；预制体缺失回退基元=降级模式，契约仍 REQUIRED）
-            _enemyVisualPrefab = Resources.Load<GameObject>(RuntimeResourcePaths.EnemyTrollVisual);
+            // R4：敌人视觉映射表（EnemyVisualCatalog）驱动；各 kind 预制体按需加载，缺失回退基元=降级模式
             _enemyPresenter = new EnemyVisualPresenter[CombatRules.DummyPoolSize];
-            GameLog.Info("Arena", _enemyVisualPrefab != null
-                ? "enemy visual presenter ready (Brute slot)"
-                : "no enemy visual prefab -> primitive enemy visuals");
+            _enemyPresenterPath = new string[CombatRules.DummyPoolSize];
 
             _projView = new Transform[CombatRules.ProjectilePoolSize];
             for (int i = 0; i < _projView.Length; i++)
@@ -430,8 +428,8 @@ namespace Game.Runtime.Core
                 if (!go.activeSelf)
                     go.SetActive(true);
 
-                // R3：Brute 槽位走通用视觉表现层（正式怪物视觉，动画由已有 gameplay 信号驱动）；其余 kind 保持基元视觉
-                if (d.Kind == EnemyKind.Brute && TryPresentEnemyVisual(i, go, d))
+                // R4：视觉映射表驱动（Brute=Troll、Stinger=狼，其余基元 placeholder）；动画由已有 gameplay 信号驱动
+                if (TryPresentEnemyVisual(i, go, d))
                     continue;
 
                 ReleaseEnemyVisual(i);
@@ -477,22 +475,32 @@ namespace Game.Runtime.Core
             }
         }
 
-        // R3：通用敌人视觉表现层接线。只读 gameplay 状态（Anim/HitFlash/AttackExecutions），零 gameplay 写入；
-        // 美术 scale 不作用于 gameplay root（root scale 恒 1），贴地用预制体自带的 R2 验证 offset。
+        // R3/R4：通用敌人视觉表现层接线（映射表 EnemyVisualCatalog → 按需加载 → Presenter）。
+        // 只读 gameplay 状态（Anim/HitFlash/AttackExecutions），零 gameplay 写入；
+        // 美术 scale 不作用于 gameplay root（root scale 恒 1），贴地用各预制体自带验证 offset。
         bool TryPresentEnemyVisual(int slot, GameObject go, Dummy d)
         {
-            if (_enemyVisualPrefab == null)
+            string resourcePath = EnemyVisualCatalog.VisualResourcePath(d.Kind);
+            if (string.IsNullOrEmpty(resourcePath))
                 return false;
+
             EnemyVisualPresenter presenter = _enemyPresenter[slot];
+            if (presenter != null && _enemyPresenterPath[slot] != resourcePath)
+            {
+                ReleaseEnemyVisual(slot); // 槽位换 kind：释放旧视觉（R4 映射表泛化）
+                presenter = null;
+            }
+
             if (presenter == null)
             {
-                presenter = EnemyVisualPresenter.Mount(_enemyVisualPrefab, go.transform);
+                GameObject prefab = LoadEnemyVisualPrefab(resourcePath);
+                if (prefab == null)
+                    return false; // 契约 REQUIRED 缺失=降级基元（审计红），加载失败已缓存不逐帧重试
+                presenter = EnemyVisualPresenter.Mount(prefab, go.transform);
                 if (presenter == null)
-                {
-                    _enemyVisualPrefab = null; // 挂载失败即回退基元视觉，不逐帧重试
                     return false;
-                }
                 _enemyPresenter[slot] = presenter;
+                _enemyPresenterPath[slot] = resourcePath;
             }
 
             presenter.Show();
@@ -507,6 +515,17 @@ namespace Game.Runtime.Core
             return true;
         }
 
+        GameObject LoadEnemyVisualPrefab(string resourcePath)
+        {
+            if (_enemyVisualPrefabs.TryGetValue(resourcePath, out GameObject cached))
+                return cached;
+            GameObject prefab = Resources.Load<GameObject>(resourcePath);
+            if (prefab == null)
+                GameLog.Info("Arena", "no enemy visual prefab at " + resourcePath + " -> primitive fallback");
+            _enemyVisualPrefabs[resourcePath] = prefab;
+            return prefab;
+        }
+
         void ReleaseEnemyVisual(int slot)
         {
             EnemyVisualPresenter presenter = _enemyPresenter[slot];
@@ -516,6 +535,8 @@ namespace Game.Runtime.Core
             presenter.ResetObservation();
             if (_dummyRenderer[slot] != null)
                 _dummyRenderer[slot].enabled = true;
+            _enemyPresenter[slot] = null;
+            _enemyPresenterPath[slot] = null;
         }
 
         /// <summary>只读观察钩子（测试/QA）：指定槽位的敌人视觉表现层，未挂载为 null。</summary>

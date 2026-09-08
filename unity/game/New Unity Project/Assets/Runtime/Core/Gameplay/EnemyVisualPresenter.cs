@@ -46,7 +46,7 @@ namespace Game.Runtime.Core
             _hitLen = ClipLength("Hit", 0.3f);
         }
 
-        /// <summary>实例化预制体并挂到 gameplay root 下（local 恒等：美术 scale 由预制体自带，不作用于 root）。</summary>
+        /// <summary>实例化预制体并挂到 gameplay root 下（位置/朝向归零，scale 沿用预制体根节点自带值）。</summary>
         public static EnemyVisualPresenter Mount(GameObject prefab, Transform gameplayRoot)
         {
             if (prefab == null || gameplayRoot == null)
@@ -56,7 +56,7 @@ namespace Game.Runtime.Core
             go.name = "VisualRoot";
             go.transform.localPosition = Vector3.zero;
             go.transform.localRotation = Quaternion.identity;
-            go.transform.localScale = Vector3.one;
+            // 保留预制体根节点自带 scale（美术负责整体尺寸，如 FireLion 0.00648），此处不得覆写
             StripBlockingPhysics(go);
 
             Animator animator = null;
