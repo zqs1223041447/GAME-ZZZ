@@ -42,7 +42,9 @@ namespace Game.Tests.EditMode
                 if (Domain == ResourceDomain.Player)
                     return RuntimeResourcePaths.PlayerDarkKnight;
                 if (Domain == ResourceDomain.Enemy)
-                    return RuntimeResourcePaths.EnemyTrollVisual;
+                    return LogicalKey == "TrollWarriorVisual"
+                        ? RuntimeResourcePaths.EnemyTrollVisual
+                        : RuntimeResourcePaths.EnemyFireLionVisual;
                 if (Domain == ResourceDomain.Voice)
                     return RuntimeResourcePaths.Voice(LogicalKey);
                 return RuntimeResourcePaths.CombatSfx(LogicalKey);
@@ -88,6 +90,7 @@ namespace Game.Tests.EditMode
             new ResourceContract { Logical = "战斗 SFX Death", Domain = ResourceDomain.CombatSfx, LogicalKey = "Death", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = SfxFallback },
             new ResourceContract { Logical = "战斗 SFX Loot", Domain = ResourceDomain.CombatSfx, LogicalKey = "Loot", TypeName = "AudioClip", Class = ResourceClass.Required, GateReason = null, Fallback = SfxFallback },
             new ResourceContract { Logical = "敌人视觉预制体（TrollWarriorVisual，Brute 默认视觉）", Domain = ResourceDomain.Enemy, LogicalKey = "TrollWarriorVisual", TypeName = "GameObject", Class = ResourceClass.Required, GateReason = null, Fallback = "Runtime 缺失回退基元视觉（降级）；契约仍 REQUIRED（S3-P5-ART-R3）" },
+            new ResourceContract { Logical = "敌人视觉预制体（FireLionVisual，Stinger 默认视觉）", Domain = ResourceDomain.Enemy, LogicalKey = "FireLionVisual", TypeName = "GameObject", Class = ResourceClass.Required, GateReason = null, Fallback = "Runtime 缺失回退基元视觉（降级）；契约仍 REQUIRED（S3-P5-ART-R4）" },
             new ResourceContract { Logical = "人声 Cast", Domain = ResourceDomain.Voice, LogicalKey = "Cast", TypeName = "AudioClip", Class = ResourceClass.Gated, GateReason = VoiceGateReason, Fallback = "缺失=静音" },
             new ResourceContract { Logical = "人声 Hit", Domain = ResourceDomain.Voice, LogicalKey = "Hit", TypeName = "AudioClip", Class = ResourceClass.Gated, GateReason = VoiceGateReason, Fallback = "缺失=静音" },
             new ResourceContract { Logical = "人声 Death", Domain = ResourceDomain.Voice, LogicalKey = "Death", TypeName = "AudioClip", Class = ResourceClass.Gated, GateReason = VoiceGateReason, Fallback = "缺失=静音" }

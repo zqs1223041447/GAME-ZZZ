@@ -103,10 +103,10 @@ namespace Game.Tests.EditMode
             Assert.AreEqual(new Vector3(1.2f, 1f, 1.2f), parent.transform.localScale, "挂载不得改 gameplay root scale");
             Assert.AreEqual(new Vector3(3f, 0f, -2f), parent.transform.localPosition);
             Assert.AreEqual(Quaternion.Euler(0f, 45f, 0f), parent.transform.localRotation);
-            // 视觉子层级 local 恒等（自带 R2 验证过的 scale/offset）
+            // 视觉子层级位置/朝向归零，scale 沿用预制体根节点自带值（挂载不得覆写美术 scale）
             Assert.AreEqual(Vector3.zero, presenter.Root.transform.localPosition);
             Assert.AreEqual(Quaternion.identity, presenter.Root.transform.localRotation);
-            Assert.AreEqual(Vector3.one, presenter.Root.transform.localScale);
+            Assert.AreEqual(prefab.transform.localScale, presenter.Root.transform.localScale, "挂载必须保留预制体根 scale（≈2.5047，动画口径≈2.35m）");
             Assert.AreEqual("VisualRoot", presenter.Root.name);
         }
 

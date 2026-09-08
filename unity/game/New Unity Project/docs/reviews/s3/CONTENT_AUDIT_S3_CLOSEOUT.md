@@ -37,11 +37,12 @@ REQUIRED 缺失=审计失败；GATED 缺失=如实记录不失败（导演门控
 | 战斗 SFX Death | Audio/Death | AudioClip | Required | Assets/Resources/Audio/Death.ogg | PASS |
 | 战斗 SFX Loot | Audio/Loot | AudioClip | Required | Assets/Resources/Audio/Loot.ogg | PASS |
 | 敌人视觉预制体（TrollWarriorVisual，Brute 默认视觉） | Enemies/TrollWarriorVisual | GameObject | Required | Assets/Resources/Enemies/TrollWarriorVisual.prefab | PASS |
+| 敌人视觉预制体（FireLionVisual，Stinger 默认视觉） | Enemies/FireLionVisual | GameObject | Required | Assets/Resources/Enemies/FireLionVisual.prefab | PASS |
 | 人声 Cast | Audio/Voice/Cast | AudioClip | Gated | — | GATED-MISSING |
 | 人声 Hit | Audio/Voice/Hit | AudioClip | Gated | — | GATED-MISSING |
 | 人声 Death | Audio/Voice/Death | AudioClip | Gated | — | GATED-MISSING |
 
-REQUIRED 通过 7/7；GATED present 0 / missing 3（缺失不失败）。
+REQUIRED 通过 8/8；GATED present 0 / missing 3（缺失不失败）。
 
 ## Skill Tag Profiles（golden parity + 当前形态规则）
 

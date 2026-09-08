@@ -46,6 +46,7 @@ namespace Game.Tests.EditMode
         {
             Assert.AreEqual("Player/DarkKnight", RuntimeResourcePaths.PlayerDarkKnight);
             Assert.AreEqual("Enemies/TrollWarriorVisual", RuntimeResourcePaths.EnemyTrollVisual);
+            Assert.AreEqual("Enemies/FireLionVisual", RuntimeResourcePaths.EnemyFireLionVisual);
             Assert.AreEqual("Audio/Cast", RuntimeResourcePaths.CombatSfx("Cast"));
             Assert.AreEqual("Audio/Loot", RuntimeResourcePaths.CombatSfx("Loot"));
             Assert.AreEqual("Audio/Voice/Cast", RuntimeResourcePaths.Voice("Cast"));
@@ -73,8 +74,8 @@ namespace Game.Tests.EditMode
         {
             var sfxExpected = new List<string>();
             var voiceExpected = new List<string>();
+            var enemyExpected = new List<string>();
             int playerCount = 0;
-            int enemyCount = 0;
             foreach (var c in ContentResourceAuditContracts.All)
             {
                 if (c.Domain == ResourceDomain.CombatSfx)
@@ -83,9 +84,8 @@ namespace Game.Tests.EditMode
                     voiceExpected.Add(c.LogicalKey);
                 else if (c.Domain == ResourceDomain.Enemy)
                 {
-                    enemyCount++;
+                    enemyExpected.Add(c.Key);
                     Assert.AreEqual(ResourceClass.Required, c.Class);
-                    Assert.AreEqual(RuntimeResourcePaths.EnemyTrollVisual, c.Key);
                 }
                 else
                 {
@@ -95,7 +95,9 @@ namespace Game.Tests.EditMode
                 }
             }
             Assert.AreEqual(1, playerCount, "玩家预制体契约必须恰好 1 条");
-            Assert.AreEqual(1, enemyCount, "敌人视觉预制体契约必须恰好 1 条（S3-P5-ART-R3）");
+            Assert.IsNull(ValidateCoverage(
+                new[] { RuntimeResourcePaths.EnemyTrollVisual, RuntimeResourcePaths.EnemyFireLionVisual },
+                enemyExpected), "敌人视觉契约覆盖不一致（S3-P5-ART-R3/R4）");
             Assert.IsNull(ValidateCoverage(AudioEvents.DeclaredKeys, sfxExpected), "战斗 SFX 契约覆盖不一致");
             Assert.IsNull(ValidateCoverage(VoiceCues.DeclaredKeys, voiceExpected), "人声契约覆盖不一致");
         }
