@@ -435,6 +435,13 @@ namespace Game.Runtime.Core
                     continue;
 
                 ReleaseEnemyVisual(i);
+                // S3-P5-ART-R7：art benchmark 模式下 Dummy 基元视觉由 harness 正式视觉层接管，隐藏避免双视觉
+                if (ArenaPerfHarness.ArtVisualsActive && d.Kind == EnemyKind.Dummy)
+                {
+                    if (go.activeSelf)
+                        go.SetActive(false);
+                    continue;
+                }
                 _dummyFilter[i].sharedMesh = MeshFor(d.Kind);
                 float y = HeightFor(d.Kind, d.Scale);
                 go.transform.SetPositionAndRotation(

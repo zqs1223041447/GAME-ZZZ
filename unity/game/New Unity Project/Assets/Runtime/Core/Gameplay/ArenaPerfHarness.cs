@@ -26,6 +26,7 @@ namespace Game.Runtime.Core
 
         public static bool RequestedFromArgs { get; private set; }
         public static bool GateEnvironment { get; private set; }
+        public static bool ArtVisualsRequested { get; private set; }
         public static string OutDir { get; private set; }
         public static bool Finished { get; private set; }
 
@@ -40,6 +41,8 @@ namespace Game.Runtime.Core
                     RequestedFromArgs = true;
                 else if (args[i] == "-arenaPerfGate")
                     GateEnvironment = true;
+                else if (args[i] == "-arenaArtVisuals")
+                    ArtVisualsRequested = true;
                 else if (args[i] == "-arenaPerfOut" && i + 1 < args.Length)
                 {
                     OutDir = args[i + 1];
@@ -130,6 +133,14 @@ namespace Game.Runtime.Core
         static IEnumerator Run(ArenaDirector director)
         {
             var sim = director.Sim;
+            // S3-P5-ART-R7：formal art stress 层——canonical Dummy gameplay workload 不变，只叠加正式 presentation。
+            // 预载/池化必须在 warmup 之前完成（§15/§16/§17）；失败时证据标记 fallback（§34：不能仍 PASS）。
+            bool artMode = ArtVisualsRequested;
+            if (artMode && !BuildArtVisuals())
+            {
+                artMode = false;
+                _artLoadFailed = true;
+            }
             for (int d = 0; d < Densities.Length; d++)
             {
                 int count = Densities[d];
@@ -141,6 +152,7 @@ namespace Game.Runtime.Core
                 for (int i = 0; i < WarmupFrames; i++)
                 {
                     TickHarness(sim, count, ref castAt, ref pick);
+                    if (artMode) SyncArtVisuals(sim, count);
                     yield return null;
                 }
 
@@ -148,6 +160,7 @@ namespace Game.Runtime.Core
                 for (int i = 0; i < SampleFrames; i++)
                 {
                     TickHarness(sim, count, ref castAt, ref pick);
+                    if (artMode) SyncArtVisuals(sim, count);
                     sampler.Sample(Time.unscaledDeltaTime);
                     yield return null;
                 }
@@ -229,6 +242,29 @@ namespace Game.Runtime.Core
             var sb = new StringBuilder();
             // 标题不声明分辨率（真实分辨率以 resolution= 实测行为准；S3-M6 证据中性化）
             sb.AppendLine("# ArenaPerfHarness, density=" + count);
+            if (ArtVisualsRequested)
+            {
+                // S3-P5-ART-R7：formal art stress 证据元数据（observation，不设独立硬门槛；机器可读供 Gate 校验）
+                sb.AppendLine("# art_profile=" + ArtProfileId);
+                sb.AppendLine("# formal_visuals=" + (_artLoadFailed ? "false(load-failed-primitive-fallback)" : "true"));
+                sb.AppendLine("# visual_instances=" + count.ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("# visual_type_count=" + _artResolved.Count.ToString(CultureInfo.InvariantCulture));
+                var mix = new StringBuilder();
+                for (int t = 0; t < _artResolved.Count; t++)
+                {
+                    if (t > 0) mix.Append(';');
+                    mix.Append(_artResolved[t]).Append('=').Append(CountMix(count, t));
+                }
+                sb.AppendLine("# visual_mix=" + mix.ToString());
+                sb.AppendLine("# resolved_visuals=" + string.Join(";", _artResolved.ToArray()));
+                int renderers, skinned, slots, verts, tris;
+                CountArtRenderers(count, out renderers, out skinned, out slots, out verts, out tris);
+                sb.AppendLine("# renderer_instances=" + renderers.ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("# skinned_renderer_instances=" + skinned.ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("# material_slots=" + slots.ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("# approx_vertices=" + verts.ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("# approx_triangles=" + tris.ToString(CultureInfo.InvariantCulture));
+            }
             sb.AppendLine("# resolution=" + Screen.width + "x" + Screen.height +
                 " fullscreen=" + Screen.fullScreen +
                 " currentRes=" + Screen.currentResolution.width + "x" + Screen.currentResolution.height +
@@ -262,6 +298,145 @@ namespace Game.Runtime.Core
             string path = Path.Combine(_outDir, count + ".txt");
             File.WriteAllText(path, sb.ToString());
             GameLog.Info("Perf", "harness wrote " + path);
+        }
+
+        // ------------------------------------------------------------------
+        // S3-P5-ART-R7：formal art stress 层（benchmark-only）
+        // gameplay 实体仍为 EnemyKind.Dummy（canonical workload 不变）；presentation
+        // 经 EnemyVisualPresenter + EnemyVisualCatalog 正式映射 round-robin 叠加。
+        // 禁止把 gameplay Kind 改成 Brute/Stinger/Warden 凑视觉（§9）。
+        // ------------------------------------------------------------------
+        const string ArtProfileId = "formal-enemy-visual-stress-v1";
+        const string ArtSelectionMode = "DistinctMappedFormalVisuals";
+        const string ArtAssignmentMode = "RoundRobinByEnemyKind";
+
+        static GameObject _artRoot;
+        static readonly System.Collections.Generic.List<GameObject> _artPrefabs = new System.Collections.Generic.List<GameObject>();
+        static readonly System.Collections.Generic.List<string> _artResolved = new System.Collections.Generic.List<string>();
+        static readonly System.Collections.Generic.List<EnemyVisualPresenter> _artPresenters = new System.Collections.Generic.List<EnemyVisualPresenter>();
+        static readonly System.Collections.Generic.List<int> _artVisualIndexOfSlot = new System.Collections.Generic.List<int>();
+        static bool _artLoadFailed;
+
+        /// <summary>art benchmark 视觉槽数（最高密度档一次建满，密度切换只 active/inactive，§16）。</summary>
+        public static int ArtSlotCapacity
+        {
+            get { return Densities[Densities.Length - 1]; }
+        }
+
+        /// <summary>art 正式视觉层是否已接管 Dummy 表现（加载成功才算接管；失败回退基元，canonical 原样）。</summary>
+        public static bool ArtVisualsActive
+        {
+            get { return RequestedFromArgs && ArtVisualsRequested && !_artLoadFailed && _artRoot != null; }
+        }
+
+        static int CountMix(int density, int visualIndex)
+        {
+            int n = 0;
+            for (int i = 0; i < density; i++)
+                if (_artVisualIndexOfSlot[i] == visualIndex)
+                    n++;
+            return n;
+        }
+
+        static void CountArtRenderers(int density, out int renderers, out int skinned, out int materialSlots, out int verts, out int tris)
+        {
+            renderers = 0; skinned = 0; materialSlots = 0; verts = 0; tris = 0;
+            for (int i = 0; i < density && i < _artPresenters.Count; i++)
+            {
+                var root = _artPresenters[i].Root;
+                if (root == null || !root.activeSelf)
+                    continue;
+                var rs = root.GetComponentsInChildren<Renderer>(true);
+                for (int r = 0; r < rs.Length; r++)
+                {
+                    if (!rs[r].enabled)
+                        continue; // §57：renderer disabled 不得计入 visual_instances 口径
+                    renderers++;
+                    if (rs[r] is SkinnedMeshRenderer) skinned++;
+                    var mats = rs[r].sharedMaterials;
+                    if (mats != null) materialSlots += mats.Length;
+                }
+                var smr = root.GetComponentInChildren<SkinnedMeshRenderer>();
+                if (smr != null && smr.sharedMesh != null)
+                {
+                    verts += smr.sharedMesh.vertexCount;
+                    tris += smr.sharedMesh.triangles.Length / 3;
+                }
+            }
+        }
+
+        static bool BuildArtVisuals()
+        {
+            _artLoadFailed = false;
+            // 解析：EnemyVisualCatalog 当前全部非 null 正式映射（EnemyKind 确定性顺序），不复制路径 truth（§8/§26）
+            var kinds = new[] { EnemyKind.Brute, EnemyKind.Stinger, EnemyKind.Ashling, EnemyKind.Warden };
+            for (int k = 0; k < kinds.Length; k++)
+            {
+                string path = EnemyVisualCatalog.VisualResourcePath(kinds[k]);
+                if (string.IsNullOrEmpty(path))
+                    continue;
+                GameObject prefab = Resources.Load<GameObject>(path);
+                if (prefab == null)
+                {
+                    GameLog.Error("Perf", "art visual load failed: " + path);
+                    return false; // §34：正式 visual 缺失不得仍 PASS（fallback 标记由证据层校验）
+                }
+                _artPrefabs.Add(prefab);
+                _artResolved.Add(prefab.name);
+            }
+            if (_artResolved.Count == 0)
+                return false;
+
+            _artRoot = new GameObject("ArenaArtVisualPool");
+            UnityEngine.Object.DontDestroyOnLoad(_artRoot);
+            int capacity = ArtSlotCapacity;
+            for (int i = 0; i < capacity; i++)
+            {
+                int vi = i % _artPrefabs.Count; // RoundRobinByEnemyKind
+                var host = new GameObject("art_slot_" + i.ToString(CultureInfo.InvariantCulture));
+                host.transform.SetParent(_artRoot.transform, false);
+                var presenter = EnemyVisualPresenter.Mount(_artPrefabs[vi], host.transform);
+                if (presenter == null)
+                    return false;
+                presenter.Hide();
+                _artPresenters.Add(presenter);
+                _artVisualIndexOfSlot.Add(vi);
+            }
+            GameLog.Info("Perf", "art visual pool ready: visuals=" + string.Join(";", _artResolved.ToArray()) +
+                " slots=" + capacity.ToString(CultureInfo.InvariantCulture));
+            return true;
+        }
+
+        static void SyncArtVisuals(ArenaSim sim, int density)
+        {
+            // art 槽 j 与 Dummy 池槽 j 固定 1:1（视觉身份随池位不走），j%visualCount=round-robin；
+            // occupied（存活+死亡回收窗口内）→显示并同步 canonical 位置/姿态；否则隐藏。
+            var items = sim.Dummies.Items;
+            int n = density < _artPresenters.Count ? density : _artPresenters.Count;
+            for (int j = 0; j < n; j++)
+            {
+                var presenter = _artPresenters[j];
+                var d = items[j];
+                if (!d.Occupied)
+                {
+                    if (presenter.Root != null && presenter.Root.activeSelf)
+                        presenter.Hide();
+                    continue;
+                }
+                if (presenter.Root != null && !presenter.Root.activeSelf)
+                    presenter.Show();
+                var t = presenter.Root.transform;
+                t.position = new Vector3(d.X, 0f, d.Z);
+                t.rotation = Quaternion.Euler(0f, d.YawDeg, 0f);
+                presenter.Present(d.Alive, d.Anim, d.HitFlash, d.AttackExecutions, Time.time);
+                presenter.ApplyFeedback(d.Alive, d.HitFlash, d.IgniteRemain > 0f);
+            }
+            for (int j = n; j < _artPresenters.Count; j++)
+            {
+                var presenter = _artPresenters[j];
+                if (presenter.Root != null && presenter.Root.activeSelf)
+                    presenter.Hide();
+            }
         }
     }
 }
