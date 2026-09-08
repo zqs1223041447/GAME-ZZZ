@@ -45,6 +45,7 @@ namespace Game.Tests.EditMode
         public void RuntimePathContract_ProducesExactKeys()
         {
             Assert.AreEqual("Player/DarkKnight", RuntimeResourcePaths.PlayerDarkKnight);
+            Assert.AreEqual("Enemies/TrollWarriorVisual", RuntimeResourcePaths.EnemyTrollVisual);
             Assert.AreEqual("Audio/Cast", RuntimeResourcePaths.CombatSfx("Cast"));
             Assert.AreEqual("Audio/Loot", RuntimeResourcePaths.CombatSfx("Loot"));
             Assert.AreEqual("Audio/Voice/Cast", RuntimeResourcePaths.Voice("Cast"));
@@ -73,12 +74,19 @@ namespace Game.Tests.EditMode
             var sfxExpected = new List<string>();
             var voiceExpected = new List<string>();
             int playerCount = 0;
+            int enemyCount = 0;
             foreach (var c in ContentResourceAuditContracts.All)
             {
                 if (c.Domain == ResourceDomain.CombatSfx)
                     sfxExpected.Add(c.LogicalKey);
                 else if (c.Domain == ResourceDomain.Voice)
                     voiceExpected.Add(c.LogicalKey);
+                else if (c.Domain == ResourceDomain.Enemy)
+                {
+                    enemyCount++;
+                    Assert.AreEqual(ResourceClass.Required, c.Class);
+                    Assert.AreEqual(RuntimeResourcePaths.EnemyTrollVisual, c.Key);
+                }
                 else
                 {
                     playerCount++;
@@ -87,6 +95,7 @@ namespace Game.Tests.EditMode
                 }
             }
             Assert.AreEqual(1, playerCount, "玩家预制体契约必须恰好 1 条");
+            Assert.AreEqual(1, enemyCount, "敌人视觉预制体契约必须恰好 1 条（S3-P5-ART-R3）");
             Assert.IsNull(ValidateCoverage(AudioEvents.DeclaredKeys, sfxExpected), "战斗 SFX 契约覆盖不一致");
             Assert.IsNull(ValidateCoverage(VoiceCues.DeclaredKeys, voiceExpected), "人声契约覆盖不一致");
         }
