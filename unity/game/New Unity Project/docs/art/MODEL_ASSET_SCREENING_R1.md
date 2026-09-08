@@ -15,7 +15,7 @@
 
 | Phase 5 需求 | 初选候选 | 状态 | 理由 |
 |---|---|---|---|
-| Boss | **Dragon Warlord Bruce**（龙领主） | 已拷贝，可直接导入评估 | 体量小、名字直接对应 Boss 位；与「监守」精英现有位置衔接 |
+| Boss | **Dragon Warlord Bruce**（龙领主） | **已试装（Art Trial R1，2026-09-08）→ ACCEPT WITH FOLLOW-UP**：九轴=8 PASS+Style Fit CONDITIONAL（手绘低模 vs DarkKnight 暗黑写实的风格混用待导演/规划裁定）；技术全达标（Generic 44 骨/20 clips 五类齐/URP-Lit 2 材质/2.60m≈2.2×DarkKnight/1738 verts-1822 tris 极低成本）；follow-up=风格裁定+controller 过渡接线+Hit 游戏内验证+Boss 位定义。详见 `docs/reviews/s3/S3_PHASE5_ART_R1_BRUCE_REVIEW.md` | 体量小、名字直接对应 Boss 位；与「监守」精英现有位置衔接 |
 | Boss 备选 | PBR 石像鬼/骨龙/蛇战士包 | 仅预览（4.8GB） | 初筛说明自荐优先验收；但需解压+导入评估成本高 |
 | 代表怪 | **Lion Head Monster / 巨魔×2 / 狼 / 蝙蝠×2** | 已拷贝，体量小 | 各覆盖一只代表怪位（近战重甲/野性/飞行），可逐只「入库检查+换模挂载+贴地验证」 |
 | 批量普通怪 | **POLYGON Knights / Samurai / Dwarfs / Orc Pack Bundle** | 已拷贝 | 低模统一风格、可批量出普通怪（现普通怪=色块基元） |
