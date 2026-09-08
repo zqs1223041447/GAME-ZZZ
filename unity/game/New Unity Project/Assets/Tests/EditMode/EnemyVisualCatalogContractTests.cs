@@ -29,8 +29,9 @@ namespace Game.Tests.EditMode
                 "Brute 必须仍映射 TrollWarriorVisual（R3 契约不变）");
             Assert.AreEqual(RuntimeResourcePaths.EnemyFireLionVisual, EnemyVisualCatalog.VisualResourcePath(EnemyKind.Stinger),
                 "Stinger 必须映射 FireLionVisual（R4 第二视觉）");
+            Assert.AreEqual(RuntimeResourcePaths.EnemyBruceVisual, EnemyVisualCatalog.VisualResourcePath(EnemyKind.Warden),
+                "Warden 必须映射 BruceVisual（S3-P5-ART-R6 第三正式视觉）");
             Assert.IsNull(EnemyVisualCatalog.VisualResourcePath(EnemyKind.Ashling), "Ashling 未接入=基元 placeholder");
-            Assert.IsNull(EnemyVisualCatalog.VisualResourcePath(EnemyKind.Warden), "Warden 未接入=基元 placeholder");
             Assert.IsNull(EnemyVisualCatalog.VisualResourcePath(EnemyKind.Dummy), "Dummy（Harness 路径）不接入");
         }
 
