@@ -595,25 +595,18 @@ namespace Game.Runtime.Core
         {
             Fill(r, new Color(0.11f, 0.11f, 0.13f, 1f));
             Label(new Rect(r.x + 8, r.y + 4, r.width - 16, 16), "天赋  已点金 / 可点绿 / 锁住灰", _small);
-            Rect area = new Rect(r.x + 6, r.y + 22, r.width - 12, r.height - 28);
-            for (int i = 0; i < PassiveCatalog.Count; i++)
-            {
-                int[] links = PassiveCatalog.Get(i).Links;
-                if (links == null)
-                    continue;
-                Vector2 a = NodeCenter(area, i);
-                for (int k = 0; k < links.Length; k++)
-                {
-                    if (links[k] <= i)
-                        continue;
-                    DrawLine(a, NodeCenter(area, links[k]), new Color(0.35f, 0.33f, 0.28f, 1f), 2f);
-                }
-            }
+            // R4 Branch A：布局由 SlicePassiveLayout 纯函数提供（canonical Links 驱动，零 synthetic edge）
+            int count = PassiveCatalog.Count;
+            var aPts = new System.Collections.Generic.List<Vector2>();
+            var bPts = new System.Collections.Generic.List<Vector2>();
+            SlicePassiveLayout.GetEdges(count, aPts, bPts, r);
+            for (int e = 0; e < aPts.Count; e++)
+                DrawLine(aPts[e], bPts[e], new Color(0.35f, 0.33f, 0.28f, 1f), 2f);
 
-            for (int i = 0; i < PassiveCatalog.Count; i++)
+            for (int i = 0; i < count; i++)
             {
                 PassiveNode n = PassiveCatalog.Get(i);
-                Rect nr = NodeRect(area, i, n);
+                Rect nr = SlicePassiveLayout.NodeRect(r, i, n);
                 NodeUiState st = s.NodeState(i);
                 Color c = SlicePalette.NodeLock;
                 if (st == NodeUiState.Allocated)
