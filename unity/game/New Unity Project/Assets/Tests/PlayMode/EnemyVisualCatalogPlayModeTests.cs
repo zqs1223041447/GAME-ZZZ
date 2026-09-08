@@ -40,12 +40,13 @@ namespace Game.Tests.PlayMode
             Assert.GreaterOrEqual(bruteSlot, 0, "地图必须生成 Brute");
             Assert.GreaterOrEqual(ashlingSlot, 0, "地图必须生成 Ashling");
 
-            // ① Stinger 槽位挂第二视觉（FireLion）；Brute 槽位仍是 Troll；Ashling 槽位无正式视觉
+            // ① Stinger 槽位挂第二视觉（FireLion）；Brute 槽位仍是 Troll；Ashling 槽位保持 placeholder
+            //    （R8：候选 GargoyleVisual 被 Formal Art Performance Gate 阻断，按工作令恢复 placeholder）
             var stingerPresenter = director.EnemyVisualFor(stingerSlot);
             var brutePresenter = director.EnemyVisualFor(bruteSlot);
             Assert.IsNotNull(stingerPresenter, "Stinger 槽位必须挂 presenter（R4 第二视觉）");
             Assert.IsNotNull(brutePresenter, "Brute 槽位必须挂 presenter（R3 契约不变）");
-            Assert.IsNull(director.EnemyVisualFor(ashlingSlot), "Ashling 未接入=必须保持基元 placeholder");
+            Assert.IsNull(director.EnemyVisualFor(ashlingSlot), "Ashling 保持基元 placeholder（R8 Art Gate 阻断后回退）");
             Assert.IsTrue(stingerPresenter.Root.activeInHierarchy, "Stinger 视觉 root 必须激活");
             Assert.AreEqual(Vector3.one, stingerPresenter.Root.transform.parent.localScale, "gameplay root scale 必须保持 1");
 

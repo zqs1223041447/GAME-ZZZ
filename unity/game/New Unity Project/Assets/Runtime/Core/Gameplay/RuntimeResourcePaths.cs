@@ -17,6 +17,8 @@ namespace Game.Runtime.Core
 
         /// <summary>敌人视觉预制体（S3-P5-ART-R6）：Warden 槽位的正式怪物视觉（Bruce，role-specific 高价值位），缺失回退基元（降级）。</summary>
         public const string EnemyBruceVisual = "Enemies/BruceVisual";
+        // S3-P5-ART-R8：Ashling 候选 GargoyleVisual 资产已验收但被 Formal Art Performance Gate 阻断（R8 FAIL），
+        // Runtime 入口已回退 placeholder；资产保留于 Assets/Art/Enemies/Gargoyle/Prefabs/（非 Resources 入口）。
 
         public static string CombatSfx(string key)
         {

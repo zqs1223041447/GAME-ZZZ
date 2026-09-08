@@ -17,6 +17,8 @@ namespace Game.Runtime.Core
                     return RuntimeResourcePaths.EnemyFireLionVisual;
                 case EnemyKind.Warden:
                     return RuntimeResourcePaths.EnemyBruceVisual;
+                // S3-P5-ART-R8：Ashling 候选（GargoyleVisual）资产已验收，但 Formal Art Performance Gate
+                // 实测 200/300 密度超预算（R8 FAIL）→ 按工作令恢复 placeholder（不降质修绿）。
                 default:
                     return null;
             }
