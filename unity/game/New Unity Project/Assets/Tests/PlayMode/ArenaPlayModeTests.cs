@@ -83,6 +83,70 @@ namespace Game.Tests.PlayMode
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator SixSlot_EquipReplaceLoop_NoException()
+        {
+            // S4-P2 §28：真实 loop——取/建手套→穿戴→聚合变化→替换移除旧词缀；腰带同理；旧四槽保持；无异常。
+            var go = new GameObject("ArenaDirector");
+            var director = go.AddComponent<ArenaDirector>();
+            director.EnablePlayerInput = false;
+            yield return null;
+            if (director.Sim.Session == null)
+            {
+                director.Sim.Session = new SliceSession();
+                director.Sim.Caster.Defs = director.Sim.Session.ResolveSkillDef;
+            }
+
+            var s = director.Sim.Session;
+            Assert.AreEqual(6, s.Equipped.Length, "六槽装备数组（随 EquipSlot.Count 派生）");
+            for (int i = 0; i <= 3; i++)
+                Assert.GreaterOrEqual(s.Equipped[i], 0, "旧四槽初始装备保持");
+
+            float baseLife = s.MaxLife;
+            ItemInstance g = MakeItem(s, EquipSlot.Gloves, 100f);
+            string err;
+            Assert.IsTrue(s.TryEquip(s.AddItem(g), out err), err);
+            Assert.Greater(s.MaxLife, baseLife, "手套词缀进 canonical 聚合");
+
+            ItemInstance g2 = MakeItem(s, EquipSlot.Gloves, 300f);
+            Assert.IsTrue(s.TryEquip(s.AddItem(g2), out err), err);
+            Assert.Greater(s.MaxLife, baseLife + 150f, "替换后新手套生效");
+
+            ItemInstance b = MakeItem(s, EquipSlot.Belt, 50f);
+            int beltIdx = s.AddItem(b);
+            Assert.IsTrue(s.TryEquip(beltIdx, out err), err);
+            Assert.Greater(s.MaxLife, baseLife + 150f, "腰带词缀进 canonical 聚合");
+            Assert.AreEqual(beltIdx, s.Equipped[(int)EquipSlot.Belt], "腰带装备槽指向新物品");
+
+            ItemInstance b2 = MakeItem(s, EquipSlot.Belt, 10f);
+            Assert.IsTrue(s.TryEquip(s.AddItem(b2), out err), err);
+            Assert.Less(s.MaxLife, baseLife + 300f + 50f, "替换后旧腰带词缀移除（新=300+10 < 旧=300+50）");
+
+            // 原四槽语义保持：仍可替换（武器）
+            ItemInstance w = MakeItem(s, EquipSlot.Weapon, 500f);
+            Assert.IsTrue(s.TryEquip(s.AddItem(w), out err), err);
+
+            // 战斗 tick 不因六槽状态异常
+            director.Sim.Tick(0.02f, PlayerCommand.None());
+            yield return null;
+
+            Object.Destroy(go);
+            yield return null;
+        }
+
+        static ItemInstance MakeItem(SliceSession s, EquipSlot slot, float lifeValue)
+        {
+            ItemInstance it = default;
+            it.Id = s.NextItemId++;
+            it.Slot = slot;
+            it.Rarity = Rarity.Ordinary;
+            it.SocketCount = SliceSession.SocketsFor(slot);
+            it.BaseName = SliceSession.ItemBaseName(slot);
+            it.AffixCount = 1;
+            it.SetAffix(0, AffixId.Life, lifeValue, 0f);
+            return it;
+        }
+
         static void Step(ArenaSim sim, float seconds)
         {
             const float dt = 0.02f;

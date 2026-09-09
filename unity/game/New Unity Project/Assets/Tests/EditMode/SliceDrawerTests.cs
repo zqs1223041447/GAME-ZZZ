@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
 using Game.Runtime.Core;
@@ -7,7 +8,7 @@ namespace Game.Tests.EditMode
     /// <summary>
     /// Phase 3 R2 右侧装备抽屉契约（工作令 S3-P3-UI-R2-EQUIPMENT-DRAWER 第十五节）：
     /// 抽屉几何（设计空间内/槽位不重叠/槽位在列头区）、内容面板不压底栏关键区、
-    /// 1080p/1440p 缩放换算、ShouldBlockWorld 抽屉内外点、EquipSlot canonical 四槽不变。
+    /// 1080p/1440p 缩放换算、ShouldBlockWorld 抽屉内外点、EquipSlot canonical 数值稳定（S4-P2 六槽）。
     /// </summary>
     public class SliceDrawerTests
     {
@@ -27,24 +28,36 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void FourSlots_NonOverlapping_AndInsideColumnHeader()
+        public void SixSlots_NonOverlapping_AndInsideColumnHeader()
         {
             Rect c = SliceDrawerLayout.Column(Dw);
-            Rect[] slots = new Rect[4];
-            for (int i = 0; i < 4; i++)
+            Assert.AreEqual(6, SliceDrawerLayout.DisplayOrder.Length, "UI 展示顺序必须覆盖 6 槽");
+            Rect[] slots = new Rect[6];
+            for (int i = 0; i < 6; i++)
             {
                 slots[i] = SliceDrawerLayout.Slot(i, Dw);
                 Assert.IsTrue(c.Contains(slots[i].center), $"槽 {i} 中心必须在抽屉列内");
                 Assert.LessOrEqual(slots[i].yMax, c.yMax - SliceDrawerLayout.TabH - 6f + 2f,
                     "槽不得侵入 tab 行");
             }
-            for (int a = 0; a < 4; a++)
+            for (int a = 0; a < 6; a++)
             {
-                for (int b = a + 1; b < 4; b++)
+                for (int b = a + 1; b < 6; b++)
                 {
                     Assert.IsFalse(slots[a].Overlaps(slots[b]), $"槽 {a} 与槽 {b} 不得重叠");
                 }
             }
+        }
+
+        [Test]
+        public void DisplayOrder_CoversAllSlots_ExactlyOnce()
+        {
+            // S4-P2 十九：UI 人体顺序与 stable ID 分离——顺序可变，但必须是 6 槽的双射
+            var seen = new HashSet<EquipSlot>();
+            foreach (var slot in SliceDrawerLayout.DisplayOrder)
+                Assert.IsTrue(seen.Add(slot), "UI 展示顺序不得重复槽：" + slot);
+            for (int i = 0; i < (int)EquipSlot.Count; i++)
+                Assert.IsTrue(seen.Contains((EquipSlot)i), "UI 展示顺序缺槽：" + (EquipSlot)i);
         }
 
         [Test]
@@ -94,15 +107,16 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void EquipSlot_CanonicalFourSlots_Unchanged()
+        public void EquipSlot_CanonicalNumericIDs_Stable()
         {
-            // 抽屉四槽=现有 canonical 装备槽，不得为“四槽”新增/改名 schema；
-            // 枚举含哨兵成员 Count=4（S3-M1 目录容量约定），真实槽=0..3 四个。
-            Assert.AreEqual(4, (int)EquipSlot.Count);
+            // S4-P2：旧四槽 numeric ID 不得漂移；Gloves/Belt 追加在 Count 前（工作令 三）
+            Assert.AreEqual(6, (int)EquipSlot.Count);
             Assert.AreEqual(EquipSlot.Weapon, (EquipSlot)0);
             Assert.AreEqual(EquipSlot.Body, (EquipSlot)1);
             Assert.AreEqual(EquipSlot.Helmet, (EquipSlot)2);
             Assert.AreEqual(EquipSlot.Boots, (EquipSlot)3);
+            Assert.AreEqual(EquipSlot.Gloves, (EquipSlot)4);
+            Assert.AreEqual(EquipSlot.Belt, (EquipSlot)5);
         }
     }
 }
