@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="11" result="Passed" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:19Z" duration="1.2437294">
+  <test-suite type="TestSuite" id="1023" name="New Unity Project" fullname="New Unity Project" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:19Z" duration="1.243729" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1017" name="Game.Tests.PlayMode.dll" fullname="G:/GAME-ZZZ/unity/game/New Unity Project/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:19Z" duration="1.236112" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="41708" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1018" name="Game" fullname="Game" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:19Z" duration="1.235653" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1019" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:19Z" duration="1.235304" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1020" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:19Z" duration="1.234993" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1001" name="ArenaPlayModeTests" fullname="Game.Tests.PlayMode.ArenaPlayModeTests" classname="Game.Tests.PlayMode.ArenaPlayModeTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:18Z" duration="0.263760" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1006" name="AffixApplicability_SessionLoop_NoIllegalAffix" fullname="Game.Tests.PlayMode.ArenaPlayModeTests.AffixApplicability_SessionLoop_NoIllegalAffix" methodname="AffixApplicability_SessionLoop_NoIllegalAffix" classname="Game.Tests.PlayMode.ArenaPlayModeTests" runstate="Runnable" seed="762895484" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:18Z" duration="0.093301" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Arena] DarkKnight fitted body height 1.16 from 4.755 scale x0.24
+[Arena] DarkKnight mounted under Player.
+[Arena] S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。
+]]></output>
+              </test-case>
+              <test-case id="1002" name="ArenaDirector_BootsAndThreeSkillsFire" fullname="Game.Tests.PlayMode.ArenaPlayModeTests.ArenaDirector_BootsAndThreeSkillsFire" methodname="ArenaDirector_BootsAndThreeSkillsFire" classname="Game.Tests.PlayMode.ArenaPlayModeTests" runstate="Runnable" seed="168516318" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:18Z" duration="0.023186" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Arena] DarkKnight fitted body height 1.16 from 4.755 scale x0.24
+[Arena] DarkKnight mounted under Player.
+[Arena] S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。
+]]></output>
+              </test-case>
+              <test-case id="1004" name="PerformanceArena_WritesCostRows" fullname="Game.Tests.PlayMode.ArenaPlayModeTests.PerformanceArena_WritesCostRows" methodname="PerformanceArena_WritesCostRows" classname="Game.Tests.PlayMode.ArenaPlayModeTests" runstate="Runnable" seed="1706502458" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:18Z" duration="0.113431" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Arena] DarkKnight fitted body height 1.16 from 4.755 scale x0.24
+[Arena] DarkKnight mounted under Player.
+[Arena] S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。
+[Perf] wrote G:\GAME-ZZZ\unity\game\New Unity Project\Logs\s1-perf-arena.txt
+[Perf] dummy=100 frames=20 mainMs.avg=0.89 p95=1.05 gc/frame=0
+[Perf] wrote G:\GAME-ZZZ\unity\game\New Unity Project\Logs\s1-perf-arena.txt
+[Perf] dummy=200 frames=20 mainMs.avg=1.10 p95=1.27 gc/frame=0
+[Perf] wrote G:\GAME-ZZZ\unity\game\New Unity Project\Logs\s1-perf-arena.txt
+[Perf] dummy=300 frames=20 mainMs.avg=1.37 p95=1.50 gc/frame=0
+]]></output>
+              </test-case>
+              <test-case id="1003" name="ProjectilesAndDummies_HaveNoRigidbodyOrNavMeshAgent" fullname="Game.Tests.PlayMode.ArenaPlayModeTests.ProjectilesAndDummies_HaveNoRigidbodyOrNavMeshAgent" methodname="ProjectilesAndDummies_HaveNoRigidbodyOrNavMeshAgent" classname="Game.Tests.PlayMode.ArenaPlayModeTests" runstate="Runnable" seed="279943595" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:18Z" duration="0.013876" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Arena] DarkKnight fitted body height 1.16 from 4.755 scale x0.24
+[Arena] DarkKnight mounted under Player.
+[Arena] S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。
+]]></output>
+              </test-case>
+              <test-case id="1005" name="SixSlot_EquipReplaceLoop_NoException" fullname="Game.Tests.PlayMode.ArenaPlayModeTests.SixSlot_EquipReplaceLoop_NoException" methodname="SixSlot_EquipReplaceLoop_NoException" classname="Game.Tests.PlayMode.ArenaPlayModeTests" runstate="Runnable" seed="948244329" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:18Z" duration="0.010025" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Arena] DarkKnight fitted body height 1.16 from 4.755 scale x0.24
+[Arena] DarkKnight mounted under Player.
+[Arena] S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1007" name="BruceVisualPlayModeTests" fullname="Game.Tests.PlayMode.BruceVisualPlayModeTests" classname="Game.Tests.PlayMode.BruceVisualPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:19Z" duration="0.457086" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1008" name="Warden_BruceVisual_Integration_AndFeedbackParity" fullname="Game.Tests.PlayMode.BruceVisualPlayModeTests.Warden_BruceVisual_Integration_AndFeedbackParity" methodname="Warden_BruceVisual_Integration_AndFeedbackParity" classname="Game.Tests.PlayMode.BruceVisualPlayModeTests" runstate="Runnable" seed="1375270401" result="Passed" start-time="2026-09-09 08:42:18Z" end-time="2026-09-09 08:42:19Z" duration="0.455975" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Arena] DarkKnight fitted body height 1.16 from 4.755 scale x0.24
+[Arena] DarkKnight mounted under Player.
+[Arena] S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。
+[Slice] 战斗中锁定  稳定度 100  收益 x1.00
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1009" name="EnemyVisualCatalogPlayModeTests" fullname="Game.Tests.PlayMode.EnemyVisualCatalogPlayModeTests" classname="Game.Tests.PlayMode.EnemyVisualCatalogPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 08:42:19Z" end-time="2026-09-09 08:42:19Z" duration="0.042680" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1010" name="EnemyVisual_StingerSlots_PresentLion_AndBruteStaysTroll" fullname="Game.Tests.PlayMode.EnemyVisualCatalogPlayModeTests.EnemyVisual_StingerSlots_PresentLion_AndBruteStaysTroll" methodname="EnemyVisual_StingerSlots_PresentLion_AndBruteStaysTroll" classname="Game.Tests.PlayMode.EnemyVisualCatalogPlayModeTests" runstate="Runnable" seed="669433690" result="Passed" start-time="2026-09-09 08:42:19Z" end-time="2026-09-09 08:42:19Z" duration="0.041617" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Arena] DarkKnight fitted body height 1.16 from 4.755 scale x0.24
+[Arena] DarkKnight mounted under Player.
+[Arena] S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。
+[Slice] 战斗中锁定  稳定度 100  收益 x1.00
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1011" name="EnemyVisualFeedbackPlayModeTests" fullname="Game.Tests.PlayMode.EnemyVisualFeedbackPlayModeTests" classname="Game.Tests.PlayMode.EnemyVisualFeedbackPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-09 08:42:19Z" end-time="2026-09-09 08:42:19Z" duration="0.146896" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1013" name="FireLion_HitPriority_ThenIgnite_ThenNormal" fullname="Game.Tests.PlayMode.EnemyVisualFeedbackPlayModeTests.FireLion_HitPriority_ThenIgnite_ThenNormal" methodname="FireLion_HitPriority_ThenIgnite_ThenNormal" classname="Game.Tests.PlayMode.EnemyVisualFeedbackPlayModeTests" runstate="Runnable" seed="532664780" result="Passed" start-time="2026-09-09 08:42:19Z" end-time="2026-09-09 08:42:19Z" duration="0.039130" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Arena] DarkKnight fitted body height 1.16 from 4.755 scale x0.24
+[Arena] DarkKnight mounted under Player.
+[Arena] S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。
+[Slice] 战斗中锁定  稳定度 100  收益 x1.00
+]]></output>
+              </test-case>
+              <test-case id="1012" name="Troll_Ignite_ReachesPresenter_AndDoTUnchanged" fullname="Game.Tests.PlayMode.EnemyVisualFeedbackPlayModeTests.Troll_Ignite_ReachesPresenter_AndDoTUnchanged" methodname="Troll_Ignite_ReachesPresenter_AndDoTUnchanged" classname="Game.Tests.PlayMode.EnemyVisualFeedbackPlayModeTests" runstate="Runnable" seed="1073325691" result="Passed" start-time="2026-09-09 08:42:19Z" end-time="2026-09-09 08:42:19Z" duration="0.106491" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Arena] DarkKnight fitted body height 1.16 from 4.755 scale x0.24
+[Arena] DarkKnight mounted under Player.
+[Arena] S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。
+[Slice] 战斗中锁定  稳定度 100  收益 x1.00
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1014" name="TrollRuntimeVisualPlayModeTests" fullname="Game.Tests.PlayMode.TrollRuntimeVisualPlayModeTests" classname="Game.Tests.PlayMode.TrollRuntimeVisualPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-09 08:42:19Z" end-time="2026-09-09 08:42:19Z" duration="0.323250" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1015" name="EnemyVisual_BruteSlots_PresentTrollDrivenByGameplayStates" fullname="Game.Tests.PlayMode.TrollRuntimeVisualPlayModeTests.EnemyVisual_BruteSlots_PresentTrollDrivenByGameplayStates" methodname="EnemyVisual_BruteSlots_PresentTrollDrivenByGameplayStates" classname="Game.Tests.PlayMode.TrollRuntimeVisualPlayModeTests" runstate="Runnable" seed="1539247804" result="Passed" start-time="2026-09-09 08:42:19Z" end-time="2026-09-09 08:42:19Z" duration="0.308094" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Arena] DarkKnight fitted body height 1.16 from 4.755 scale x0.24
+[Arena] DarkKnight mounted under Player.
+[Arena] S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。
+[Slice] 战斗中锁定  稳定度 100  收益 x1.00
+]]></output>
+              </test-case>
+              <test-case id="1016" name="EnemyVisual_DummyKind_KeepsPrimitiveVisual" fullname="Game.Tests.PlayMode.TrollRuntimeVisualPlayModeTests.EnemyVisual_DummyKind_KeepsPrimitiveVisual" methodname="EnemyVisual_DummyKind_KeepsPrimitiveVisual" classname="Game.Tests.PlayMode.TrollRuntimeVisualPlayModeTests" runstate="Runnable" seed="1212646072" result="Passed" start-time="2026-09-09 08:42:19Z" end-time="2026-09-09 08:42:19Z" duration="0.013489" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Arena] DarkKnight fitted body height 1.16 from 4.755 scale x0.24
+[Arena] DarkKnight mounted under Player.
+[Arena] S2 UI. 角色/地图/制作可全鼠标。Q/W/E 仍可连发。
+Saving results to: C:/Users/ZQS/AppData/LocalLow/DefaultCompany/New Unity Project\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

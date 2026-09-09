@@ -37,4 +37,5 @@
 | 2026-09-09 | S5-WO-02（多连接域核）执行完毕，Evidence 回传（commit A=6a13a38/B=1ff9d82,C） | Gate Review=**ACCEPT**（21 项 Gate 全 PASS，无 follow-up；Phase-2 Integration Guard 纳入 WO-03 验收）；下发 **S5-WO-03** |
 | 2026-09-09 | S5-WO-03（多连接运行时与 UI 集成）执行完毕，Evidence 回传（commit A=14ca5d5/B=d711906） | Gate Review=**ACCEPT（Follow-up: NONE）**；两裁定：同槽同技能 host 交接=合法移交（不得改拒绝）、背包预配置+装备时共享校验器最终防线=接受（裁定已回填 DECISIONS）；**下发 S5-WO-04** |
 | 2026-09-09 | S5-WO-04（有界词缀广度）执行完毕，Evidence 回传（commit A=6a9d547/B=da4ca87） | Gate Review=**ACCEPT（Follow-up: NONE）**；两裁定：铁骨 Belt 表述按原文接受、starter 池自动纳入新词缀=预期（禁隐藏 17 概率宇宙/禁因池变大调平衡）；**下发 S5-WO-05** |
-| 2026-09-09 | S5-WO-05（构筑与交互验证）执行完毕，Evidence 回传（commit hash 见 STATUS「本轮 commit」行） | Gate Review 结果见规划 AI 下轮回文（RC-M/RC-P/RC-A=validation scenarios 不晋升；Runtime Product Delta 预期 NONE） |
+| 2026-09-09 | S5-WO-05（构筑与交互验证）执行完毕，Evidence 回传（commit A=910b26c/B=cfced12） | Gate Review=**ACCEPT（Follow-up: NONE）**；两裁定：RC-A 变体保持开放（WO-06 不得选定/晋升）、V6 换绑拒绝=正确行为（合法移交仅适用于终态合法情形）；**下发 S5-WO-06（最终生产闭口轮；完成后 STOP，下一步=Director Final Gate）** |
+| 2026-09-09 | S5-WO-06（Production Closure）执行完毕，Evidence 回传（commit hash 见 STATUS「本轮 commit」行） | 结果见规划 AI 下轮回文（ProdSim×3 同 hash=S5 canonical hash；canonical/Art 性能门；Director Final Gate packet） |

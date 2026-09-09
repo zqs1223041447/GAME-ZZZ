@@ -21,3 +21,7 @@
 BL-002.A2（Prefix/Suffix）、BL-002.A3（Tier/ModGroup/生成规则）、BL-003.*（大树/Mastery/Ascendancy）、BL-004.*（Aura/Reservation）、BL-005 Curse、BL-006 Flask、BL-007.*（Defense 族）、BL-008.*（Ailment 族）、BL-009 高级 Trigger、BL-010 Unique、BL-011 Jewel、BL-012.A2-A5（Gem 其它成长）、BL-013.*（Deep Craft）、BL-014 Craft Sim、BL-015.*（Map Tier）、BL-016.*（Encounter）、BL-017 Map Risk Sim、BL-018 内容工厂（downstream）、BL-019 Atlas、BL-020.*（技术路线锁）、BL-023.*（全量导入）、BL-024 PoEDB Pipeline（双门）、BL-025 Persistence、BL-026 Voice（GATED）、BL-027 树 UI、BL-028.*（Ring/Offhand/Amulet）、BL-029.*（新内容轴门槛）、BL-030/031/032（质量/表现/合同项）。
 
 **Default-on-Omission Rule 全程生效**：本台账未列 APPROVED 的一切能力保持原状态；禁止从「S5 已开工」推导任何额外授权。
+
+## Phase-5 Final Evidence Linkage（S5-WO-06；零新增授权）
+
+Production Closure（S5-WO-06，2026-09-09）全门 PASS 候选：EditMode 314/314 / PlayMode 11/11 / Audit fresh / Affix=21 / 组 max=2 / golden 21/21 双位 / 词缀可达 4/4+铁骨 Belt 负面 / **ProdSim×3 hash exact=FNV1A64:9a4c9524d0b3e214（S5 canonical hash；S4 参照仅历史）** / canonical+Art 双性能门锁定硬件 PASS（worst p99=4.925ms(59.1%) 与 6.689ms(80.3%)）/ 视觉解析 4/4 无 fallback/clone / Drift=0 / Forbidden=PASS。**本节仅链接证据，不新增授权**——显式拒绝项（孔色/宝石等级品质）与 Default-on-Omission 全部保持。**Director Final Gate = PENDING**（`S5_FINAL_GATE_PACKET.md`；批准后才正式 S5=COMPLETE）。
