@@ -2,7 +2,7 @@
 
 **当前 Content Audit snapshot（测试再生）**。文件名保留 CLOSEOUT 是因为它源自 S3 Phase 1/2 收口；**BATCH1 / R2 报告才是冻结历史 evidence**。
 
-生成：EditMode 测试 `ContentAuditS2Tests`，failure-safe 顺序 **Collect → Render → Persist → Assert**（S3-M3：报告先于测试断言落盘——测试红 ⇒ 本快照同轮红，不遗留上一轮 PASS）。只覆盖现行切片：3 Active + 7 Support + 13 词缀 + 16 天赋 + 3 图词缀 + 5 怪。
+生成：EditMode 测试 `ContentAuditS2Tests`，failure-safe 顺序 **Collect → Render → Persist → Assert**（S3-M3：报告先于测试断言落盘——测试红 ⇒ 本快照同轮红，不遗留上一轮 PASS）。只覆盖现行切片：3 Active + 7 Support + 17 词缀 + 16 天赋 + 3 图词缀 + 5 怪。
 
 ## Verdict
 
@@ -16,13 +16,13 @@
 |---|---|
 | Active 技能 | 3 |
 | Support | 7 |
-| 词缀 | 13 |
+| 词缀 | 17 |
 | 天赋节点 | 16（含 2 Notable + 1 机制烬心） |
 | 图词缀 | 3 |
 | 怪 | 5（3 普通 + Elite 监守 + 木桩） |
 | Modifier 引用（Support+Passive） | 26 |
 
-内容数量护栏（Collect 阶段核入「结构/契约问题」，baseline 冻结）：Support=7 / 词缀=13 / StatId=28 / ModOp、Tag、Effect、Event、Condition、Skill、图词缀轴全部 +0。
+内容数量护栏（Collect 阶段核入「结构/契约问题」）：Support=7 / StatId=28 / ModOp、Tag、Effect、Event、Condition、Skill、图词缀轴全部 +0；词缀=13 基线 + S4-P3 追加 ≤4（旧 ID 只追加不缩水，S4-P3 前基线冻结）。
 
 ## 资源契约（真实加载验证，非声明文字）
 
@@ -104,15 +104,19 @@ Tagged Modifier 总数 4，可满足 4，不可满足 0（期望 0）。负向�
 |---|---|---|---|---|---|---|
 | FireConversion | 火焰转化 | ConvertPhysToFire 固定 0.5 | Attack, Hit, Physical | true | 无（Tag 路径推导） | 无 |
 
-## S3 第一批新增词缀
+## S3 第一批 + S4-P3 追加词缀
 
-全部由**已有 StatId/ModOp** 组成。可出现在 4 槽（武器/胸甲/头盔/靴子）掉落池；进两步 Craft（随机制作=废料池重掷、定向制作=蚀刻剂写入列表）。第二行独立掷值，存 `ItemInstance` 第二值。
+全部由**已有 StatId/ModOp** 组成。S4-P3 起带 AllowedSlots（0=不限槽）；可出现在其 eligible 槽位掉落池（不限槽=全部 6 槽）。第二行独立掷值，存 `ItemInstance` 第二值。定向制作对非法槽位组合 deterministic reject。
 
 | ID | 名称 | 行 1（Stat/Op） | 行 2（Stat/Op） | 槽位 | 两步 Craft |
 |---|---|---|---|---|---|
-| IgniteFire | 灼燃 | FireDamage 提高（{0:0%} 火焰伤害） | IgniteChance 固定（点燃几率 {0:0%}） | 4 槽全部 | 随机池 + 定向列表 |
-| AccCrit | 锐击 | Accuracy 固定（+{0:0} 命中） | CritChanceIncreased 提高（暴击率 {0:0%}） | 4 槽全部 | 随机池 + 定向列表 |
-| PhysFire | 熔铸 | PhysicalDamage 提高（{0:0%} 物理伤害） | FireDamage 提高（火焰伤害 {0:0%}） | 4 槽全部 | 随机池 + 定向列表 |
+| IgniteFire | 灼燃 | FireDamage 提高（{0:0%} 火焰伤害） | IgniteChance 固定（点燃几率 {0:0%}） | 6 槽全部 | 随机池 + 定向列表 |
+| AccCrit | 锐击 | Accuracy 固定（+{0:0} 命中） | CritChanceIncreased 提高（暴击率 {0:0%}） | 6 槽全部 | 随机池 + 定向列表 |
+| PhysFire | 熔铸 | PhysicalDamage 提高（{0:0%} 物理伤害） | FireDamage 提高（火焰伤害 {0:0%}） | 6 槽全部 | 随机池 + 定向列表 |
+| SwiftGrip | 迅握 | AttackSpeed 提高（{0:0%} 攻击速度） | Life 基础（） | 仅 手套 | 随机池 + 定向列表 |
+| KeenEdge | 锋锐 | CritChanceAdded 固定（+{0:0%} 暴击率） | Accuracy 固定（+{0:0} 命中） | 仅 手套 | 随机池 + 定向列表 |
+| Bulwark | 壁垒 | Armour 提高（{0:0%} 护甲） | Life 基础（） | 仅 腰带 | 随机池 + 定向列表 |
+| VitalWeave | 韧脉 | Life 固定（+{0:0} 生命） | FireResistance 固定（+{0:0%} 火焰抗性） | 仅 腰带 | 随机池 + 定向列表 |
 
 ## 未使用 Tag（已声明、当前内容未引用）
 
