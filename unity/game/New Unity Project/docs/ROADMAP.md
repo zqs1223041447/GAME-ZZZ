@@ -1,6 +1,6 @@
 # ROADMAP
 
-当前阶段：**S2P 技术收口已完成（1080p 已证；1440p/120 已于 M7 在锁定硬件下 CLOSED，2026-09-08——结论只适用锁定硬件/canonical contract，非所有 Windows PC 保证 120FPS）；S3 Phase 1/2 = COMPLETE，Phase 3/4/5 = 导演门控 GATED / NOT STARTED**（S2 玩法循环已由导演确认，2026-09-06。自制 Eve FBX **已剔除**，换模 Dark Knight 技术放行。碰撞规则仍在。HUD **未完备**。I 不自放行）。
+当前阶段：**S3 = COMPLETE（Phase 1/2/3 UI/5 Art 全 COMPLETE；Phase 4 人声=DEFERRED BY DIRECTOR，排除出当前完成范围——总收口 `docs/reviews/s3/S3_OVERALL_CLOSEOUT_REVIEW.md` PASS，2026-09-08）；S4 = IN PROGRESS（Production Scale & Itemization Breadth，规划 `docs/reviews/s4/S4_PLAN.md`）：Phase 0=COMPLETE、Phase 1=COMPLETE（Production Tooling v1）、Phase 2（Gloves+Belt 装备槽扩容）=IN PROGRESS、Phase 3-5 NOT STARTED；Stage0 锁全部延续；1440p/120 已于 M7 在锁定硬件下 CLOSED（结论只适用锁定硬件/canonical contract，非所有 Windows PC 保证 120FPS）**（S2 玩法循环已由导演确认，2026-09-06。自制 Eve FBX **已剔除**，换模 Dark Knight 技术放行。碰撞规则仍在。I 不自放行）。
 
 ## 阶段
 
@@ -10,7 +10,8 @@
 | S1 | 能打 + 能量测 | **已放行**（手感门 2026-09-07 导演复测关闭） |
 | S2 | 微循环能玩 | **已完成**（导演 2026-09-06 确认）；换模 Dark Knight 技术放行（贴地修正 ebbf782）；碰撞仍在（HUD 未完备） |
 | S2P | 真实系统密度报告 | **1080p 已证（b152610）+ 1440p/120 已于 M7 在锁定硬件下 CLOSED（2026-09-08，证据 `docs/reviews/s2p/1440p-120-m7/`；边界=锁定硬件，非所有 Windows PC 保证）** |
-| S3 | 按队列扩内容 | **阶段 1（内容工厂）+ 阶段 2（R1/R2 组合增产）已收口（2026-09-07，工作令 S3-P12）**：资源路径级真实验证 + Tag 组合规则/golden + 兼容门 + 死内容扫描（`S3_PHASE2_CLOSEOUT.md`，Phase 1/2 = COMPLETE）；R1=3 组合词缀、R2=火焰转化均 PASS；**后续：阶段 3 UI=导演门控、阶段 4 人声=导演门控、阶段 5 精模=导演门控，后置系统仍关——S3 整体未结束**。1440p 补测不是 S3 前置阻断 |
+| S3 | 按队列扩内容 | **S3=COMPLETE（2026-09-08 总收口 `S3_OVERALL_CLOSEOUT_REVIEW.md` PASS）**：Phase 1（内容工厂）+ Phase 2（R1 3 组合词缀/R2 火焰转化）+ Phase 3 Formal UI（R1-R4）+ Phase 5 Art（四正式视觉+Art Gate）全 COMPLETE；**Phase 4 人声=DEFERRED BY DIRECTOR（排除出当前完成范围）** |
+| S4 | Production Scale & Itemization Breadth（扩产工具→装备槽→词缀→生产模拟） | **IN PROGRESS（导演 2026-09-09「开启 S4」，规划 `docs/reviews/s4/S4_PLAN.md`）**：Phase 0=COMPLETE、Phase 1=COMPLETE（Production Content Report=`docs/qa/CONTENT_PRODUCTION_REPORT.json`）；**Phase 2 Gloves+Belt=IN PROGRESS**；Phase 3-5 NOT STARTED；Stage0 锁延续、Voice 继续 DEFERRED |
 
 ## Gate S0
 

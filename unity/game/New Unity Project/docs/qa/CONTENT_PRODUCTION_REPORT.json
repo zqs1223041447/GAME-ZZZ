@@ -11,7 +11,7 @@
     "passives": 16,
     "enemyKinds": 5,
     "mapMods": 3,
-    "equipmentSlots": 4
+    "equipmentSlots": 6
   },
   "runtimeCoverage": {
     "declaredStats": ["Accuracy", "AddedFire", "AddedPhysical", "AreaDamageMore", "AreaRadiusMore", "Armour", "AttackSpeed", "ConvertPhysToFire", "CritChanceIncreased", "Dexterity", "Evasion", "FireDamage", "FireResistance", "Fork", "IgniteChance", "Intelligence", "Life", "MorePhysical", "PhysicalDamage", "Strength"],
