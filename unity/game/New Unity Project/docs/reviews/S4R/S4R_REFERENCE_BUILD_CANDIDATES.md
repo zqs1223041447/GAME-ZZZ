@@ -59,3 +59,53 @@
 - 本映射写入 Mechanic Matrix 时仅作为 **Candidate Coverage Mapping** 分区，正式 Reference Build Coverage 字段保持 N/A（Targets 未锁定，不构成 Gap 判断）——AC-08。
 - 候选间互斥组合不预判（如 Fork 与 FireConversion 同为 Projectile 可同装 2 槽位，属合法组合空间，留待正式 Targets 阶段决策）。
 - 与 Backlog 的关系：候选不依赖任何 BL 项；BL-023/024（全量导入/pipeline）等扩张成立后，候选可被更广机制集替换——替换不追溯本文件。
+
+## S5-WO-05 Validation Records（Phase 4 验证记录；2026-09-09；**状态保持 CANDIDATE / NOT LOCKED，不晋升**）
+
+**性质**：以下为 S5-WO-05 联合验证的如实记录——证明「当前已批准机制可以连贯组合并执行」，**不等于**「canonical product build / balanced / optimal / certified」。测试载体=`S5BuildInteractionTests`（EditMode，Runtime Product Delta=NONE）。
+
+### RC-M（S4R-RBC-M）烈刃转火 — 已验证
+
+| 字段 | 验证记录 |
+|---|---|
+| Exact scenario exercised | `MeaningfulChoice_ThreeDistinguishableValidLoadouts` 场景 1（legacy 单连接） |
+| Supports actually used | Q[0]=火焰转化（ConvertPhysToFire Flat 0.50）+ Q[1]=残暴（MorePhysical More 0.40）——golden 合法（FireConversion×Melee ✓ / Brutal×Melee ✓） |
+| Affixes actually used | 坚韧（Tenacity，手套，Strength/Flat 12） |
+| Link mode | legacy 单连接（LinkSkill1=None，组0 双 Support 位） |
+| Observed mechanic identity | 转化 0.5 进入近战聚合 + MorePhys 1.4 + Strength 32（词缀经玩家属性轴与连接正交） |
+| Result | **PASS**（全部断言绿） |
+| Unsupported dependencies | **NONE** |
+| Status | **CANDIDATE / NOT LOCKED**（验证通过不构成锁定/晋升） |
+
+### RC-P（S4R-RBC-P）分裂弹幕 — 已验证
+
+| 字段 | 验证记录 |
+|---|---|
+| Exact scenario exercised | `V4_MechanicSupportCrossPosition_RCP_Fork_WithAffixes`（组0 与组1 双位，同 seed 9u 真实 ArenaSim 施放） |
+| Supports actually used | 组0 位=Fork+Faster（legacy 容 2）；组1 位=恰 Fork（组 1 容 1=容量真相） |
+| Affixes actually used | 迅疾（SwiftBreeze，武器，AttackSpeed/Increased 0.16） |
+| Link mode | 双位验证：legacy 组0 + 武器改挂弹道（组1）各一次 |
+| Observed mechanic identity | Fork 真实分裂（ForkSpawns==2 双位等价）——真实 runtime 行为非数据模型断言 |
+| Result | **PASS** |
+| Unsupported dependencies | **NONE** |
+| Status | **CANDIDATE / NOT LOCKED** |
+
+### RC-A（S4R-RBC-A）灰烬领域 — 已验证（部分：Concentrated 变体）
+
+| 字段 | 验证记录 |
+|---|---|
+| Exact scenario exercised | `V6_CrossGroupIsolation_UnderAffixes`（Area legacy 头盔位 + Concentrated；另 `V2_TwoLink_ConfigB` 验证 Combustion 变体经组1） |
+| Supports actually used | V6=Concentrated（Area 专属 ✓）；V2B=Combustion（Area ✓，经武器组1）——候选描述的「Concentrated/Combustion 二选一」两变体均得到独立验证，取舍仍留正式锁定阶段 |
+| Affixes actually used | V6=坚韧（武器）+迅疾（身体）；V2B=无词缀（隔离观测） |
+| Link mode | V6=武器改挂弹道（双连接在场）+ Area legacy 头盔位；V2B=Area 经武器组1 |
+| Observed mechanic identity | AreaDamageMore 0.4 仅进 Area 聚合（RawMore=1.4 含中性 1）；燃尽点燃/火伤轴经组1 生效；跨组零泄漏 |
+| Result | **PASS** |
+| Unsupported dependencies | **NONE**（FireConversion×Area 拒绝边界=golden 既有事实，未在本场景强制） |
+| Status | **CANDIDATE / NOT LOCKED** |
+
+### 池假设审计记录（WO-05 §8/AC-13；audit=test hygiene，非权重调整授权）
+
+- **stale current-pool assumptions found: 0**（grep 全测试目录：无任何测试断言「当前目录/池==17」）。
+- **number intentionally retained with rationale**：`ContentAuditS2Tests.S2BaselineAffixCount=10`（S2 历史基线语义）；`S5AffixBreadthTests` 内 17 = stable-ID 常量断言（SwiftBreeze ID=17）与「Before 17 + 4 = 21」计数语义、旧 ID 稳定域 0-16 位置扫描——均非当前池基数断言；`AshlingVisualContractTests`「17k 顶点」等=无关数值。
+- **test-only corrections**：无（WO-04 已把两处护栏更新为 21；本轮无需再修）。
+- 随机/概率行为断言均不依赖池基数（sweep=「至少出现一次」的存在性断言）。

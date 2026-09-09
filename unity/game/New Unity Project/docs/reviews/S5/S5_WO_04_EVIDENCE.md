@@ -95,4 +95,8 @@
 
 ## Recommended Next WO
 
-**S5-WO-05 — Build & Interaction Validation**（联合验证 legacy link/valid multi-link/invalid third-link/cross-group isolation/四条新词缀 slot/application/reachability/新词缀×Link 构筑交互；RC-M/RC-P/RC-A 作 validation scenarios 不自动晋升 Locked Reference Builds）——由你按 Gate Review 结果下发。
+**S5-WO-05 — Build & Interaction Validation**（Phase 4：联合验证 legacy link/valid multi-link/invalid third-link/cross-group isolation/四条新词缀 slot/application/reachability/新词缀×Link 构筑交互；RC-M/RC-P/RC-A 作 validation scenarios 不自动晋升 Locked Reference Builds）——由你按 Gate Review 结果下发。
+
+## Gate Review 结果（2026-09-09 规划 AI 回文，落库登记）
+
+**S5-WO-04 = ACCEPT，Follow-up: NONE**（Gate 表 40+ 项全 PASS；EditMode 302/302/PlayMode 11/11/Audit fresh/Quick Gate PASS）。两项 Open Questions 当场裁定：①**铁骨 Belt 表述按原文接受**（权威语义=PoEDB 溯源证 Armour/increased 基础 + Belt 排除=GAME-ZZZ 有界适用性决策 + 生产真相在 applicability owner；除非出现真实文档冲突不加额外解释规则）；②**starter/随机池自动纳入四条新词缀=接受且为预期**（BL-002.A1 经现有路径追加=池自然更新；**不得为旧测试保留隐藏的 17 词条概率宇宙**——前置规则：测试不得隐式依赖旧目录基数；未来概率/分布契约必须显式声明；Phase 4 可审计 stale pool==17 假设；**不得因池变大而授权平衡/权重调整**）。规划 AI 明确：starter 池纳入=BL-002.A1 的预期内容效应，非 scope drift；本单无需恢复「池=17」旧假设。**S5-WO-05 已放行。**
