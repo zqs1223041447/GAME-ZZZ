@@ -2,7 +2,7 @@
 
 日期：2026-09-09。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit（S4R-WO-01-GOVERNANCE-RECONCILIATION）：**S4R inter-cycle 治理周期开工（无 gameplay capability 变更，Runtime feature surface 冻结）**。规划 AI 会话（渠道登记 `开发计划/规划AI会话.md`，会话 ID 6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d）下发 S4R — Direction Readiness & Baseline Lock；工作 AI 落库计划 `docs/reviews/S4R/S4R_PLAN.md` 并执行 **WO-01=Frozen Baseline & Governance Reconciliation**：**首次正式建立** Capability Ledger / Mechanic Support Matrix / Source-of-Truth Index / S4 冻结基线+Hard-Stop·Forbidden 清单（`docs/reviews/S4R/` 五件）；核查发现并修复 1 处文档漂移（RUNTIME 装备节 4 槽/「13 条」/2×2 → 6 槽/易变计数改快照指针/2×3 六槽——S4-P2/P3 改变事实后 RUNTIME 未同步）；DECISIONS/ROADMAP 同步；**Runtime/Canonical/Content delta=0**；Quick Gate PASS（EditMode 246/246+PlayMode 11/11+audit fresh；按 S4R Test Policy 不重跑 S4 性能门，引用 S4 Final 证据）；**S4=COMPLETE 与硬停止语义原样保留；下一实施周期=Director-Gated**。（本轮提交：A=主体本提交 / B=STATUS 回填提交，hash 由回填写入）
+本轮 commit（S4R-WO-01-GOVERNANCE-RECONCILIATION）：**S4R inter-cycle 治理周期开工（无 gameplay capability 变更，Runtime feature surface 冻结）**。规划 AI 会话（渠道登记 `开发计划/规划AI会话.md`，会话 ID 6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d）下发 S4R — Direction Readiness & Baseline Lock；工作 AI 落库计划 `docs/reviews/S4R/S4R_PLAN.md` 并执行 **WO-01=Frozen Baseline & Governance Reconciliation**：**首次正式建立** Capability Ledger / Mechanic Support Matrix / Source-of-Truth Index / S4 冻结基线+Hard-Stop·Forbidden 清单（`docs/reviews/S4R/` 五件）；核查发现并修复 1 处文档漂移（RUNTIME 装备节 4 槽/「13 条」/2×2 → 6 槽/易变计数改快照指针/2×3 六槽——S4-P2/P3 改变事实后 RUNTIME 未同步）；DECISIONS/ROADMAP 同步；**Runtime/Canonical/Content delta=0**；Quick Gate PASS（EditMode 246/246+PlayMode 11/11+audit fresh；按 S4R Test Policy 不重跑 S4 性能门，引用 S4 Final 证据）；**S4=COMPLETE 与硬停止语义原样保留；下一实施周期=Director-Gated**。（本轮提交：A=cee032c 主体 / B=本行所在回填提交）
 
 ## 门状态
 
