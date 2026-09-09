@@ -145,19 +145,37 @@ namespace Game.Tests.EditMode
                     result.BadAffix.Add("Affix." + def.Name + " 组合第二行缺 Format2");
                 if (def.RowCount == 1 && !string.IsNullOrEmpty(def.Format2))
                     result.BadAffix.Add("Affix." + def.Name + " 单行词缀却带 Format2");
+                // S4-P3：applicability mask + stable ID（位=Id 一致，防目录 reorder 导致旧 ID 漂移）
+                string maskErr = ContentAuditTagRules.ValidateAffixSlots(def);
+                if (maskErr != null)
+                    result.StructuralProblems.Add("Affix." + def.Name + "：" + maskErr);
+                if (def.Id != (AffixId)i)
+                    result.StructuralProblems.Add("Affix stable ID 漂移：目录位 " + i + " 的 Id=" + def.Id);
             }
 
-            // 第一批护栏：新增词缀 ∈ [0,3] 且全部合法（合法性由上方通用扫描覆盖）
+            // S4-P3：六槽 eligible 池非空（canonical IsApplicable 派生；任一槽空池=结构/契约失败）
+            var slotPool = new int[(int)EquipSlot.Count];
+            for (int i = 0; i < AffixCatalog.Count; i++)
+            {
+                AffixDef def = AffixCatalog.Get((AffixId)i);
+                for (int s = 0; s < (int)EquipSlot.Count; s++)
+                    if (def.IsApplicable((EquipSlot)s))
+                        slotPool[s]++;
+            }
+            for (int s = 0; s < slotPool.Length; s++)
+                if (slotPool[s] == 0)
+                    result.StructuralProblems.Add("装备槽 eligible 词缀池为空：" + SliceSession.SlotName((EquipSlot)s));
+
+            // S3 第一批护栏（≤3）由 S4-P3 取代：旧 13 ID 只追加不缩水；S4-P3 追加 2-4（总上限 17）
             int newAffixes = (int)AffixId.Count - S2BaselineAffixCount;
             result.NewAffixCount = newAffixes;
             if (newAffixes < 0)
-                result.StructuralProblems.Add("S3 第一批词缀池缩水：AffixId.Count < " + S2BaselineAffixCount);
-            if (newAffixes > 3)
-                result.StructuralProblems.Add("S3 第一批新增词缀必须 ≤3：当前 " + newAffixes);
+                result.StructuralProblems.Add("词缀池缩水：AffixId.Count < " + S2BaselineAffixCount);
+            if ((int)AffixId.Count > S2BaselineAffixCount + 3 + 4)
+                result.StructuralProblems.Add("S4-P3 词缀追加必须 ≤4（总上限 17）：当前 " + (int)AffixId.Count);
 
             // S3-R2 内容数量护栏：仅 Support +1（火焰转化），其余内容轴全部不变（护栏违规入结构/契约问题）
             PinCount(result, SupportCatalog.Count, S2BaselineSupportCount + 1, "Support（R2 仅允许新增 1 个火焰转化）");
-            PinCount(result, (int)AffixId.Count, 10 + 3, "词缀轴（S2 基线 10 + 第一批 3）");
             PinCount(result, (int)StatId.Count, 28, "StatId（不得新增）");
             PinCount(result, (int)ModOp.Override, 4, "ModOp（最大仍为 Override=4）");
             PinCount(result, (int)Tag.Duration, 256, "Tag（最大仍为 Duration=1<<8）");
@@ -362,7 +380,7 @@ namespace Game.Tests.EditMode
             {
                 AffixDef def = AffixCatalog.Get((AffixId)i);
                 result.NewAffixRows.Add("| " + def.Id + " | " + def.Name + " | " + def.Stat + " " + ModOpName(def.Op) + "（" + def.Format + "） | " +
-                             def.Stat2 + " " + ModOpName(def.Op2) + "（" + def.Format2 + "） | 4 槽全部 | 随机池 + 定向列表 |");
+                             def.Stat2 + " " + ModOpName(def.Op2) + "（" + def.Format2 + "） | " + SlotText(def) + " | 随机池 + 定向列表 |");
             }
             return result;
         }
@@ -397,7 +415,7 @@ namespace Game.Tests.EditMode
             sb.AppendLine("| 怪 | " + result.EnemyCount + "（3 普通 + Elite 监守 + 木桩） |");
             sb.AppendLine("| Modifier 引用（Support+Passive） | " + result.ModRefCount + " |");
             sb.AppendLine("");
-            sb.AppendLine("内容数量护栏（Collect 阶段核入「结构/契约问题」，baseline 冻结）：Support=7 / 词缀=13 / StatId=28 / ModOp、Tag、Effect、Event、Condition、Skill、图词缀轴全部 +0。");
+            sb.AppendLine("内容数量护栏（Collect 阶段核入「结构/契约问题」）：Support=7 / StatId=28 / ModOp、Tag、Effect、Event、Condition、Skill、图词缀轴全部 +0；词缀=13 基线 + S4-P3 追加 ≤4（旧 ID 只追加不缩水，S4-P3 前基线冻结）。");
             sb.AppendLine("");
             sb.AppendLine("## 资源契约（真实加载验证，非声明文字）");
             sb.AppendLine("");
@@ -461,9 +479,9 @@ namespace Game.Tests.EditMode
             foreach (var row in result.R2SupportRows)
                 sb.AppendLine(row);
             sb.AppendLine("");
-            sb.AppendLine("## S3 第一批新增词缀");
+            sb.AppendLine("## S3 第一批 + S4-P3 追加词缀");
             sb.AppendLine("");
-            sb.AppendLine("全部由**已有 StatId/ModOp** 组成。可出现在 4 槽（武器/胸甲/头盔/靴子）掉落池；进两步 Craft（随机制作=废料池重掷、定向制作=蚀刻剂写入列表）。第二行独立掷值，存 `ItemInstance` 第二值。");
+            sb.AppendLine("全部由**已有 StatId/ModOp** 组成。S4-P3 起带 AllowedSlots（0=不限槽）；可出现在其 eligible 槽位掉落池（不限槽=全部 6 槽）。第二行独立掷值，存 `ItemInstance` 第二值。定向制作对非法槽位组合 deterministic reject。");
             sb.AppendLine("");
             sb.AppendLine("| ID | 名称 | 行 1（Stat/Op） | 行 2（Stat/Op） | 槽位 | 两步 Craft |");
             sb.AppendLine("|---|---|---|---|---|---|");
@@ -483,6 +501,18 @@ namespace Game.Tests.EditMode
         {
             if (actual != expected)
                 result.StructuralProblems.Add("内容数量护栏违规：" + axis + " 期望 " + expected + " 实际 " + actual);
+        }
+
+        /// <summary>S4-P3：AllowedSlots 的报告文字（0=不限槽=全部 6 槽）。</summary>
+        static string SlotText(AffixDef def)
+        {
+            if (def.AllowedSlots == 0)
+                return "6 槽全部";
+            var names = new List<string>();
+            for (int s = 0; s < (int)EquipSlot.Count; s++)
+                if ((def.AllowedSlots & (ushort)(1 << s)) != 0)
+                    names.Add(SliceSession.SlotName((EquipSlot)s));
+            return "仅 " + string.Join("/", names.ToArray());
         }
 
         /// <summary>Tag 规则负向测试：合成坏输入必须被 validator 拒绝（证明规则本身有效，而非当前内容碰巧合法）。</summary>

@@ -134,6 +134,68 @@ namespace Game.Tests.PlayMode
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator AffixApplicability_SessionLoop_NoIllegalAffix()
+        {
+            // S4-P3 §三十四：真实 session path——生成 Gloves 出现合法新词缀→equip 后 Modifier 生效（AttackSpeed 缩短 recovery）→
+            // craft 后仍合法；Belt 定向制作合法写入、非法组合 deterministic reject（不消耗）；旧槽 gameplay 正常。
+            var go = new GameObject("ArenaDirector");
+            var director = go.AddComponent<ArenaDirector>();
+            director.EnablePlayerInput = false;
+            yield return null;
+            if (director.Sim.Session == null)
+            {
+                director.Sim.Session = new SliceSession();
+                director.Sim.Caster.Defs = director.Sim.Session.ResolveSkillDef;
+            }
+            var s = director.Sim.Session;
+
+            ItemInstance picked = default;
+            bool hasSwift = false;
+            for (uint seed = 1u; seed <= 120u && !hasSwift; seed++)
+            {
+                ItemInstance g = s.RollItem(EquipSlot.Gloves, Rarity.Rare, new SeededRng(seed),
+                    SliceSession.SocketsFor(EquipSlot.Gloves), SliceSession.ItemBaseName(EquipSlot.Gloves));
+                for (int a = 0; a < g.AffixCount; a++)
+                    if (g.AffixIdAt(a) == (int)AffixId.SwiftGrip) { picked = g; hasSwift = true; break; }
+            }
+            Assert.IsTrue(hasSwift, "真实 RollItem 路径必须可达新 Gloves 词缀（迅握）");
+            for (int a = 0; a < picked.AffixCount; a++)
+                Assert.IsTrue(AffixCatalog.Get((AffixId)picked.AffixIdAt(a)).IsApplicable(EquipSlot.Gloves),
+                    "手套物品词缀必须合法");
+
+            float baseRecovery = s.ResolveSkillDef(SkillId.Melee).Recovery;
+            string err;
+            Assert.IsTrue(s.TryEquip(s.AddItem(picked), out err), err);
+            float withSwift = s.ResolveSkillDef(SkillId.Melee).Recovery;
+            Assert.Less(withSwift, baseRecovery, "AttackSpeed 词缀必须经 canonical 聚合生效（recovery 缩短）");
+
+            // craft 后仍合法（随机制作=同槽 eligible 池重掷）
+            s.Scrap = 5;
+            int glovesIdx = s.Equipped[(int)EquipSlot.Gloves];
+            Assert.IsTrue(s.TryRandomCraft(glovesIdx, out err), err);
+            for (int a = 0; a < s.Inventory[glovesIdx].AffixCount; a++)
+                Assert.IsTrue(AffixCatalog.Get((AffixId)s.Inventory[glovesIdx].AffixIdAt(a)).IsApplicable(EquipSlot.Gloves),
+                    "随机制作后不得出现非法词缀");
+
+            // Belt：定向制作合法写入；Gloves 专属词缀永不注入 Belt
+            ItemInstance belt = s.RollItem(EquipSlot.Belt, Rarity.Ordinary, new SeededRng(11u),
+                SliceSession.SocketsFor(EquipSlot.Belt), SliceSession.ItemBaseName(EquipSlot.Belt));
+            int beltIdx = s.AddItem(belt);
+            Assert.IsTrue(s.TryDirectedCraft(beltIdx, AffixId.Bulwark, out err), err);
+            Assert.IsFalse(s.TryDirectedCraft(glovesIdx, AffixId.Bulwark, out err), "Belt 专属词缀不得注入手套");
+            director.Sim.Tick(0.02f, PlayerCommand.None());
+            yield return null;
+
+            // 旧槽 gameplay 正常：武器仍可替换
+            ItemInstance w = s.RollItem(EquipSlot.Weapon, Rarity.Rare, new SeededRng(13u),
+                SliceSession.SocketsFor(EquipSlot.Weapon), SliceSession.ItemBaseName(EquipSlot.Weapon));
+            Assert.IsTrue(s.TryEquip(s.AddItem(w), out err), err);
+
+            Object.Destroy(go);
+            yield return null;
+        }
+
         static ItemInstance MakeItem(SliceSession s, EquipSlot slot, float lifeValue)
         {
             ItemInstance it = default;

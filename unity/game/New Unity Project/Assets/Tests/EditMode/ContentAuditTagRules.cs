@@ -57,6 +57,18 @@ namespace Game.Tests.EditMode
             return "死 Tagged Modifier：当前无任何 Active Skill 可满足 " + required;
         }
 
+        /// <summary>
+        /// S4-P3：Affix 槽位适用性 mask 校验（纯函数，可被合成输入负向测试）。返回 null=通过，否则为违规原因。
+        /// 0=不限槽（既有 13 词缀默认语义）；非 0 时所有 bit 必须是已知 EquipSlot（且合法 bit 非零即至少一个允许槽）。
+        /// </summary>
+        public static string ValidateAffixSlots(AffixDef def)
+        {
+            ushort valid = (ushort)((1 << (int)EquipSlot.Count) - 1);
+            if ((def.AllowedSlots & ~valid) != 0)
+                return def.Name + " AllowedSlots 含未知 EquipSlot bit：" + def.AllowedSlots;
+            return null;
+        }
+
         /// <summary>可满足该 RequiredTags 的当前 Active Skill 列表（报告/可达性用）。</summary>
         public static List<SkillId> SatisfyingSkills(Tag required)
         {
