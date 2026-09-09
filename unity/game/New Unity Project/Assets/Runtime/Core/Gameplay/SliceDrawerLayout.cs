@@ -71,5 +71,87 @@ namespace Game.Runtime.Core
         {
             return dw - ScreenMargin - ColumnW;
         }
+
+        // ---------------- S5U-WO-03：抽屉壳（Shell）单一来源（角色/背包页；旧 Column 系保留供 Build 面板与既有测试） ----------------
+
+        /// <summary>壳宽（较旧列 300 加宽 12 供 3 列网格）。</summary>
+        public const float ShellW = 312f;
+        /// <summary>壳顶（与旧列同高起点）。</summary>
+        public const float ShellTop = 64f;
+        /// <summary>壳底距设计底 =224：底缘 dh-160，在战斗栏顶（dh-152）上方 8px，两层永不重叠。</summary>
+        public const float ShellBottomGap = 224f;
+        public const float HeaderH = 26f;
+        public const float ShellTabH = 26f;
+        public const float ShellSlotW = 146f;
+        public const float ShellSlotH = 86f;
+        public const float CellW = 92f;
+        public const float CellH = 70f;
+        public const float GridGap = 4f;
+        public const float FooterH = 20f;
+        /// <summary>装备区/背包区段标签行高。</summary>
+        public const float SectionLabelH = 16f;
+
+        /// <summary>抽屉壳外框（右缘 ScreenMargin；底缘避开战斗栏）。</summary>
+        public static Rect Shell(float dw, float dh)
+        {
+            return new Rect(dw - ScreenMargin - ShellW, ShellTop, ShellW, dh - ShellBottomGap - ShellTop);
+        }
+
+        /// <summary>壳内标题条。</summary>
+        public static Rect ShellHeader(float dw, float dh)
+        {
+            var s = Shell(dw, dh);
+            return new Rect(s.x, s.y, s.width, HeaderH);
+        }
+
+        /// <summary>壳内 Build/Craft 两 tab（语义=现有 Panel 切换，仅视觉重做）。</summary>
+        public static Rect ShellTab(int index, float dw, float dh)
+        {
+            var s = Shell(dw, dh);
+            float w = (ShellW - 12f - Gap) * 0.5f;
+            return new Rect(s.x + 6f + index * (w + Gap), s.y + HeaderH + 4f, w, ShellTabH);
+        }
+
+        /// <summary>装备区 2×3 槽（index 0..5=DisplayOrder；恒 6 槽，不新增槽位）。</summary>
+        public static Rect ShellSlot(int index, float dw, float dh)
+        {
+            var s = Shell(dw, dh);
+            float y0 = s.y + HeaderH + 4f + ShellTabH + 4f + SectionLabelH;
+            int col = index % 2;
+            int row = index / 2;
+            return new Rect(s.x + 6f + col * (ShellSlotW + Gap), y0 + row * (ShellSlotH + Gap), ShellSlotW, ShellSlotH);
+        }
+
+        /// <summary>背包网格可视区（滚动视口；内容坐标见 ShellInvContentSize/ShellInvCell）。
+        /// 小视口（dh&lt;~880）时壳高压到下限 24px 仍保持滚动可用，且永不压反馈条。</summary>
+        public static Rect ShellInvView(float dw, float dh)
+        {
+            var s = Shell(dw, dh);
+            float y0 = s.y + HeaderH + 4f + ShellTabH + 4f + SectionLabelH + 3f * (ShellSlotH + Gap) + SectionLabelH + 2f;
+            float bottom = s.yMax - FooterH - 6f;
+            return new Rect(s.x + 8f, y0, ShellW - 16f, Mathf.Max(24f, bottom - y0));
+        }
+
+        /// <summary>网格内容总高（rows=ceil(count/3)；内容坐标，供 ScrollView）。</summary>
+        public static float ShellInvContentHeight(int count)
+        {
+            int rows = (count + 2) / 3;
+            return rows * (CellH + GridGap);
+        }
+
+        /// <summary>网格单元矩形（内容坐标：col=i%3, row=i/3；调用方叠加滚动偏移）。</summary>
+        public static Rect ShellInvCell(int index)
+        {
+            int col = index % 3;
+            int row = index / 3;
+            return new Rect(col * (CellW + GridGap), row * (CellH + GridGap), CellW, CellH);
+        }
+
+        /// <summary>壳底反馈条（LastMessage/拾取反馈）。</summary>
+        public static Rect ShellFooter(float dw, float dh)
+        {
+            var s = Shell(dw, dh);
+            return new Rect(s.x + 6f, s.yMax - FooterH - 2f, ShellW - 12f, FooterH);
+        }
     }
 }

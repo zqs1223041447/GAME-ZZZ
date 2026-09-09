@@ -548,19 +548,34 @@ namespace Game.Runtime.Core
         /// <summary>R2 右侧装备抽屉：常驻列=标题+2×3 迷你槽（S4-P2 六槽，人体顺序 DisplayOrder）+Build/Craft tab。单渲染器原则：Build/Craft 内容在列左侧面板迁移呈现（move, not duplicate），列永远可见。</summary>
         void DrawDrawer(SliceSession s)
         {
-            float dw = Dw();
-            _drawer = SliceDrawerLayout.Column(dw);
+            float dw = Dw(), dh = Dh();
+            _drawer = SliceDrawerLayout.Shell(dw, dh);
             PanelBg(_drawer);
-            Label(new Rect(_drawer.x + 8, _drawer.y + 6, _drawer.width - 16, 18), "装备", _small);
-            for (int i = 0; i < SliceDrawerLayout.DisplayOrder.Length; i++)
-                DrawMiniSlot(s, SliceDrawerLayout.DisplayOrder[i], SliceDrawerLayout.Slot(i, dw));
-            if (NavBtn(SliceDrawerLayout.Tab(0, dw), "角色", s.Panel == SlicePanel.Build))
+            // 头部（S-08：标题+饰线）
+            var head = SliceDrawerLayout.ShellHeader(dw, dh);
+            Label(new Rect(head.x + 10, head.y + 4, head.width - 20, 18), "角色 / 背包", _title);
+            GUI.DrawTexture(new Rect(head.x + 10, head.y + head.height - 4, head.width - 20, 3), SliceHudIcons.Separator);
+            // tab（语义=现有 Panel 切换，仅视觉重做）
+            if (NavBtn(SliceDrawerLayout.ShellTab(0, dw, dh), "角色", s.Panel == SlicePanel.Build))
                 s.Panel = s.Panel == SlicePanel.Build ? SlicePanel.None : SlicePanel.Build;
-            if (NavBtn(SliceDrawerLayout.Tab(1, dw), "制作", s.Panel == SlicePanel.Craft))
+            if (NavBtn(SliceDrawerLayout.ShellTab(1, dw, dh), "制作", s.Panel == SlicePanel.Craft))
                 s.Panel = s.Panel == SlicePanel.Craft ? SlicePanel.None : SlicePanel.Craft;
+            // 装备区（S-09：恒 6 槽）
+            var slot0 = SliceDrawerLayout.ShellSlot(0, dw, dh);
+            Label(new Rect(_drawer.x + 8, slot0.y - SliceDrawerLayout.SectionLabelH - 2, 120, 16), "装备", _small);
+            for (int i = 0; i < SliceDrawerLayout.DisplayOrder.Length; i++)
+                DrawMiniSlot(s, SliceDrawerLayout.DisplayOrder[i], SliceDrawerLayout.ShellSlot(i, dw, dh));
+            // 背包区（S-10：呈现网格；顺序=库存真值；零网格机制）
+            var view = SliceDrawerLayout.ShellInvView(dw, dh);
+            Label(new Rect(_drawer.x + 8, view.y - SliceDrawerLayout.SectionLabelH - 2, 200, 16), "背包（点击装备）", _small);
+            DrawInventoryGrid(s, view);
+            // 底部反馈条
+            var foot = SliceDrawerLayout.ShellFooter(dw, dh);
+            Clipped(foot, s.LastMessage + (string.IsNullOrEmpty(s.LastLoot) ? "" : "  ·  " + s.LastLoot), _small);
         }
 
-        /// <summary>迷你装备槽：只读现有 canonical 装备状态（EquipSlot/Inventory），点击=打开 Build 面板；无新图标资源（文字+程序化槽位皮肤）。</summary>
+        /// <summary>装备迷你槽（S-09/S-13）：槽位类型符文（generic，不伪装物品）+ 槽名 + 物品名（稀有度真值着色）；
+        /// 空槽=暗符文+空；hover=ItemCard（已装备本体）；点击=打开角色页（既有语义不变）。</summary>
         void DrawMiniSlot(SliceSession s, EquipSlot slot, Rect r)
         {
             Event e = Event.current;
@@ -569,12 +584,15 @@ namespace Game.Runtime.Core
             GUI.Box(r, GUIContent.none, press ? _slotP : (hover ? _slotH : _slotN));
             int idx = s.Equipped[(int)slot];
             bool has = idx >= 0 && idx < s.InventoryCount;
-            Label(new Rect(r.x + 8, r.y + 6, r.width - 14, 16), SliceSession.SlotName(slot), _small);
+            GUI.color = has ? Color.white : new Color(1f, 1f, 1f, 0.28f);
+            GUI.DrawTexture(new Rect(r.x + 8, r.y + 8, 44, 44), SliceHudIcons.EquipGlyph(slot));
+            GUI.color = Color.white;
+            Label(new Rect(r.x + 56, r.y + 6, r.width - 62, 16), SliceSession.SlotName(slot), _small);
             if (has)
             {
                 ItemInstance it = s.Inventory[idx];
                 GUI.color = it.Rarity == Rarity.Rare ? SlicePalette.Rare : SlicePalette.Ordinary;
-                Clipped(new Rect(r.x + 8, r.y + 24, r.width - 14, 18),
+                Clipped(new Rect(r.x + 56, r.y + 24, r.width - 62, 32),
                     SliceSession.CleanBaseName(it.BaseName), _clip);
                 GUI.color = Color.white;
                 if (hover)
@@ -582,7 +600,9 @@ namespace Game.Runtime.Core
             }
             else
             {
-                Label(new Rect(r.x + 8, r.y + 24, r.width - 14, 18), "空", _small);
+                GUI.color = SlicePalette.Dim;
+                Label(new Rect(r.x + 56, r.y + 24, r.width - 62, 16), "空", _small);
+                GUI.color = Color.white;
             }
             if (Click(r))
             {
@@ -592,13 +612,63 @@ namespace Game.Runtime.Core
             }
         }
 
+        /// <summary>背包呈现网格（S-10/S-11/S-13）：1 物品=1 格（96²→92×70），顺序=库存真值；
+        /// 槽位类型符文+稀有度左缘（既有真值）+名称+词缀摘要+已装备徽记；
+        /// 选中/hover 独立状态（selected &gt; hover）；点击流=既有 SelectInv+TryEquip（零新机制）。</summary>
+        void DrawInventoryGrid(SliceSession s, Rect view)
+        {
+            float contentH = SliceDrawerLayout.ShellInvContentHeight(s.InventoryCount);
+            _invScroll = GUI.BeginScrollView(view, _invScroll, new Rect(0, 0, view.width - 16, contentH));
+            for (int i = 0; i < s.InventoryCount; i++)
+            {
+                Rect cell = SliceDrawerLayout.ShellInvCell(i);
+                // 悬停/tooltip 必须用屏幕（设计）坐标：cell 是内容坐标，Pointer 是设计空间
+                // （旧列表实现此处的坐标从未对齐——S5U-WO-03 修复；GUI.Button 输入由 ScrollView 自行变换不受影响）
+                Rect cellScreen = new Rect(view.x + cell.x - _invScroll.x, view.y + cell.y - _invScroll.y,
+                    cell.width, cell.height);
+                bool sel = i == s.SelectedInv;
+                bool equipped = false;
+                for (int k = 0; k < s.Equipped.Length; k++)
+                    if (s.Equipped[k] == i) { equipped = true; break; }
+                ItemInstance it = s.Inventory[i];
+                Event e = Event.current;
+                bool hover = e != null && cellScreen.Contains(Pointer);
+                GUI.Box(cell, GUIContent.none, sel ? _slotSel : (hover ? _slotH : _slotN));
+                Bar(cell.x + 1, cell.y + 1, 3, cell.height - 2,
+                    it.Rarity == Rarity.Rare ? SlicePalette.Rare : SlicePalette.Ordinary);
+                GUI.color = equipped ? Color.white : new Color(0.86f, 0.86f, 0.86f, 1f);
+                GUI.DrawTexture(new Rect(cell.x + 6, cell.y + 5, 36, 36), SliceHudIcons.EquipGlyph(it.Slot));
+                GUI.color = Color.white;
+                if (equipped)
+                {
+                    var badge = new Rect(cell.xMax - 50, cell.y + 4, 46, 13);
+                    Fill(badge, new Color(0.05f, 0.045f, 0.04f, 0.85f));
+                    Label(badge, "已装备", _tiny);
+                }
+                Clipped(new Rect(cell.x + 4, cell.y + 42, cell.width - 8, 13),
+                    SliceSession.CleanBaseName(it.BaseName), _clip);
+                Clipped(new Rect(cell.x + 4, cell.y + 55, cell.width - 8, 13), ItemAffixSummary(it), _clip);
+                if (hover)
+                    RequestTip(SliceTooltipModel.ItemCard(it, s), TipPriPanel); // 候选 vs canonical 同槽已装备（工作令 七-十）
+                if (GUI.Button(cell, GUIContent.none, GUIStyle.none))
+                {
+                    s.SelectedInv = i;
+                    string err;
+                    if (!s.TryEquip(i, out err) && err != null)
+                        s.LastMessage = err;
+                }
+            }
+            GUI.EndScrollView();
+        }
+
         void DrawBuild(SliceSession s, ArenaSim sim)
         {
             _panel = SliceDrawerLayout.BuildPanel(Dw());
             PanelChrome(_panel, "角色  ·  " + s.StatusCopy);
             DrawGearRow(s, new Rect(_panel.x + 12, _panel.y + 32, 736, 118));
-            DrawInventory(s, new Rect(_panel.x + 12, _panel.y + 154, 360, 260));
-            DrawTree(s, new Rect(_panel.x + 380, _panel.y + 154, 368, 260));
+            // S5U-WO-03：背包网格移交常驻抽屉壳（单一背包表面）；Build 页=装备明细行+天赋树（树放宽到整幅，
+            // SlicePassiveLayout 本就按传入矩形布局，语义零改动）
+            DrawTree(s, new Rect(_panel.x + 12, _panel.y + 154, 712, 260));
         }
 
         void DrawGearRow(SliceSession s, Rect r)
@@ -625,9 +695,13 @@ namespace Game.Runtime.Core
             Fill(r, new Color(0.13f, 0.13f, 0.15f, 1f));
             Bar(r.x, r.y, 5, r.height, edge);
             Label(new Rect(r.x + 10, r.y + 4, r.width - 14, 16), SliceSession.SlotName(slot), _small);
+            // S5U-WO-03：槽位类型符文（generic；与抽屉壳同一符文语言）
+            GUI.color = has ? Color.white : new Color(1f, 1f, 1f, 0.28f);
+            GUI.DrawTexture(new Rect(r.x + 10, r.y + 22, 36, 36), SliceHudIcons.EquipGlyph(slot));
+            GUI.color = Color.white;
             if (!has)
             {
-                Label(new Rect(r.x + 10, r.y + 24, r.width - 14, 20), "空", _body);
+                Label(new Rect(r.x + 54, r.y + 30, r.width - 60, 20), "空", _body);
                 return;
             }
 
@@ -635,7 +709,7 @@ namespace Game.Runtime.Core
             // S5-WO-03：第二连接配置条=卡底 20px 有界呈现（资格=SecondaryLinkConfigurable 与域同源）；
             // 配置条物品行转紧凑单行，词缀详情看 Tooltip（无新屏/无重构）
             bool rebind = SliceSession.SecondaryLinkConfigurable(it);
-            DrawItemBody(it, new Rect(r.x + 10, r.y + 20, r.width - 16, rebind ? 16f : r.height - 24f), rebind);
+            DrawItemBody(it, new Rect(r.x + 54, r.y + 20, r.width - 60, rebind ? 16f : r.height - 24f), rebind);
             if (rebind)
                 DrawRebindStrip(s, idx, it, new Rect(r.x + 10, r.y + r.height - 20, r.width - 20, 18));
             if (r.Contains(Pointer))
@@ -722,38 +796,6 @@ namespace Game.Runtime.Core
                 Clipped(new Rect(r.x, y, r.width, 14), SliceSession.AffixLine(it, i), _small);
                 y += 14;
             }
-        }
-
-        void DrawInventory(SliceSession s, Rect r)
-        {
-            Fill(r, new Color(0.11f, 0.11f, 0.13f, 1f));
-            Label(new Rect(r.x + 8, r.y + 4, r.width - 16, 18), "背包（点击装备）", _small);
-            Rect view = new Rect(r.x + 6, r.y + 24, r.width - 12, r.height - 30);
-            _invScroll = GUI.BeginScrollView(view, _invScroll, new Rect(0, 0, view.width - 16, s.InventoryCount * 46f));
-            for (int i = 0; i < s.InventoryCount; i++)
-            {
-                Rect row = new Rect(0, i * 46f, view.width - 18, 44);
-                bool sel = i == s.SelectedInv;
-                ItemInstance it = s.Inventory[i];
-                Color edge = it.Rarity == Rarity.Rare ? SlicePalette.Rare : SlicePalette.Ordinary;
-                Fill(row, sel ? new Color(0.20f, 0.19f, 0.14f, 1f) : new Color(0.14f, 0.14f, 0.16f, 1f));
-                Bar(row.x, row.y, 4, row.height, edge);
-                Clipped(new Rect(row.x + 10, row.y + 2, row.width - 14, 16),
-                    SliceSession.RarityWord(it.Rarity) + "  " + SliceSession.CleanBaseName(it.BaseName), _clip);
-                Clipped(new Rect(row.x + 10, row.y + 18, row.width - 14, 22),
-                    ItemAffixSummary(it), _small);
-                if (row.Contains(Pointer))
-                    RequestTip(SliceTooltipModel.ItemCard(it, s), TipPriPanel); // 候选 vs canonical 同槽已装备（工作令 七-十）
-                if (GUI.Button(row, GUIContent.none, GUIStyle.none))
-                {
-                    s.SelectedInv = i;
-                    string err;
-                    if (!s.TryEquip(i, out err) && err != null)
-                        s.LastMessage = err;
-                }
-            }
-
-            GUI.EndScrollView();
         }
 
         void DrawTree(SliceSession s, Rect r)
@@ -955,7 +997,14 @@ namespace Game.Runtime.Core
             float w = SliceTooltipLayout.BaseW;
             const float pad = 10f;
             const float titleH = 20f, lineH = 16f, smallH = 15f;
+            // S5U-WO-03：层级分隔线（标题块|正文|对比区）——渲染层视觉，不动模型
+            bool div1 = card.Body != null && card.Body.Length > 0 &&
+                (!string.IsNullOrEmpty(card.Title) || !string.IsNullOrEmpty(card.Subtitle) || !string.IsNullOrEmpty(card.Badge));
+            bool div2 = card.Body != null && card.Body.Length > 0 &&
+                (!string.IsNullOrEmpty(card.ContextTitle) || (card.Context != null && card.Context.Length > 0));
             float h = pad * 2f;
+            if (div1) h += 8f;
+            if (div2) h += 8f;
             if (!string.IsNullOrEmpty(card.Title)) h += titleH;
             if (!string.IsNullOrEmpty(card.Subtitle)) h += lineH;
             if (!string.IsNullOrEmpty(card.Badge)) h += lineH;
@@ -989,6 +1038,11 @@ namespace Game.Runtime.Core
                 GUI.color = old;
                 y += lineH;
             }
+            if (div1)
+            {
+                Fill(new Rect(ix, y + 1, iw, 2), SlicePalette.PanelEdge);
+                y += 8f;
+            }
             if (card.Body != null)
             {
                 for (int i = 0; i < card.Body.Length; i++)
@@ -996,6 +1050,11 @@ namespace Game.Runtime.Core
                     Label(new Rect(ix, y, iw, smallH), card.Body[i], _small);
                     y += smallH;
                 }
+            }
+            if (div2)
+            {
+                Fill(new Rect(ix, y + 1, iw, 2), SlicePalette.PanelEdge);
+                y += 8f;
             }
             if (!string.IsNullOrEmpty(card.ContextTitle))
             {

@@ -19,13 +19,16 @@ namespace Game.Runtime.Core
         static Texture2D _globeFrame;
         static Texture2D _slotFrame;
         static Texture2D _separator;
+        static Texture2D _eqWeapon, _eqHelmet, _eqBody, _eqGloves, _eqBoots, _eqBelt;
         static bool _built;
 
         public static void Ensure()
         {
             if (_built && _glyphMelee != null && _glyphProjectile != null && _glyphArea != null &&
                 _pipOn != null && _pipOff != null && _pipClosed != null &&
-                _globeFrame != null && _slotFrame != null && _separator != null)
+                _globeFrame != null && _slotFrame != null && _separator != null &&
+                _eqWeapon != null && _eqHelmet != null && _eqBody != null &&
+                _eqGloves != null && _eqBoots != null && _eqBelt != null)
                 return;
             _glyphMelee = BuildGlyphMelee();
             _glyphProjectile = BuildGlyphProjectile();
@@ -36,6 +39,12 @@ namespace Game.Runtime.Core
             _globeFrame = BuildGlobeFrame();
             _slotFrame = BuildSlotFrame();
             _separator = BuildSeparator();
+            _eqWeapon = BuildEqWeapon();
+            _eqHelmet = BuildEqHelmet();
+            _eqBody = BuildEqBody();
+            _eqGloves = BuildEqGloves();
+            _eqBoots = BuildEqBoots();
+            _eqBelt = BuildEqBelt();
             _built = true;
         }
 
@@ -48,6 +57,26 @@ namespace Game.Runtime.Core
         public static Texture2D GlobeFrame { get { Ensure(); return _globeFrame; } }
         public static Texture2D SlotFrame { get { Ensure(); return _slotFrame; } }
         public static Texture2D Separator { get { Ensure(); return _separator; } }
+        public static Texture2D EqWeapon { get { Ensure(); return _eqWeapon; } }
+        public static Texture2D EqHelmet { get { Ensure(); return _eqHelmet; } }
+        public static Texture2D EqBody { get { Ensure(); return _eqBody; } }
+        public static Texture2D EqGloves { get { Ensure(); return _eqGloves; } }
+        public static Texture2D EqBoots { get { Ensure(); return _eqBoots; } }
+        public static Texture2D EqBelt { get { Ensure(); return _eqBelt; } }
+
+        /// <summary>S5U-WO-03：装备槽类型符文（generic 槽位图形，不伪装具体物品外观；恒等映射）。</summary>
+        public static Texture2D EquipGlyph(EquipSlot slot)
+        {
+            switch (slot)
+            {
+                case EquipSlot.Helmet: return EqHelmet;
+                case EquipSlot.Body: return EqBody;
+                case EquipSlot.Gloves: return EqGloves;
+                case EquipSlot.Boots: return EqBoots;
+                case EquipSlot.Belt: return EqBelt;
+                default: return EqWeapon;
+            }
+        }
 
         /// <summary>Support pip 恒等映射（全部 SupportId 同一贴图：中性金属，颜色零语义）。</summary>
         public static Texture2D PipFor(SupportId id, bool filled, bool closed)
@@ -136,6 +165,129 @@ namespace Game.Runtime.Core
         }
 
         // ---------------- Support pip（20²；中性金属恒等映射） ----------------
+
+        // ---------------- 装备槽类型符文（64²，透明底；S5U-WO-03） ----------------
+
+        static Texture2D BuildEqWeapon()
+        {
+            var px = Blank(64);
+            // 立式巨剑（垂直剑身+剑尖+横护手+握柄+金铆）——与技能斜剑区分
+            Stroke(px, 64, 64, 32, 12, 32, 44, 7f, Ink);
+            Stroke(px, 64, 64, 32, 13, 32, 43, 4f, Cream);
+            Stroke(px, 64, 64, 32, 10, 32, 14, 5f, Ink);
+            FillTri(px, 28, 14, 32, 6, 36, 14, Ink);
+            FillTri(px, 30, 13, 32, 8, 34, 13, Cream);
+            Stroke(px, 64, 64, 20, 44, 44, 44, 6f, Ink);
+            Stroke(px, 64, 64, 20, 44, 44, 44, 2.6f, GoldMid);
+            Stroke(px, 64, 64, 32, 47, 32, 55, 5f, Ink);
+            Stroke(px, 64, 64, 32, 47, 32, 55, 2f, Cream);
+            Dot(px, 32, 58, 3.6f, Ink);
+            Dot(px, 32, 58, 1.9f, Gold);
+            return Make(px, 64);
+        }
+
+        static Texture2D BuildEqHelmet()
+        {
+            var px = Blank(64);
+            // 头盔：圆顶+帽檐+眼缝+护鼻
+            Stroke(px, 64, 64, 14, 38, 22, 18, 5.5f, Ink);
+            Stroke(px, 64, 64, 22, 18, 42, 18, 5.5f, Ink);
+            Stroke(px, 64, 64, 42, 18, 50, 38, 5.5f, Ink);
+            Stroke(px, 64, 64, 15, 38, 23, 20, 2.4f, Cream);
+            Stroke(px, 64, 64, 23, 20, 41, 20, 2.4f, Cream);
+            Stroke(px, 64, 64, 41, 20, 49, 38, 2.4f, Cream);
+            Stroke(px, 64, 64, 12, 40, 52, 40, 5f, Ink);
+            Stroke(px, 64, 64, 13, 40, 51, 40, 2f, GoldMid);
+            Stroke(px, 64, 64, 32, 40, 32, 54, 4f, Ink);
+            Stroke(px, 64, 64, 32, 41, 32, 53, 1.6f, Cream);
+            Stroke(px, 64, 64, 20, 44, 28, 44, 3.5f, IronLo);
+            Stroke(px, 64, 64, 36, 44, 44, 44, 3.5f, IronLo);
+            return Make(px, 64);
+        }
+
+        static Texture2D BuildEqBody()
+        {
+            var px = Blank(64);
+            // 胸甲：肩线+梯形甲身+中脊金线
+            Stroke(px, 64, 64, 14, 14, 24, 10, 5f, Ink);
+            Stroke(px, 64, 64, 50, 14, 40, 10, 5f, Ink);
+            Stroke(px, 64, 64, 14, 14, 18, 34, 5f, Ink);
+            Stroke(px, 64, 64, 50, 14, 46, 34, 5f, Ink);
+            Stroke(px, 64, 64, 18, 34, 22, 52, 5f, Ink);
+            Stroke(px, 64, 64, 46, 34, 42, 52, 5f, Ink);
+            Stroke(px, 64, 64, 22, 52, 42, 52, 5f, Ink);
+            Stroke(px, 64, 64, 15, 15, 23, 11, 2.2f, Cream);
+            Stroke(px, 64, 64, 49, 15, 41, 11, 2.2f, Cream);
+            Stroke(px, 64, 64, 16, 17, 20, 34, 2.2f, Cream);
+            Stroke(px, 64, 64, 48, 17, 44, 34, 2.2f, Cream);
+            Stroke(px, 64, 64, 20, 35, 24, 51, 2.2f, Cream);
+            Stroke(px, 64, 64, 44, 35, 40, 51, 2.2f, Cream);
+            Stroke(px, 64, 64, 24, 52, 40, 52, 2.2f, Cream);
+            Stroke(px, 64, 64, 32, 12, 32, 52, 2.6f, GoldMid);
+            return Make(px, 64);
+        }
+
+        static Texture2D BuildEqGloves()
+        {
+            var px = Blank(64);
+            // 手套：掌+四指并拢+拇指外张+护腕
+            Stroke(px, 64, 64, 20, 26, 44, 26, 5f, Ink);
+            Stroke(px, 64, 64, 20, 26, 20, 46, 5f, Ink);
+            Stroke(px, 64, 64, 44, 26, 44, 34, 5f, Ink);
+            Stroke(px, 64, 64, 44, 34, 52, 40, 5f, Ink);
+            Stroke(px, 64, 64, 52, 40, 48, 46, 5f, Ink);
+            Stroke(px, 64, 64, 48, 46, 20, 46, 5f, Ink);
+            Stroke(px, 64, 64, 22, 27, 22, 45, 2.2f, Cream);
+            Stroke(px, 64, 64, 22, 28, 43, 28, 2.2f, Cream);
+            Stroke(px, 64, 64, 43, 28, 43, 33, 2.2f, Cream);
+            Stroke(px, 64, 64, 18, 48, 46, 48, 6f, Ink);
+            Stroke(px, 64, 64, 19, 48, 45, 48, 2.4f, GoldMid);
+            return Make(px, 64);
+        }
+
+        static Texture2D BuildEqBoots()
+        {
+            var px = Blank(64);
+            // 靴：靴筒+脚尖+厚底（双靴剪影：主靴+后靴暗影）
+            Stroke(px, 64, 64, 16, 10, 38, 10, 5.5f, Ink);
+            Stroke(px, 64, 64, 16, 10, 16, 38, 5.5f, Ink);
+            Stroke(px, 64, 64, 16, 38, 30, 38, 5.5f, Ink);
+            Stroke(px, 64, 64, 30, 38, 30, 48, 5.5f, Ink);
+            Stroke(px, 64, 64, 30, 48, 46, 48, 5.5f, Ink);
+            Stroke(px, 64, 64, 46, 48, 46, 42, 5.5f, Ink);
+            Stroke(px, 64, 64, 46, 42, 38, 38, 5.5f, Ink);
+            Stroke(px, 64, 64, 38, 38, 38, 10, 5.5f, Ink);
+            Stroke(px, 64, 64, 17, 11, 17, 37, 2.2f, Cream);
+            Stroke(px, 64, 64, 17, 37, 29, 37, 2.2f, Cream);
+            Stroke(px, 64, 64, 29, 37, 29, 47, 2.2f, Cream);
+            Stroke(px, 64, 64, 29, 47, 45, 47, 2.2f, Cream);
+            Stroke(px, 64, 64, 37, 12, 37, 34, 3f, IronHi);
+            Stroke(px, 64, 64, 12, 52, 50, 52, 6f, Ink);
+            Stroke(px, 64, 64, 13, 52, 49, 52, 2.2f, GoldDim);
+            return Make(px, 64);
+        }
+
+        static Texture2D BuildEqBelt()
+        {
+            var px = Blank(64);
+            // 腰带：横带+方扣（金框+针）+带尾
+            Stroke(px, 64, 64, 8, 30, 56, 30, 6f, Ink);
+            Stroke(px, 64, 64, 8, 38, 56, 38, 6f, Ink);
+            FillTri(px, 8, 27, 8, 41, 2, 34, IronLo);
+            Stroke(px, 64, 64, 9, 30, 55, 30, 2.4f, Cream);
+            Stroke(px, 64, 64, 9, 38, 55, 38, 2.4f, Cream);
+            Stroke(px, 64, 64, 26, 22, 40, 22, 5f, Ink);
+            Stroke(px, 64, 64, 40, 22, 40, 46, 5f, Ink);
+            Stroke(px, 64, 64, 40, 46, 26, 46, 5f, Ink);
+            Stroke(px, 64, 64, 26, 46, 26, 22, 5f, Ink);
+            Stroke(px, 64, 64, 26, 22, 40, 22, 2.2f, Gold);
+            Stroke(px, 64, 64, 40, 22, 40, 46, 2.2f, Gold);
+            Stroke(px, 64, 64, 40, 46, 26, 46, 2.2f, Gold);
+            Stroke(px, 64, 64, 26, 46, 26, 22, 2.2f, Gold);
+            Stroke(px, 64, 64, 33, 26, 33, 42, 3f, Ink);
+            Stroke(px, 64, 64, 33, 27, 33, 41, 1.6f, Cream);
+            return Make(px, 64);
+        }
 
         static Texture2D BuildPip(bool filled, bool closed)
         {

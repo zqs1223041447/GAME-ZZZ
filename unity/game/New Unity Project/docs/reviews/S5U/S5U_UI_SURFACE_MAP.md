@@ -247,3 +247,22 @@
 **几何单一来源**：`SliceHud.CombatBarRects(dw,dh)`（public 纯函数）——S-03..S-07 全部元素矩形出自同一函数，`S5UHudTests` 三设计空间（1920×1080 共同空间 / 1.4 上夹取空间 / 1280×720 小窗）断言不重叠不出界。
 **连接徽章真值映射**：`SliceSession.LinkBadgeText(skill)` = `"G"+组+"·容"+SupportCapacity(skill)`；与 `LinkSourceLabel` 同源（组/容量逐字符一致有测试）。
 **§0 几何事实补充（canonical 通道）**：WO-02 起所有 After 截图经 canonical 无夹取通道采集——GameView `m_TargetSize`=2560×1440（GAME-ZZZ-CANON FixedResolution 注册）→ Screen=2560×1440、DesignScale=1.3333、**设计空间=1920×1080**；§0 表内 1.4 夹取态换算系数仅适用于 WO-01 历史基线。
+
+## 5. WO-03 实现真值（装备/背包呈现 S-08..S-16，2026-09-09）
+
+> 规划 AI 2026-09-09 放行令落地：抽屉壳+装备 2×3+背包呈现网格+ItemCard 层级+第二连接条带+紧凑格式化升位修正。证据=`S5U_WO_03_EVIDENCE.md`（7 张 canonical After）。
+
+| Surface | WO-03 实现 | 契约校验 |
+|---|---|---|
+| S-08 抽屉壳 | **已换装**：全壳面板（头部「角色 / 背包」+饰线 / Build-Craft tab（语义不变）/ 装备区+背包区 / 底部反馈条 LastMessage）；`SliceDrawerLayout.Shell 系`纯函数=单一来源；壳底缘恒在战斗栏顶上方 8px（测试断言三设计空间） | 不与战斗栏重叠；2560/1920 双分辨率完整可见 |
+| S-09 装备 2×3 | **已换装**：146×86 槽=槽位类型符文（6 件原创 EqGlyph，generic 不伪装物品）+槽名+物品名（稀有度真值着色）/空槽暗符文+「空」；hover=ItemCard；点击=开角色页（语义不变） | **恒 6 槽**（禁 Ring/Amulet/Offhand）；EquipSlot ID 不漂移 |
+| S-10 背包网格 | **已换装**：92×70×3 列滚动呈现网格（1 物品=1 恰一格；顺序=InventoryCount 真值顺序；零 width/height/占位/旋转/容量机制） | 网格=纯呈现（ShellInvContentHeight=ceil(count/3) 行高，测试锁定） |
+| S-11 物品格层级 | 符文+稀有度左缘（既有真值）+名称+词缀摘要+已装备徽记；**禁项全未添加**（无 item level/quality/socket 色/新稀有度层/unidentified/vendor value） | 既有真值零增删 |
+| S-12 ItemCard | 层级=标题（稀有度着色）/副题（稀有·槽·孔）/**金分隔线×2（渲染层新增）**/正文（基础+词缀+连接组真值）/对比区/操作提示；模型（SliceTooltipModel）零改动 | Affix 通用渲染不变；无占位泄漏 |
+| S-13 状态语言 | Normal/Hover/Selected（石质框四态沿用）+已装备徽记+空槽暗符文；优先级 selected > hover > normal（GUI 框态选择序） | 视觉状态不改变选择逻辑 |
+| S-14 装备/拖放合同 | 点击网格=既有 `SelectedInv=i + TryEquip(i)`（逐字保留）；装备经既有 post-validator；**零直接写 LinkSkill1/零自动迁移** | 换装/替换路径不变（SixSlot PlayMode 测试绿） |
+| S-15 第二连接条带 | 既有条带保留（资格=SecondaryLinkConfigurable 同源；候选=RebindCandidates；写入唯一 TryReassignLink；拒绝=确定性可见）；本 Wo 仅随装备卡符文化呈现 | 容量/候选/拒绝语义精确（MultiLink 套件绿） |
+| S-16 物品 Tooltip | 与 WO-02 tooltip 同族（石底金边卡+分隔线）；**修复：网格 cell 悬停坐标换算（内容坐标→设计空间）——旧列表悬停检测从未对齐，本 Wo 修正后 cell hover→ItemCard 可靠触发；容器（壳/面板）结构性不请求 tooltip，无同优先级抢占** | 视口钳制/翻转沿用 SliceTooltipLayout |
+
+**WO-03 合同修正（规划 AI 非阻塞项）**：`SliceHudFormat.Compact` 升位——999999→`1.0M`（K/M/T 段舍入达上段阈值即升位；禁 1000.0K/1000.0M 伪影）；formatter 测试同步（含全窗口扫描测试）。
+**Build 页调整**：背包列表自 Build 面板**移除**（网格移交常驻抽屉壳=单一背包表面）；天赋树放宽至面板整幅（SlicePassiveLayout 按矩形布局，语义零改动）；装备明细行保留（符文化+既有连接/条带）。

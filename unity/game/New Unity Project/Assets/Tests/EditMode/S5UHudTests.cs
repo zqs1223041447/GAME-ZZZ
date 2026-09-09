@@ -18,12 +18,24 @@ namespace Game.Tests.EditMode
         [TestCase(1000f, "1.0K")]
         [TestCase(9999f, "10.0K")]
         [TestCase(10000f, "10.0K")]
-        [TestCase(999999f, "1000.0K")]
+        [TestCase(999940f, "999.9K")]
+        [TestCase(999999f, "1.0M")]
         [TestCase(1000000f, "1.0M")]
         [TestCase(9999999f, "10.0M")]
+        [TestCase(999999999999f, "1.0T")]
         public void Compact_Boundaries_FormatsExactly(float value, string expected)
         {
             Assert.AreEqual(expected, SliceHudFormat.Compact(value));
+        }
+
+        [Test]
+        public void Compact_NeverEmitsThousandBoundaryArtifact()
+        {
+            // WO-03 合同修正（规划 AI）：K/M 段舍入达上段阈值=升位；禁 1000.0K/1000.0M 伪影
+            for (float v = 999900f; v <= 1000000f; v += 10f)
+                StringAssert.DoesNotContain("1000.0K", SliceHudFormat.Compact(v), "v=" + v);
+            for (float v = 999900000000f; v <= 1000000000000f; v += 10000000f)
+                StringAssert.DoesNotContain("1000.0M", SliceHudFormat.Compact(v), "v=" + v);
         }
 
         [Test]

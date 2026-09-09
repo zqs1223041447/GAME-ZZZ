@@ -160,3 +160,14 @@ S1 技术已放行。输入、对象池、SeededRng、点地移动、Q/W/E 施�
 - **WO-02 Gate Review=ACCEPT（无阻塞 follow-up，规划 AI 2026-09-09）**：27 项门全 PASS（技术路线/呈现-only/三 Delta=NONE/CombatBarRects 单一真值/canonical+1080 布局/连接与容量真值/禁 Socket Color/332+11/11/Audit/ProdSim hash 精确/Drift=0/Forbidden=PASS）。具体裁定：LinkBadgeText=只读呈现投影接受（**不得成为第二套 link validator/不得自算容量/禁止 UI 徽章反写状态**）；运行时图标范式接受（禁 OnGUI 每帧生成 Texture/每帧重建样式/隐藏 Resources 回退）；tooltip 两修复接受（权威语义未动）；NRE 过程事件不构成门失败（纪律保留：禁在存活 Play 会话并行跑批处理 EditMode 套件）；canonical 通道重注册接受（S5U 收口仍须重建权威 2560×1440 环境并跑完整性能门）；WO-02 未跑 locked-hardware 性能=接受（S5U Final Closure 重跑）。
 - **合同修正（非阻塞，WO-03 内实施）**：Compact 格式化器加 rounded-unit promotion——`999999→"1.0M"`（禁出现 1000.0K/1000.0M 型边界伪影），并更新 formatter 测试；gameplay 数值真值不受影响。
 - **Bootstrap→Arena 裁定**：方案A（校验通过后自动 TryEnterMap）=**NOT AUTHORIZED**（改启动控制流/进场时机/Bootstrap 语义，超出呈现授权）；方案B（校验有效态后显式「进入竞技场」用户入口，点击走既有合法进图路径，不点击停留 Bootstrap）=**AUTHORIZED IN PRINCIPLE，但独立成 S5U-WO-04（WO-03 通过后执行）**；实现 B 时若无安全可复用的普通进图路径=STOP 该子项并上报 blocker，禁止退化成 A 或复用 -arenaPerf 测量/自动退出流程作普通入口。
+
+## S5U-WO-03（2026-09-09，规划 AI 放行 + 执行完毕）
+
+- **WO-03 放行**（规划 AI，WO-02 ACCEPT 后立即）：Equipment & Inventory Presentation Renewal；硬边界=S-08..S-16；六槽恰 6/背包网格=纯呈现非机制/换装唯一走既有 TryEquip+post-validator/零直接 LinkSkill1 写入/Secondary Link 真值不变/layout 单一来源+测试/性能纪律（零每帧纹理/样式重建/热路径集合）。
+- **呈现裁定·抽屉壳**：全高常驻壳（头部+tab+装备 2×3+背包呈现网格+反馈条）；`SliceDrawerLayout.Shell 系`=布局单一来源（旧 Column 系保留供既有测试与 Build 面板）；壳底缘 dh-160=战斗栏顶上方 8px（三设计空间测试锁定）。
+- **呈现裁定·背包网格**：**纯呈现网格**（1 物品=1 恰一格、顺序=InventoryCount 真值、零 width/height/占位/旋转/容量机制——规划 AI 明令禁项全部未做）；Build 页背包列表移除=背包表面唯一化（天赋树放宽整幅、SlicePassiveLayout 按矩形布局语义零改动；功能零净损失）。
+- **装备槽符文**：6 件原创 EqGlyph（generic 槽位类型，恒等映射 EquipGlyph，不伪装具体物品；台账 10-15 号登记）。
+- **自查修复入账**：网格 cell 悬停坐标换算（内容→设计空间）——**旧背包列表悬停检测从未对齐**（S5 遗留缺陷），本 Wo 一并修正；GUI.Button 输入路径不受影响。
+- **门快照（最终 HEAD）**：EditMode **344/344**（332 前置全保留+12 新）+ PlayMode 11/11 + Audit fresh PASS + ProdSim hash=FNV1A64:9a4c9524d0b3e214 精确不变；canonical After 7 张。Runtime Delta=presentation-only；Gameplay/Content/Balance=NONE；Drift=0；Forbidden=PASS。
+- **过程披露**：编辑器被外部有序关闭一次（非崩溃；重启后全门重跑通过）。
+- **下一令**：S5U-WO-04 — Bootstrap Entry Affordance（方案B 预授权已锁：显式按钮；禁自动进场/禁 -arenaPerf 复用；无可复用进图路径则 STOP 上报）。

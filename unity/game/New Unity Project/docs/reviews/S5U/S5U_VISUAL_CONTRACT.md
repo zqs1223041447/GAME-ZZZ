@@ -229,3 +229,11 @@ S5U Final Gate 至少提供：Arena clean combat HUD / two-link active / item to
 - **Canonical GameView 通道**：GameViewSizes 反射注册 `GAME-ZZZ-CANON` 2560×1440 FixedResolution → `m_SelectedSizes[0]`+`m_TargetSize` SerializedObject 设定 → Screen=2560×1440、DesignScale=1.3333、dw=1920 无夹取（编辑器重启后需重注册；已验证可重复建立）。
 - **DebugHover 通道**：`SliceHud.DebugHoverAt(设计空间点)/DebugHoverOff()`——指针钉扎截图通道，正常输入零影响；hover 点必须由运行时 dw 动态换算（禁止硬编码 1920 空间点）。
 - **capture_game_view**：`--source screen --width/--height`；存至 `Assets/TempShots/` 后须移出 Assets 并删除 .meta。
+
+## §7 WO-03 实现真值（装备/背包呈现，2026-09-09）
+
+- **抽屉壳**：`SliceDrawerLayout.Shell 系`（Shell/Header/ShellTab/ShellSlot/ShellInvView/ShellInvCell/ShellInvContentHeight/ShellFooter）=纯函数单一来源；壳 312 宽、底缘 dh-160（战斗栏顶 dh-152 上方 8px）；三设计空间（1920×1080/1.4 夹取/1280×720）不重叠不出界有测试（`S5UDrawerTests`）。
+- **装备槽符文**：EqWeapon/EqHelmet/EqBody/EqGloves/EqBoots/EqBelt（64² 原创合成；generic 槽位类型；恒等映射 `EquipGlyph(slot)`；互异+幂等测试）。
+- **呈现网格**：92×70×3 列；1 物品=1 恰一格；顺序=InventoryCount 真值；零网格机制（内容高=ceil(count/3)×行高，测试锁定）。
+- **Tooltip 层级**：金分隔线×2（标题块|正文|对比区）为渲染层视觉（模型零改动）；cell 悬停坐标换算修复（内容→设计空间；旧列表缺陷一并修正）。
+- **Compact 升位**：K/M/T 段舍入达上段阈值=升位（999999→1.0M；禁 1000.0K/1000.0M）——规划 AI WO-02 Gate 合同修正项，随 WO-03 落地。

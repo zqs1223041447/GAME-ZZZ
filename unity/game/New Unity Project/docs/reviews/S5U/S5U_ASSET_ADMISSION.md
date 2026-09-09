@@ -81,7 +81,7 @@
 
 ## §6 Provenance 台账
 
-**当前 ADMITTED production UI assets：9 项（S5U-WO-02 登记，全部=GAME-ZZZ ORIGINAL 运行时程序化合成）。**
+**当前 ADMITTED production UI assets：15 项（WO-02 登记 9 + WO-03 登记 6，全部=GAME-ZZZ ORIGINAL 运行时程序化合成）。**
 
 | # | 资产 | 用途（表层） | 源 | 依据 | 存放 |
 |---|---|---|---|---|---|
@@ -94,6 +94,12 @@
 | 7 | PipOff（20²） | S-06 支持孔=空态 | GAME-ZZZ 原创 | 同上 | 凭证 `asset-source/support_pip_off.png` |
 | 8 | PipClosed（20²） | S-06 支持孔=封闭态（容量外） | GAME-ZZZ 原创 | 同上 | 凭证 `asset-source/support_pip_closed.png` |
 | 9 | Separator（256×6） | S-01 顶部标题/数据饰线 | GAME-ZZZ 原创 | 同上（金线+菱形节点） | 凭证 `asset-source/separator.png` |
+| 10 | EqWeapon（64²） | S-09 武器槽/网格物品符文 | GAME-ZZZ 原创 | WO-03 登记同范式（立式巨剑+金铆；generic 槽位类型，不伪装具体物品） | 凭证 `asset-source/equip_weapon_glyph.png` |
+| 11 | EqHelmet（64²） | S-09 头盔槽/网格 | GAME-ZZZ 原创 | 同上（圆顶+帽檐+护鼻） | 凭证 `asset-source/equip_helmet_glyph.png` |
+| 12 | EqBody（64²） | S-09 胸甲槽/网格 | GAME-ZZZ 原创 | 同上（甲身+中脊金线） | 凭证 `asset-source/equip_body_glyph.png` |
+| 13 | EqGloves（64²） | S-09 手套槽/网格 | GAME-ZZZ 原创 | 同上（掌+指+护腕） | 凭证 `asset-source/equip_gloves_glyph.png` |
+| 14 | EqBoots（64²） | S-09 靴子槽/网格 | GAME-ZZZ 原创 | 同上（靴筒+厚底） | 凭证 `asset-source/equip_boots_glyph.png` |
+| 15 | EqBelt（64²） | S-09 腰带槽/网格 | GAME-ZZZ 原创 | 同上（横带+金扣） | 凭证 `asset-source/equip_belt_glyph.png` |
 
 **台账约束重申**：PNG 凭证仅作 provenance 记录，**不进入 Assets/ 不 import**；运行时唯一真相=`SliceHudIcons` 程序化合成（改样式=改代码=改凭证，单向同步）。审计断言 `PipFor 恒等映射` 禁止出现任何 Socket Color 语义回归（S5 负向条件）。
 
