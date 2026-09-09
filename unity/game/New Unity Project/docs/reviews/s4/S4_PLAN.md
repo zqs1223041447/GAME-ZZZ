@@ -3,7 +3,7 @@
 **来源**：协调席（GPT）S4 Master Plan（2026-09-09，经导演「开启 S4 工作 + 读取仓库 https://github.com/zqs1223041447/GAME-ZZZ 」指令下发）。工作 AI 将其正式写入 Repository-as-Memory，不得重新解释为别的 S4。
 **基线**：main @ 7edbb6f（S3 = COMPLETE; Voice DEFERRED BY DIRECTOR）。
 
-> **Milestone 状态回填（2026-09-09，不改目标定义）**：Phase 0/1/2/3/4 = COMPLETE；Phase 5（Integrated Closeout）= IN PROGRESS —— Gate 1/2/3 全 PASS + Simulation hash exact match + R7/R9 归档 OK，但 Gate 4/Art Gate=ENV_NOT_MET（机器活动显示=远程虚拟显示 1920×1080@144 ≠ 合同锁定 2560×1440；规则⑦ 不自动放宽，待导演恢复 1440p 或正式合同变更令）。总收口评审=`S4_OVERALL_CLOSEOUT_REVIEW.md`（Branch B）。S4=IN PROGRESS。
+> **Milestone 状态回填（2026-09-09，不改目标定义）**：Phase 0/1/2/3/4/5 全 COMPLETE。Phase 5 Closeout 初跑 Gate 4/Art Gate=ENV_NOT_MET（活动显示变更为远程虚拟 1080p@144）；经 **S4-P5R-LOCKED-ENV-RECERTIFICATION**（Display Audit=Branch A：EDID 1440 可用；系统正常模式切换恢复活动显示 2560×1440@144；Final Gate `-IncludeArtPerformance` 双 PASS——Canonical worst p99=4.840ms=58.1% / Art worst avg=4.085ms=49.0%、resolvedVisuals=4/fallback=0/clones=0）后全部完成标准成立 → **S4 = COMPLETE**（总收口 `S4_OVERALL_CLOSEOUT_REVIEW.md`；完成后硬停止）。
 
 ## 0. S4 定义
 

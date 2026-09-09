@@ -1,8 +1,7 @@
 # S4_OVERALL_CLOSEOUT_REVIEW — Production Scale & Itemization Breadth 总收口（工作令 S4-P5-INTEGRATED-CLOSEOUT）
 
-**日期**：2026-09-09　**Candidate HEAD**：5ec04bb（clean）
-**Verdict**：**S4 REMAINS IN PROGRESS — ENV BLOCKER: LOCKED-HARDWARE DISPLAY MODE NOT MET（1920×1080 虚拟显示 ≠ 合同锁定 2560×1440）**
-（Branch B——工作令 §四十二。非项目回归：Gate 1/2/3 全 PASS + Simulation hash exact match；仅 Gate 4/Art Gate 因执行环境显示模式无法满足锁定合同而 ENV_NOT_MET。不得放宽合同（规则⑦/§四十四）；需导演/协调席裁定：恢复 2560×1440 显示模式，或按规则⑦走正式合同变更工作令。）
+**日期**：2026-09-09　**Candidate HEAD**：5ec04bb（clean，零项目代码 diff）／**Recertification sourceCommit=b3eb9fe**
+**Verdict**：**PASS — S4 COMPLETE**（S4-P5R-LOCKED-ENV-RECERTIFICATION 后：ENV blocker 已解除——活动显示经系统正常模式切换恢复 2560×1440@144（该 mode 本就存在于显示器枚举列表，无任何驱动/EDID/registry hack）；Final Gate `-IncludeArtPerformance` 于锁定环境重跑：**Canonical PerformanceVerdict=PASS + ArtPerformanceVerdict=PASS**；详见 §11b）
 
 ## 1. Baseline & S4 Goal（§一/§二）
 
@@ -58,13 +57,25 @@ StatId/ModOp/Condition/Effect/Trigger delta=0；4 条新词缀全部由 Runtime-
 | Gate 4 Canonical Performance | **ENV_NOT_MET**（见 §11） |
 | Art Gate | **NOT_EVALUATED**（canonical 未 PASS 则 Art 不评估，工具语义） |
 
-## 11. ENV BLOCKER（§四十四：先判定，不放宽）
+## 11. ENV BLOCKER（§四十四：先判定，不放宽）——**已由 §11b RECERTIFICATION 解除（保留作审计轨迹）**
 
 - 现象：`-IncludeArtPerformance` 3 次 run 全部 **ENV_NOT_MET**——player 以 `-screen-width 2560 -screen-height 1440 -screen-fullscreen 1` 启动（gate 按合同正确请求 1440p），实测 resolution=**1920×1080** ≠ 锁定 2560×1440。
 - 根因判定：**执行环境显示模式变更，非 measurement issue、非项目 regression**。机器当前活动显示链=GameViewer/OrayIdd 远程虚拟显示（1920×1080@144；RTX 5070 输出同 1920×1080@165）——R9 时代（2026-09-08）机器为真实 2560×1440 显示。虚拟显示不接受 1440p 全屏切换 → Unity 回落 1080p。
 - 顺带记录（非指标问题）：性能余量本身健康——18 次测量 avg 1.47-1.88ms / p99 2.27-2.67ms / gpu ~0.35ms（预算 8.33），alive 293-295/300（≥95% 阈值内）；但**分辨率不满足锁定合同即 ENV_NOT_MET，不得据此放行**（规则⑦/规则⑥）。
 - 已尝试（记录）：PowerShell ChangeDisplaySettings/EnumDisplayDevices 恢复 2560×1440——本会话（远程虚拟显示链）下枚举/切换不可用，未改动导演显示环境。
 - 解除路径（需导演/协调席裁定，执行端不自行裁定）：①导演将显示恢复 2560×1440（R9 状态）后重跑 `-IncludeArtPerformance`；或 ②按规则⑦走正式合同变更（显式更新锁定环境）。**不得放宽预算/density/contract/workload。**
+
+## 11b. RECERTIFICATION（S4-P5R-LOCKED-ENV-RECERTIFICATION：blocker 已解除）
+
+- **Display Capability Audit（§四 of P5R 令）**：3 台已连接显示器（BenQ BL2480T=1080p 无 1440 / G2750X=**EDID 含 2560×1440** / Dell S2719DGF=**EDID 含 2560×1440**）；活动显示=\\.\DISPLAY5（GameViewer/OrayIdd 远程虚拟显示，当时 1920×1080@144）。**1440P_MODE_AVAILABLE=True → Branch A**。
+- **Recovery（§七 合规）**：经交互会话（计划任务）调用系统标准 `ChangeDisplaySettingsEx` 将活动显示切至 2560×1440@144——该 mode 为显示器模式列表既有项（`has 2560x1440@144` 枚举实证）；**零驱动安装/零 EDID/registry hack/零自定义分辨率/零远程设备禁用**（§六 全合规，可逆）。
+- **Resolution Preflight（§八/§九）**：WMI 实证 OS active mode=2560×1440@144；正式 Gate 内 Player 实测 **resolution=2560x1440**（requested=actual ✓）。
+- **Final Gate（§十-§十二）**：`.\tools\verify_unattended.ps1 -IncludeArtPerformance` @ clean b3eb9fe（合同/Profile 零修改）：
+  - **Canonical：PerformanceVerdict=PASS**（100: avg 1.552-1.658/p99 4.222-4.84 | 200: avg 1.658-1.735/p99 2.400-2.495 | 300: avg 1.881-1.903/p99 2.592-2.669；**worst avg=1.903ms=22.8% / worst p99=4.840ms=58.1%**（预算 8.33）；CPU worst 1.903 / GPU worst 0.581；alive 293-295/300=97.7-98.3%）
+  - **Art：ArtPerformanceVerdict=PASS**（Profile=formal-enemy-visual-stress-v1；**resolvedVisuals=4**（Troll/FireLion/Gargoyle/Bruce）；**fallback=0 / material clones=0**；**worst avg=4.085ms=49.0% / worst p99=6.671ms=80.1%**；CPU worst 4.083 / GPU worst 1.281；alive 291-295/300）
+  - Hardware=AMD Ryzen 7 5700X3D / RTX 5070（锁定机器）；FrameBudget=8.33ms；Gate: PASS。
+- P4 Production evidence 不变（seed=20260909 / iterations=10000 / hash=FNV1A64:a1f075f251ec1070 / invalid=0——§二十一 引用）。
+- STATUS/ROADMAP/S4_PLAN 已同步：**S4 = COMPLETE**（§十五/§四十八）。
 
 ## 12. S3 Regression Boundary（§二十三）
 
