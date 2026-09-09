@@ -356,6 +356,8 @@ Boots  0S → 只吃词缀
 
 7 Support：Burning / Brutal / Focused / Swift / Combustion / **Fork（机制：命中后分裂 2 发，MechanicSkill=弹道）** / **Fire Conversion（火焰转化：50% 物理转火，`ConvertPhysToFire` Flat 0.50，RequiredTags=Attack|Hit|Physical 驱动兼容——近战/弹道可接、范围拒绝，无专用 Combat 分支）**。同一 Support 不能同时装在两条 Link。Support 安装经 `TrySetSupport` 兼容门（写入前拒绝，失败无半写入）；当前数量以最新 Content Audit 为准。
 
+**多连接组（S5 Phase 1 已实现，BL-021.A2；权威合同 `docs/reviews/S5/S5_LINK_CONTRACT.md`）**：`ItemInstance.LinkSkill1`（SkillId，None=单连接 legacy，既有数据零迁移）。改挂后 group 0=前部 `SocketCount−2` 孔（映射技能容量=组孔数−1）、group 1=末尾 2 孔（被改挂技能容量恒 1，连接源整体迁移至此，原映射槽对该技能失效）；每技能至多一个有效连接源；2 组资格由 `SocketCount≥3` 推导（当前孔数下=Weapon/Body），资格集合不变；写入口唯一=`SliceSession.TryReassignLink`（自改挂/同技能双物品改挂/容量溢出=原子拒绝，无半写入，禁静默截断/迁移/重排；读路径遇腐败双改挂=fail-closed 忽略改挂回退 legacy）；兼容判定唯一走 `IsSupportCompatible`+golden oracle（组位无关）；孔颜色/宝石等级/品质/持久化不引入。UI 集成待 S5 Phase 2（当前无 UI 呈现）。
+
 ### 装备 / 掉落 / Craft
 
 6 装备槽（canonical `EquipSlot`：Weapon/Body/Helmet/Boots + S4 扩展 Gloves/Belt；Gloves/Belt 各 1 孔——仅作孔数展示，**不映射技能孔位**，SupportCapacity 仍只走 Weapon/Body/Helmet）。Ordinary 2 Affix，Rare 3–4。词缀见 `AffixCatalog`（**数量为易变快照，以最新 Content Audit / Production Report 为当前事实，本节不复制计数**；双行 Affix 各自独立掷值，第二值存 `ItemInstance` 第二值，消费路径按 `RowCount` 工作；槽位适用性=单一 applicability truth，AllowedSlots 位掩码决定可出现槽位，不兼容槽位不 roll）。击杀用 `LootRng`。随机 Craft（Scrap 洗 Rare）+ 定向 Craft（Etching 写入指定 Affix；物品内已存在同词缀时 deterministic reject，无半写入）。

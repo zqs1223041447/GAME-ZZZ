@@ -1055,20 +1055,168 @@ namespace Game.Runtime.Core
             return null;
         }
 
+        /// <summary>S5-WO-02：技能→默认连接槽位硬映射（既有契约，不改）。</summary>
+        static EquipSlot MappedSlot(SkillId skill)
+        {
+            return skill == SkillId.Melee ? EquipSlot.Weapon
+                 : skill == SkillId.Projectile ? EquipSlot.Body
+                 : EquipSlot.Helmet;
+        }
+
+        /// <summary>S5-WO-02：连接槽位→默认技能（映射逆；Gloves/Belt/Boots 无映射=SkillId.None）。</summary>
+        static SkillId MappedSlotOfSlot(EquipSlot slot)
+        {
+            return slot == EquipSlot.Weapon ? SkillId.Melee
+                 : slot == EquipSlot.Body ? SkillId.Projectile
+                 : slot == EquipSlot.Helmet ? SkillId.Area
+                 : SkillId.None;
+        }
+
+        /// <summary>
+        /// S5-WO-02（BL-021.A2，合同 S5_LINK_CONTRACT.md）：技能被已装备物品 group 1 改挂时的 hosting 库存位。
+        /// 返回 -1=无改挂（读路径回退映射槽 legacy）。同技能被多物品改挂=腐败构造态，fail-closed 忽略改挂（禁 first/last-wins）。
+        /// </summary>
+        int RebindHostIndex(SkillId skill)
+        {
+            if (skill != SkillId.Melee && skill != SkillId.Projectile && skill != SkillId.Area)
+                return -1;
+            int found = -1;
+            for (int s = 0; s < (int)EquipSlot.Count; s++)
+            {
+                int idx = Equipped[s];
+                if (idx < 0 || idx >= InventoryCount || Inventory[idx].LinkSkill1 != skill)
+                    continue;
+                if (found >= 0)
+                    return -1;
+                found = idx;
+            }
+            return found;
+        }
+
+        static int CountSupports(SupportId[] arr)
+        {
+            if (arr == null)
+                return 0;
+            int n = 0;
+            for (int i = 0; i < arr.Length; i++)
+                if (arr[i] != SupportId.None)
+                    n++;
+            return n;
+        }
+
         public int SupportCapacity(SkillId skill)
         {
-            EquipSlot slot = skill == SkillId.Melee ? EquipSlot.Weapon : skill == SkillId.Projectile ? EquipSlot.Body : EquipSlot.Helmet;
+            // S5-WO-02：被改挂技能的唯一连接源=hosting item 的 group 1（末尾 2 孔，容量恒 1）。
+            if (RebindHostIndex(skill) >= 0)
+                return 1;
+
+            EquipSlot slot = MappedSlot(skill);
             int idx = Equipped[(int)slot];
             if (idx < 0 || idx >= InventoryCount)
                 return 0;
-            int sockets = Inventory[idx].SocketCount;
-            int cap = sockets - 1;
+            ItemInstance host = Inventory[idx];
+            // S5-WO-02：host 自带 group 1（LinkSkill1≠None 且孔数足）时，group 0=前部 SocketCount-2 孔（末尾 2 孔归 group 1）。
+            int group0Sockets = host.LinkSkill1 != SkillId.None && host.SocketCount >= 3 ? host.SocketCount - 2 : host.SocketCount;
+            int cap = group0Sockets - 1;
             if (cap < 0)
                 cap = 0;
             SupportId[] arr = SupportsOf(skill);
             if (arr != null && cap > arr.Length)
                 cap = arr.Length;
             return cap;
+        }
+
+        /// <summary>
+        /// S5-WO-02（BL-021.A2，合同 docs/reviews/S5/S5_LINK_CONTRACT.md）：把一个技能的连接改挂到指定物品的
+        /// group 1（末尾 2 孔），或传 SkillId.None 清除改挂。每技能至多一个有效连接源；写入前全量校验
+        /// （自改挂/双物品改挂/孔数不足/容量溢出=确定性拒绝，无半写入）——不做静默截断/迁移/重排。
+        /// </summary>
+        public bool TryReassignLink(int invIndex, SkillId skill, out string error)
+        {
+            error = null;
+            if (BuildLocked)
+            {
+                error = SliceCopy.LockFail;
+                return false;
+            }
+            if (invIndex < 0 || invIndex >= InventoryCount)
+            {
+                error = "无此物品";
+                return false;
+            }
+
+            ItemInstance it = Inventory[invIndex];
+
+            // 清除改挂：被改挂技能回退映射槽 legacy，host group 0 恢复完整孔集
+            if (skill == SkillId.None)
+            {
+                if (it.LinkSkill1 == SkillId.None)
+                {
+                    error = "该物品无第二连接组";
+                    return false;
+                }
+                SkillId freed = it.LinkSkill1;
+                it.LinkSkill1 = SkillId.None;
+                Inventory[invIndex] = it;
+                ClampSupportsToSockets();
+                RecalcPlayer(false);
+                LastMessage = SkillDisplayName(freed) + " 连接回归默认";
+                return true;
+            }
+
+            if (skill != SkillId.Melee && skill != SkillId.Projectile && skill != SkillId.Area)
+            {
+                error = "非可连接技能";
+                return false;
+            }
+
+            // 自改挂拒绝：group 1 不能与该物品自带连接同技能
+            SkillId hostSkill = MappedSlotOfSlot(it.Slot);
+            if (hostSkill != SkillId.None && skill == hostSkill)
+            {
+                error = "该物品已自带此技能连接";
+                return false;
+            }
+
+            // 2 组资格：SocketCount >= 3（group 1 固定占末尾 2 孔）
+            if (it.SocketCount < 3)
+            {
+                error = "孔数不足 3，无法承载第二连接组";
+                return false;
+            }
+
+            // 全局唯一连接源：该技能未被其它已装备物品改挂（禁 first/last-wins）
+            for (int s = 0; s < (int)EquipSlot.Count; s++)
+            {
+                int idx = Equipped[s];
+                if (idx == invIndex || idx < 0 || idx >= InventoryCount)
+                    continue;
+                if (Inventory[idx].LinkSkill1 == skill)
+                {
+                    error = SkillDisplayName(skill) + " 已被其它装备改挂";
+                    return false;
+                }
+            }
+
+            // 原子容量校验（写入前；任一溢出=拒绝，禁静默截断/迁移/重排）：
+            // 拆分后 host 映射技能 group 0 容量 = (SocketCount-2)-1；被改挂技能 group 1 容量 = 1。
+            if (CountSupports(SupportsOf(hostSkill)) > it.SocketCount - 3)
+            {
+                error = SkillDisplayName(hostSkill) + " 现有连接超出拆分后容量，先拆除非空连接";
+                return false;
+            }
+            if (CountSupports(SupportsOf(skill)) > 1)
+            {
+                error = SkillDisplayName(skill) + " 现有连接超出第二组容量（1），先拆除非空连接";
+                return false;
+            }
+
+            it.LinkSkill1 = skill;
+            Inventory[invIndex] = it;
+            ClampSupportsToSockets();
+            RecalcPlayer(false);
+            LastMessage = SkillDisplayName(skill) + " 连接改挂至 " + CleanBaseName(it.BaseName);
+            return true;
         }
 
         void ClampSupportsToSockets()

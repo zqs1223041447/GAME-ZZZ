@@ -185,6 +185,11 @@ namespace Game.Runtime.Core
         public float SecondValue1;
         public float SecondValue2;
         public float SecondValue3;
+        // S5-WO-02（BL-021.A2，合同 docs/reviews/S5/S5_LINK_CONTRACT.md）：可选第二连接组绑定技能。
+        // None（=0）= 单连接 legacy（全部 SocketCount 孔归 group 0，行为与既有逐位等价）；非 None 且 SocketCount>=3 时
+        // group 0=前部 SocketCount-2 孔、group 1=末尾 2 孔（改挂该技能的连接；每技能至多一个有效连接源）。
+        // 写入唯一入口=SliceSession.TryReassignLink（映射技能自改挂/同技能双物品改挂/容量溢出=原子拒绝，无半写入）。
+        public SkillId LinkSkill1;
 
         public int AffixIdAt(int i)
         {

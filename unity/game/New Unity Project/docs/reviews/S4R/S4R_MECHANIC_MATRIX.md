@@ -40,7 +40,7 @@
 | 掉落可达性（6 槽全 reachable、17 词缀全可达） | Supported | Drop 路径 | Production Simulator（invalidCount=0 + hash exact match） | — | — |
 | 10 槽 / Weapon 族 / Handedness / Prefix-Suffix Tier / Item Level / Base Items | Unsupported | 未建 | — | — | BDA Phase 2 范围；Director 未给方向（Ring/Offhand/Amulet=NOT AUTHORIZED） |
 
-> **S5 授权跟踪（2026-09-09，仅 tracking 不晋升）**：Multiple Link Groups（BL-021.A2）=**AUTHORIZED NOT IMPLEMENTED**（合同 `docs/reviews/S5/S5_LINK_CONTRACT.md`；S5 Phase 1 起实现）；Bounded Affix Breadth（BL-002.A1）=**AUTHORIZED NOT IMPLEMENTED**（清单 `S5_AFFIX_ADMISSION.md`，N=4；S5 Phase 3 起）；Socket Color（BL-021.A1）与 Gem Level/Quality（BL-012.A1）=**导演显式拒绝**（负向验收条件贯穿 S5）。上表各机制状态不因授权变化。
+> **S5 跟踪（2026-09-09，仅 tracking 不晋升）**：Multiple Link Groups（BL-021.A2）=**域核已实现（S5-WO-02：ItemInstance.LinkSkill1+TryReassignLink+容量派生；EditMode 260/260 含 14 项 MultiLinkDomainTests），用户侧 UI 集成待 S5 Phase 2——机制不提前标 Supported**；Bounded Affix Breadth（BL-002.A1）=AUTHORIZED NOT IMPLEMENTED（清单 `S5_AFFIX_ADMISSION.md`，N=4【坚韧替换原开阔候选】；S5 Phase 3 起）；Socket Color（BL-021.A1）与 Gem Level/Quality（BL-012.A1）=**导演显式拒绝**（负向验收条件贯穿 S5）。上表各机制状态不因授权/域核实现变化。
 
 ## 4. 战斗 / 地图 / 表现 / 基础设施机制族
 

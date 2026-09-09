@@ -26,6 +26,16 @@
 7. **确定性顺序**：组身份=固定索引（0=legacy 隐式组、1=改挂组）；组内 Support 顺序=数组索引顺序；组划分固定（末尾 2 孔）。
 8. **不引入**：孔颜色（无字段/匹配/UI/需求）；宝石等级/品质（无字段/缩放）；持久化/存档；新增带孔或带连接槽位；新增 Skill/Support。
 
+### 2a. S5-WO-01 评审裁定补丁（2026-09-09 规划 AI Gate Review=ACCEPT WITH FOLLOW-UP；代码前强制收口）
+
+- **改挂语义（已批准）**：整体迁移（reassignment）而非叠加（not stacking）。任一技能的有效连接源数 ≤1：group 1 改挂后该技能默认隐式连接源失效、Support 列表跟随技能身份（不复制到新集合）、清除改挂即恢复默认源。
+- **必须拒绝的写入**：①把 host 自带 group 0 技能再挂为其 group 1（自改挂）；②同一技能被两个已装备物品同时改挂；③任何会产生双有效连接源的状态。**禁止 first/last-wins 式裁决**；腐败构造态 fail-closed（读路径检测到重复改挂=忽略改挂、回退映射槽 legacy）。
+- **缺组 parity（明确条款）**：`LinkSkill1 == None` ⇒ group 0 拥有该物品完整孔集；legacy 容量与行为逐位不变。
+- **改挂生效前提**：物品连接资格不变（Weapon/Body/Helmet）+ `SocketCount ≥ 3`；划分=group 1 末尾 2 孔 / group 0 其余前部孔；两组共用既有公式 `容量 = 组孔数 − 1`。
+- **总容量取舍（有意设计，非回归）**：启用 group 1 消耗第二个技能宝石位。3 孔例：legacy=group 0 3 孔→2 Support；拆分=group 0 1 孔→0 Support + group 1 2 孔→1 Support。
+- **原子容量校验（写入前）**：写入/变更 `LinkSkill1` 前校验拆分后两组容量——host 映射技能既有 Support 数 ≤ 拆分后 group 0 容量；被改挂技能既有 Support 数 ≤ group 1 容量（1）。任一溢出 ⇒ **原子拒绝**（不消耗、不半写入）；**禁止**静默截断、自动移除、自动迁移、重排凑容。
+- **生命周期**：Assign=激活 group 1+抑制被改挂技能默认源+保留其 Support 列表+套用 group 1 容量；Change（A→B）=单次校验事务（无外部可见双源中间态）；Clear（→None）=移除 group 1+恢复被改挂技能默认源+host group 0 恢复完整孔集。
+
 ## 3. Data-Model Decision（AC-08：唯一选定表示）
 
 **选定表示：`ItemInstance` 追加单个字段 `LinkSkill1`（SkillId），其余全部由既有字段+确定性规则派生。**
