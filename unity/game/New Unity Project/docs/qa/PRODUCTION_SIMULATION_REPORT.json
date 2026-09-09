@@ -1,0 +1,19 @@
+{
+  "schema": "PRODUCTION_SIMULATION_REPORT_V1",
+  "schemaVersion": 1,
+  "generatedBy": "Game.Tests.EditMode.ProductionSimulatorTests（EditMode 测试再生；真实 Drop/Craft/Equip 路径驱动，禁止手填）",
+  "verdict": "PASS",
+  "seed": 20260909,
+  "iterations": 10000,
+  "sessionCycleSize": 40,
+  "cycleKindDistribution": { "drop": 3891, "randomCraft": 2505, "directedCraft": 2002, "equip": 1602 },
+  "slotDistribution": { "Weapon": 640, "Body": 671, "Helmet": 638, "Boots": 634, "Gloves": 643, "Belt": 665 },
+  "rarityDistribution": { "ordinary": 1992, "rare": 1899 },
+  "affixDistribution": { "AddPhys": 1324, "IncPhys": 1292, "AddFire": 1341, "IncFire": 1388, "Life": 1379, "Armour": 1337, "Evasion": 1329, "FireRes": 1335, "Accuracy": 1381, "Crit": 1347, "IgniteFire": 1358, "AccCrit": 1293, "PhysFire": 1359, "SwiftGrip": 130, "KeenEdge": 116, "Bulwark": 118, "VitalWeave": 124 },
+  "invalidCount": 0,
+  "invalidSamples": [  ],
+  "rejectedDirectedCraft": 433,
+  "deterministicHash": "FNV1A64:a1f075f251ec1070",
+  "repeatHashMatch": true,
+  "repeatHash": "FNV1A64:a1f075f251ec1070"
+}
