@@ -9,11 +9,11 @@
   "cycleKindDistribution": { "drop": 3891, "randomCraft": 2505, "directedCraft": 2002, "equip": 1602 },
   "slotDistribution": { "Weapon": 640, "Body": 671, "Helmet": 638, "Boots": 634, "Gloves": 643, "Belt": 665 },
   "rarityDistribution": { "ordinary": 1992, "rare": 1899 },
-  "affixDistribution": { "AddPhys": 1324, "IncPhys": 1292, "AddFire": 1341, "IncFire": 1388, "Life": 1379, "Armour": 1337, "Evasion": 1329, "FireRes": 1335, "Accuracy": 1381, "Crit": 1347, "IgniteFire": 1358, "AccCrit": 1293, "PhysFire": 1359, "SwiftGrip": 130, "KeenEdge": 116, "Bulwark": 118, "VitalWeave": 124 },
+  "affixDistribution": { "AddPhys": 1028, "IncPhys": 990, "AddFire": 1107, "IncFire": 968, "Life": 1065, "Armour": 1035, "Evasion": 1001, "FireRes": 1067, "Accuracy": 1085, "Crit": 1072, "IgniteFire": 1026, "AccCrit": 1024, "PhysFire": 1062, "SwiftGrip": 93, "KeenEdge": 94, "Bulwark": 101, "VitalWeave": 93, "SwiftBreeze": 1050, "Ironhide": 947, "Insight": 1017, "Tenacity": 1072 },
   "invalidCount": 0,
   "invalidSamples": [  ],
-  "rejectedDirectedCraft": 433,
-  "deterministicHash": "FNV1A64:a1f075f251ec1070",
+  "rejectedDirectedCraft": 338,
+  "deterministicHash": "FNV1A64:9a4c9524d0b3e214",
   "repeatHashMatch": true,
-  "repeatHash": "FNV1A64:a1f075f251ec1070"
+  "repeatHash": "FNV1A64:9a4c9524d0b3e214"
 }

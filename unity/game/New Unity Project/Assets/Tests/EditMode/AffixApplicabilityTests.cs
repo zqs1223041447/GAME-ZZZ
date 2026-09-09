@@ -34,8 +34,8 @@ namespace Game.Tests.EditMode
                 for (int s = 0; s < (int)EquipSlot.Count; s++)
                     Assert.IsTrue(def.IsApplicable((EquipSlot)s), "旧词缀必须六槽全可用：" + def.Name);
             }
-            Assert.GreaterOrEqual((int)AffixId.Count, 15, "S4-P3 追加 2-4");
-            Assert.LessOrEqual((int)AffixId.Count, 17, "S4-P3 追加上限 4（总 17）");
+            Assert.GreaterOrEqual((int)AffixId.Count, 21, "S5-WO-04 落地后 21（不得缩水）");
+            Assert.LessOrEqual((int)AffixId.Count, 21, "S5-WO-04 追加上限 4（总 21，BL-002.A1 锁定清单，硬上限）");
         }
 
         [Test]

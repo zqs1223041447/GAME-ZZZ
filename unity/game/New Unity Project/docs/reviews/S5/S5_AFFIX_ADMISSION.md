@@ -1,6 +1,7 @@
 # S5_AFFIX_ADMISSION — 有界词缀广度准入清单（S5-WO-01 锁定；WO-01 评审后按裁定修订；AC-10/11/12 交付物）
 
 **性质**：BL-002.A1 的唯一权威词缀清单。**Locked N = 4**（1≤4≤6 ✓）；计划目录数 = **17 + 4 = 21**。N 事后变更需新规划 AI 工作令。
+**状态（S5-WO-04）**：**4-entry manifest = IMPLEMENTED**（17→21 落地：`AffixId` 17-20 + `AffixCatalog` 在位 def；候选 20 权威=**坚韧 Strength/Flat**，旧开阔候选保持废弃不恢复；铁骨 Belt 排除=GAME-ZZZ 有界适用性决策，PoEDB 溯源与适用性分离表述保持；count-guard 已按裁定扩展 17→21（S4-P3 上限被 S5 界取代，仍为硬上限）；实现证据=`S5_WO_04_EVIDENCE.md`）。
 **准入规则（S5_PLAN §4.1 逐条满足）**：唯一外部 canonical 源=PoEDB（人工溯源，不触发 BL-024）；复用已支持 runtime stat/modifier 语义；走现有单一 applicability truth（`AffixDef.IsApplicable` + `AllowedSlots` 位掩码）；现有装备槽语义；经现有生成路径可达（随机掉落/洗炼池=IsApplicable 自动过滤；定向制作=目录枚举 + applicability + duplicate guard——已核 `TryDirectedCraft` 按目录枚举，无硬编码清单，新条目自动可达）。禁止：新词缀族/新 ModOp 语义/Prefix-Suffix/Tier/ModGroup/新槽/新资源。
 
 ## 锁定候选（4 条；Stable ID 追加 17-20，旧 ID 零漂移；全部单行词缀）

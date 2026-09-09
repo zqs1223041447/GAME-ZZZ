@@ -35,4 +35,5 @@
 | 2026-09-09 | 导演原子级批准转规划 AI（「新增现有类型词缀，一件装备多组连接；其他不做」） | **S5 激活**：实现授权=恰 {BL-002.A1, BL-021.A2}；BL-021.A1 孔颜色/BL-012.A1 宝石等级品质=显式拒绝（负向条件）；规划 AI 下发 S5 计划+**S5-WO-01**；执行完毕 Evidence 回传（commit A=1ef5487/B=901f26d） |
 | 2026-09-09 | S5-WO-01 Gate Review | =**ACCEPT WITH FOLLOW-UP**（合同 §2a 补丁先行：改挂语义获批/原子容量校验/fail-closed/候选 20 Option B 替换=坚韧 Strength/Flat）；下发 **S5-WO-02** |
 | 2026-09-09 | S5-WO-02（多连接域核）执行完毕，Evidence 回传（commit A=6a13a38/B=1ff9d82,C） | Gate Review=**ACCEPT**（21 项 Gate 全 PASS，无 follow-up；Phase-2 Integration Guard 纳入 WO-03 验收）；下发 **S5-WO-03** |
-| 2026-09-09 | S5-WO-03（多连接运行时与 UI 集成）执行完毕，Evidence 回传（commit hash 见 STATUS「本轮 commit」行） | Gate Review 结果见规划 AI 下轮回文（预期=审查换装绕过唯一来源与组 1 真实 runtime 生效两类） |
+| 2026-09-09 | S5-WO-03（多连接运行时与 UI 集成）执行完毕，Evidence 回传（commit A=14ca5d5/B=d711906） | Gate Review=**ACCEPT（Follow-up: NONE）**；两裁定：同槽同技能 host 交接=合法移交（不得改拒绝）、背包预配置+装备时共享校验器最终防线=接受（裁定已回填 DECISIONS）；**下发 S5-WO-04** |
+| 2026-09-09 | S5-WO-04（有界词缀广度）执行完毕，Evidence 回传（commit hash 见 STATUS「本轮 commit」行） | Gate Review 结果见规划 AI 下轮回文（锁定清单 4 条 17→21；铁骨 Belt 拒绝；reachability/运行时消费实证） |

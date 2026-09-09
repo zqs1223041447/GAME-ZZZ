@@ -37,7 +37,7 @@ Partial/Unsupported/Blocked 行的候选扩张已全部进入规范化 Backlog�
 | Passive（16 节点图） | Supported | Production Report `passiveGraph` 16/20/0 + RUNTIME.md 天赋节（Start 免费、2 Notable、1 机制 Cinder Heart、出图免费重置） | 大树/Mastery/Jewel=Unsupported（Stage0 锁） |
 | Mastery | **Unsupported** | 无数据无 runtime | BDA Phase 3 范围，Director-gated |
 | Ascendancy | **Unsupported** | 无数据无 runtime | BDA Phase 3 范围，Director-gated |
-| Equipment / Affix | Supported | 6 槽全闭环（drop/equip/replace/聚合/快照/tooltip/抽屉 2×3）+ 17 词缀 + 单一 applicability truth + 双行词缀；`SixSlotEquipmentTests`、`AffixApplicabilityTests`、`SliceDrawerTests` | 新槽/新词缀族=Forbidden（未授权）；Ring/Offhand/Amulet=NOT AUTHORIZED |
+| Equipment / Affix | Supported | 6 槽全闭环（drop/equip/replace/聚合/快照/tooltip/抽屉 2×3）+ 单一 applicability truth + 双行词缀；`SixSlotEquipmentTests`、`AffixApplicabilityTests`、`SliceDrawerTests` | 新槽/新词缀族=Forbidden（未授权）；Ring/Offhand/Amulet=NOT AUTHORIZED。**S5 跟踪（2026-09-09）**：Affix breadth 17→**21**（S5-WO-04，BL-002.A1 锁定清单恰 4 条=迅疾/铁骨/睿智/坚韧，全部复用既有 stat/modop/applicability/生成路径，无新 capability family；铁骨 Belt 排除=GAME-ZZZ 有界适用性决策）；Socket/Link 行见上（Multi-Link 集成已实现，Socket Color 未授权） |
 | Craft（有界） | Supported | 随机 Craft（Scrap 洗 Rare）+ 定向 Craft（Etching 写入；同词缀 deterministic reject）；Production Simulator 覆盖 | Deep Craft/Tier/Corruption=Unsupported + Forbidden |
 | Map System（单图） | Partial | 1 图 Ash Court；3 图词缀（Hearty/Savage/Ash Veil）；Stability=100-ΣCost、Reward=1+ΣRewardAdd；进图 BuildSnapshot.Locked | Map Tier/Progression=NOT AUTHORIZED（硬停止） |
 | Enemy Taxonomy / AI | Partial | 3 普通（Brute/Stinger/Ashling）+ Elite Warden；AI LOD 三档；分离规则；无 Boss | Boss/BossKind=NOT AUTHORIZED |

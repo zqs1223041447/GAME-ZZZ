@@ -166,13 +166,14 @@ namespace Game.Tests.EditMode
                 if (slotPool[s] == 0)
                     result.StructuralProblems.Add("装备槽 eligible 词缀池为空：" + SliceSession.SlotName((EquipSlot)s));
 
-            // S3 第一批护栏（≤3）由 S4-P3 取代：旧 13 ID 只追加不缩水；S4-P3 追加 2-4（总上限 17）
+            // S3 第一批护栏（≤3）由 S4-P3 取代，S4-P3（≤4，总 17）由 S5-WO-04 取代：旧 13 ID 只追加不缩水；
+            // S5-WO-04（BL-002.A1 锁定清单，docs/reviews/S5/S5_AFFIX_ADMISSION.md）追加恰 4（总上限 21，仍为硬上限）
             int newAffixes = (int)AffixId.Count - S2BaselineAffixCount;
             result.NewAffixCount = newAffixes;
             if (newAffixes < 0)
                 result.StructuralProblems.Add("词缀池缩水：AffixId.Count < " + S2BaselineAffixCount);
-            if ((int)AffixId.Count > S2BaselineAffixCount + 3 + 4)
-                result.StructuralProblems.Add("S4-P3 词缀追加必须 ≤4（总上限 17）：当前 " + (int)AffixId.Count);
+            if ((int)AffixId.Count > S2BaselineAffixCount + 3 + 4 + 4)
+                result.StructuralProblems.Add("S5-WO-04 词缀追加必须 ≤4（总上限 21，BL-002.A1）：当前 " + (int)AffixId.Count);
 
             // S3-R2 内容数量护栏：仅 Support +1（火焰转化），其余内容轴全部不变（护栏违规入结构/契约问题）
             PinCount(result, SupportCatalog.Count, S2BaselineSupportCount + 1, "Support（R2 仅允许新增 1 个火焰转化）");

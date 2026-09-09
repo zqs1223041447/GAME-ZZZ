@@ -2,7 +2,7 @@
 
 **当前 Content Audit snapshot（测试再生）**。文件名保留 CLOSEOUT 是因为它源自 S3 Phase 1/2 收口；**BATCH1 / R2 报告才是冻结历史 evidence**。
 
-生成：EditMode 测试 `ContentAuditS2Tests`，failure-safe 顺序 **Collect → Render → Persist → Assert**（S3-M3：报告先于测试断言落盘——测试红 ⇒ 本快照同轮红，不遗留上一轮 PASS）。只覆盖现行切片：3 Active + 7 Support + 17 词缀 + 16 天赋 + 3 图词缀 + 5 怪。
+生成：EditMode 测试 `ContentAuditS2Tests`，failure-safe 顺序 **Collect → Render → Persist → Assert**（S3-M3：报告先于测试断言落盘——测试红 ⇒ 本快照同轮红，不遗留上一轮 PASS）。只覆盖现行切片：3 Active + 7 Support + 21 词缀 + 16 天赋 + 3 图词缀 + 5 怪。
 
 ## Verdict
 
@@ -16,7 +16,7 @@
 |---|---|
 | Active 技能 | 3 |
 | Support | 7 |
-| 词缀 | 17 |
+| 词缀 | 21 |
 | 天赋节点 | 16（含 2 Notable + 1 机制烬心） |
 | 图词缀 | 3 |
 | 怪 | 5（3 普通 + Elite 监守 + 木桩） |
@@ -117,6 +117,10 @@ Tagged Modifier 总数 4，可满足 4，不可满足 0（期望 0）。负向�
 | KeenEdge | 锋锐 | CritChanceAdded 固定（+{0:0%} 暴击率） | Accuracy 固定（+{0:0} 命中） | 仅 手套 | 随机池 + 定向列表 |
 | Bulwark | 壁垒 | Armour 提高（{0:0%} 护甲） | Life 基础（） | 仅 腰带 | 随机池 + 定向列表 |
 | VitalWeave | 韧脉 | Life 固定（+{0:0} 生命） | FireResistance 固定（+{0:0%} 火焰抗性） | 仅 腰带 | 随机池 + 定向列表 |
+| SwiftBreeze | 迅疾 | AttackSpeed 提高（{0:0%} 攻击速度） | Life 基础（） | 6 槽全部 | 随机池 + 定向列表 |
+| Ironhide | 铁骨 | Armour 提高（{0:0%} 护甲） | Life 基础（） | 仅 武器/胸甲/头盔/靴子/手套 | 随机池 + 定向列表 |
+| Insight | 睿智 | Intelligence 固定（+{0:0} 智力） | Life 基础（） | 6 槽全部 | 随机池 + 定向列表 |
+| Tenacity | 坚韧 | Strength 固定（+{0:0} 力量） | Life 基础（） | 6 槽全部 | 随机池 + 定向列表 |
 
 ## 未使用 Tag（已声明、当前内容未引用）
 

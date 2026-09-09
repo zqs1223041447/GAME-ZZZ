@@ -40,7 +40,7 @@
 | 掉落可达性（6 槽全 reachable、17 词缀全可达） | Supported | Drop 路径 | Production Simulator（invalidCount=0 + hash exact match） | — | — |
 | 10 槽 / Weapon 族 / Handedness / Prefix-Suffix Tier / Item Level / Base Items | Unsupported | 未建 | — | — | BDA Phase 2 范围；Director 未给方向（Ring/Offhand/Amulet=NOT AUTHORIZED） |
 
-> **S5 跟踪（2026-09-09，仅 tracking 不晋升）**：Multiple Link Groups（BL-021.A2）=**域核+运行时/UI 集成已实现（S5-WO-02 域核：ItemInstance.LinkSkill1+TryReassignLink+容量派生；S5-WO-03 集成：共享后置校验器 ValidateLinkGraphPostState+TryEquip 装备原子守卫+第二连接配置条/技能行源标注/Tooltip 划分行+组0/组1 运行时隔离实证（数值型 BuildPlayerHit+机制型 Fork 真实分裂）；EditMode 291/291 含 14 项域核+31 项集成测试）——机制不提前标 Supported（Socket/Link 总体保持 Partial）**；Bounded Affix Breadth（BL-002.A1）=AUTHORIZED NOT IMPLEMENTED（清单 `S5_AFFIX_ADMISSION.md`，N=4【坚韧替换原开阔候选】；S5 Phase 3 起）；Socket Color（BL-021.A1）与 Gem Level/Quality（BL-012.A1）=**导演显式拒绝**（负向验收条件贯穿 S5）。上表各机制状态不因授权/域核/集成实现变化。
+> **S5 跟踪（2026-09-09，仅 tracking 不晋升）**：Multiple Link Groups（BL-021.A2）=**域核+运行时/UI 集成已实现（S5-WO-02 域核：ItemInstance.LinkSkill1+TryReassignLink+容量派生；S5-WO-03 集成：共享后置校验器 ValidateLinkGraphPostState+TryEquip 装备原子守卫+第二连接配置条/技能行源标注/Tooltip 划分行+组0/组1 运行时隔离实证（数值型 BuildPlayerHit+机制型 Fork 真实分裂）；Gate Review=ACCEPT 无 follow-up）——机制不提前标 Supported（Socket/Link 总体保持 Partial）**；Bounded Affix Breadth（BL-002.A1）=**IMPLEMENTED（S5-WO-04：锁定清单恰 4 条迅疾/铁骨/睿智/坚韧 17→21，全部复用既有 Supported mechanic/stat path（AttackSpeed/Armour/Intelligence/Strength 聚合轴），单一 applicability truth，铁骨 Belt 排除=GAME-ZZZ 有界适用性决策；无 mechanic promotion、无新族）**；Socket Color（BL-021.A1）与 Gem Level/Quality（BL-012.A1）=**导演显式拒绝**（负向验收条件贯穿 S5）。上表各机制状态不因授权/域核/集成/词缀实现变化。
 
 ## 4. 战斗 / 地图 / 表现 / 基础设施机制族
 

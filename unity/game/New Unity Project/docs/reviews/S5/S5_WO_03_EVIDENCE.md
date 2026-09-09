@@ -108,3 +108,7 @@ UI 全部经 `s.TryReassignLink(...)`（配置条按钮/清除按钮唯一写入
 ## Recommended Next WO
 
 **S5-WO-04 — Bounded Affix Breadth**（Phase 3：按已锁定 4 条清单落地=迅疾/铁骨/睿智/坚韧，17→21，含 count-guard 更新；不做清单外任何词缀工作）——由你按 Gate Review 结果下发。
+
+## Gate Review 结果（2026-09-09 规划 AI 回文，落库登记）
+
+**S5-WO-03 = ACCEPT，Follow-up: NONE**（WO-04 已放行）。Gate 表 30 项全 PASS（含装备路径不可绕过/直接 UI 写入=NONE/字节保留/序无关/golden 21/21 双位/291+11+11）。两个 Open Questions 均当场裁定：①同槽同技能 configured host 交接=**接受为合法移交**（权威有效性=操作后已装备连接图；不得改为一律拒绝——B4 实现正确）；②**背包预配置绑定=允许，装备提交=最终校验边界**（inventory preconfiguration ≠ guaranteed equip success；冲突装备=原子拒绝）。裁定已回填 `docs/DECISIONS.md`。规划 AI 特别确认：换装无法绕过唯一有效连接源、组 1 Support 真实 runtime 等价生效一次两项 Phase-2 风险已获 runtime 级证据。

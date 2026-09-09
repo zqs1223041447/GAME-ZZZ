@@ -7,7 +7,7 @@
   "counts": {
     "skills": 3,
     "supports": 7,
-    "affixes": 17,
+    "affixes": 21,
     "passives": 16,
     "enemyKinds": 5,
     "mapMods": 3,
@@ -21,13 +21,13 @@
     "unusedTags": ["Spell", "Projectile", "Fire", "Duration"]
   },
   "supportCompatibility": { "total": 21, "compatible": 16, "incompatible": 5, "oracleParityStatus": "OK" },
-  "affixApplicability": { "total": 17, "unrestricted": 13, "restricted": 4, "bySlot": [
-      { "slot": "Weapon", "eligibleAffixCount": 13 },
-      { "slot": "Body", "eligibleAffixCount": 13 },
-      { "slot": "Helmet", "eligibleAffixCount": 13 },
-      { "slot": "Boots", "eligibleAffixCount": 13 },
-      { "slot": "Gloves", "eligibleAffixCount": 15 },
-      { "slot": "Belt", "eligibleAffixCount": 15 }
+  "affixApplicability": { "total": 21, "unrestricted": 16, "restricted": 5, "bySlot": [
+      { "slot": "Weapon", "eligibleAffixCount": 17 },
+      { "slot": "Body", "eligibleAffixCount": 17 },
+      { "slot": "Helmet", "eligibleAffixCount": 17 },
+      { "slot": "Boots", "eligibleAffixCount": 17 },
+      { "slot": "Gloves", "eligibleAffixCount": 19 },
+      { "slot": "Belt", "eligibleAffixCount": 18 }
     ] },
   "passiveGraph": { "nodeCount": 16, "edgeCount": 20, "disconnectedCount": 0 },
   "resources": {

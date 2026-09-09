@@ -37,7 +37,13 @@ namespace Game.Runtime.Core
         KeenEdge = 14,
         Bulwark = 15,
         VitalWeave = 16,
-        Count = 17
+        // S5-WO-04（工作令 S5-WO-04-BOUNDED-AFFIX-BREADTH，BL-002.A1）：锁定清单恰 4 条（权威清单 docs/reviews/S5/S5_AFFIX_ADMISSION.md；
+        // 17→21；全部复用既有 StatId/ModOp 单行词缀；旧 ID 只追加不漂移）
+        SwiftBreeze = 17, // 迅疾 AttackSpeed/Increased 0.10-0.16 不限槽
+        Ironhide = 18,    // 铁骨 Armour/Increased 0.10-0.22 排除 Belt（GAME-ZZZ 有界适用性决策，非 PoEDB 禁令）
+        Insight = 19,     // 睿智 Intelligence/Flat 6-12 不限槽
+        Tenacity = 20,    // 坚韧 Strength/Flat 6-12 不限槽（原开阔 AreaRadiusMore/More 候选已按裁定废弃）
+        Count = 21
     }
 
     public enum EquipSlot : byte
@@ -434,6 +440,29 @@ namespace Game.Runtime.Core
                 Stat = StatId.Life, Op = ModOp.Flat, Min = 15f, Max = 30f, Format = "+{0:0} 生命",
                 Stat2 = StatId.FireResistance, Op2 = ModOp.Flat, Min2 = 0.05f, Max2 = 0.10f, Format2 = "+{0:0%} 火焰抗性",
                 AllowedSlots = SlotsMask(EquipSlot.Belt)
+            };
+            // S5-WO-04 第一批（BL-002.A1 锁定清单 N=4；全部复用既有 StatId/ModOp；单一 applicability truth；
+            // PoEDB 人工溯源与逐条准入自查见 docs/reviews/S5/S5_AFFIX_ADMISSION.md）
+            _defs[(int)AffixId.SwiftBreeze] = new AffixDef
+            {
+                Id = AffixId.SwiftBreeze, Name = "迅疾",
+                Stat = StatId.AttackSpeed, Op = ModOp.Increased, Min = 0.10f, Max = 0.16f, Format = "{0:0%} 攻击速度"
+            };
+            _defs[(int)AffixId.Ironhide] = new AffixDef
+            {
+                Id = AffixId.Ironhide, Name = "铁骨",
+                Stat = StatId.Armour, Op = ModOp.Increased, Min = 0.10f, Max = 0.22f, Format = "{0:0%} 护甲",
+                AllowedSlots = SlotsMask(EquipSlot.Weapon, EquipSlot.Body, EquipSlot.Helmet, EquipSlot.Gloves, EquipSlot.Boots)
+            };
+            _defs[(int)AffixId.Insight] = new AffixDef
+            {
+                Id = AffixId.Insight, Name = "睿智",
+                Stat = StatId.Intelligence, Op = ModOp.Flat, Min = 6f, Max = 12f, Format = "+{0:0} 智力"
+            };
+            _defs[(int)AffixId.Tenacity] = new AffixDef
+            {
+                Id = AffixId.Tenacity, Name = "坚韧",
+                Stat = StatId.Strength, Op = ModOp.Flat, Min = 6f, Max = 12f, Format = "+{0:0} 力量"
             };
         }
 
