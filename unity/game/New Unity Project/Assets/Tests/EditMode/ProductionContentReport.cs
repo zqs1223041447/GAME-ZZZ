@@ -36,6 +36,12 @@ namespace Game.Tests.EditMode
             public bool Formal;
         }
 
+        internal sealed class SlotAffixCount
+        {
+            public string Slot;
+            public int EligibleAffixCount;
+        }
+
         internal sealed class Data
         {
             public string Verdict;
@@ -61,6 +67,11 @@ namespace Game.Tests.EditMode
             public int ComboCompatible;
             public int ComboIncompatible;
             public string OracleParityStatus;
+
+            // S4-P3：Affix applicability 汇总（全部派生 canonical predicate IsApplicable，禁止手写 expected counts）
+            public int AffixUnrestricted;
+            public int AffixRestricted;
+            public List<SlotAffixCount> AffixBySlot;
 
             public int PassiveEdgeCount;
             public int PassiveDisconnectedCount;
@@ -128,6 +139,26 @@ namespace Game.Tests.EditMode
             d.ComboCompatible = compatible;
             d.ComboIncompatible = total - compatible;
             d.OracleParityStatus = audit.CompatProblems.Count == 0 ? "OK" : "VIOLATED";
+
+            // S4-P3：Affix applicability（canonical predicate 派生）
+            d.AffixBySlot = new List<SlotAffixCount>();
+            for (int s = 0; s < (int)EquipSlot.Count; s++)
+            {
+                int eligible = 0;
+                for (int i = 0; i < AffixCatalog.Count; i++)
+                    if (AffixCatalog.Get((AffixId)i).IsApplicable((EquipSlot)s))
+                        eligible++;
+                d.AffixBySlot.Add(new SlotAffixCount { Slot = ((EquipSlot)s).ToString(), EligibleAffixCount = eligible });
+            }
+            d.AffixUnrestricted = 0;
+            d.AffixRestricted = 0;
+            for (int i = 0; i < AffixCatalog.Count; i++)
+            {
+                if (AffixCatalog.Get((AffixId)i).AllowedSlots == 0)
+                    d.AffixUnrestricted++;
+                else
+                    d.AffixRestricted++;
+            }
 
             // Passive：只读 canonical Links（越界/单向由 audit MissingLinks 判定，此处只汇总）。
             int edgeCount = 0;
@@ -219,6 +250,21 @@ namespace Game.Tests.EditMode
             sb.Append(", \"incompatible\": ").Append(d.ComboIncompatible);
             sb.Append(", \"oracleParityStatus\": "); AppendString(sb, d.OracleParityStatus);
             sb.Append(" },\n");
+            sb.Append("  \"affixApplicability\": { \"total\": ").Append(d.AffixCount);
+            sb.Append(", \"unrestricted\": ").Append(d.AffixUnrestricted);
+            sb.Append(", \"restricted\": ").Append(d.AffixRestricted);
+            sb.Append(", \"bySlot\": [\n");
+            for (int i = 0; i < d.AffixBySlot.Count; i++)
+            {
+                var sc = d.AffixBySlot[i];
+                sb.Append("      { \"slot\": "); AppendString(sb, sc.Slot);
+                sb.Append(", \"eligibleAffixCount\": ").Append(sc.EligibleAffixCount);
+                sb.Append(" }");
+                if (i < d.AffixBySlot.Count - 1)
+                    sb.Append(",");
+                sb.Append("\n");
+            }
+            sb.Append("    ] },\n");
             sb.Append("  \"passiveGraph\": { \"nodeCount\": ").Append(d.PassiveCount);
             sb.Append(", \"edgeCount\": ").Append(d.PassiveEdgeCount);
             sb.Append(", \"disconnectedCount\": ").Append(d.PassiveDisconnectedCount);

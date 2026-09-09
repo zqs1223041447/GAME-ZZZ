@@ -7,20 +7,28 @@
   "counts": {
     "skills": 3,
     "supports": 7,
-    "affixes": 13,
+    "affixes": 17,
     "passives": 16,
     "enemyKinds": 5,
     "mapMods": 3,
     "equipmentSlots": 6
   },
   "runtimeCoverage": {
-    "declaredStats": ["Accuracy", "AddedFire", "AddedPhysical", "AreaDamageMore", "AreaRadiusMore", "Armour", "AttackSpeed", "ConvertPhysToFire", "CritChanceIncreased", "Dexterity", "Evasion", "FireDamage", "FireResistance", "Fork", "IgniteChance", "Intelligence", "Life", "MorePhysical", "PhysicalDamage", "Strength"],
+    "declaredStats": ["Accuracy", "AddedFire", "AddedPhysical", "AreaDamageMore", "AreaRadiusMore", "Armour", "AttackSpeed", "ConvertPhysToFire", "CritChanceAdded", "CritChanceIncreased", "Dexterity", "Evasion", "FireDamage", "FireResistance", "Fork", "IgniteChance", "Intelligence", "Life", "MorePhysical", "PhysicalDamage", "Strength"],
     "consumedStats": ["Life", "Mana", "Strength", "Dexterity", "Intelligence", "Armour", "Evasion", "Accuracy", "FireResistance", "MaxFireResistance", "Damage", "PhysicalDamage", "FireDamage", "MoreDamage", "MorePhysical", "MoreFire", "AddedPhysical", "AddedFire", "ConvertPhysToFire", "CritChanceBase", "CritChanceAdded", "CritChanceIncreased", "CritMultiAdded", "IgniteChance", "AreaRadiusMore", "AreaDamageMore", "AttackSpeed", "Fork"],
     "unconsumedDeclaredStats": [],
     "declaredTags": ["Attack", "Spell", "Melee", "Projectile", "Area", "Hit", "Physical", "Fire", "Duration"],
     "unusedTags": ["Spell", "Projectile", "Fire", "Duration"]
   },
   "supportCompatibility": { "total": 21, "compatible": 16, "incompatible": 5, "oracleParityStatus": "OK" },
+  "affixApplicability": { "total": 17, "unrestricted": 13, "restricted": 4, "bySlot": [
+      { "slot": "Weapon", "eligibleAffixCount": 13 },
+      { "slot": "Body", "eligibleAffixCount": 13 },
+      { "slot": "Helmet", "eligibleAffixCount": 13 },
+      { "slot": "Boots", "eligibleAffixCount": 13 },
+      { "slot": "Gloves", "eligibleAffixCount": 15 },
+      { "slot": "Belt", "eligibleAffixCount": 15 }
+    ] },
   "passiveGraph": { "nodeCount": 16, "edgeCount": 20, "disconnectedCount": 0 },
   "resources": {
     "requiredPresent": 10,
