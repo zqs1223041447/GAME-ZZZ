@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Runtime.Core
@@ -179,14 +180,19 @@ namespace Game.Runtime.Core
             it.BaseName = baseName;
             int n = rarity == Rarity.Rare ? RngUtil.NextInt(rng, 3, 5) : 2;
             it.AffixCount = n;
-            bool[] used = new bool[(int)AffixId.Count];
-            for (int i = 0; i < n; i++)
+            // S4-P3：slot-eligible 候选池（canonical catalog 顺序，禁 HashSet 迭代序）；唯一 truth=AffixDef.IsApplicable。
+            // 不重复选取=候选池缩池；六槽全局池恒非空（≥13 条不限槽词缀）。
+            var eligible = new List<int>((int)AffixId.Count);
+            for (int i = 0; i < (int)AffixId.Count; i++)
             {
-                int id = RngUtil.NextInt(rng, 0, (int)AffixId.Count);
-                int guard = 0;
-                while (used[id] && guard++ < 12)
-                    id = (id + 1) % (int)AffixId.Count;
-                used[id] = true;
+                if (AffixCatalog.Get((AffixId)i).IsApplicable(slot))
+                    eligible.Add(i);
+            }
+            for (int i = 0; i < n && eligible.Count > 0; i++)
+            {
+                int pick = RngUtil.NextInt(rng, 0, eligible.Count);
+                int id = eligible[pick];
+                eligible.RemoveAt(pick);
                 AffixDef def = AffixCatalog.Get((AffixId)id);
                 float v = RngUtil.Range(rng, def.Min, def.Max);
                 float v2 = def.RowCount > 1 ? RngUtil.Range(rng, def.Min2, def.Max2) : 0f;
@@ -429,6 +435,12 @@ namespace Game.Runtime.Core
 
             ItemInstance it = Inventory[invIndex];
             AffixDef def = AffixCatalog.Get(pick);
+            // S4-P3：定向制作受唯一 applicability 约束——非法组合 deterministic reject（不消耗蚀刻剂、不半写入）
+            if (!def.IsApplicable(it.Slot))
+            {
+                error = def.Name + " 不能出现在" + SlotName(it.Slot);
+                return false;
+            }
             float v = RngUtil.Range(LootRng, def.Min, def.Max);
             float v2 = def.RowCount > 1 ? RngUtil.Range(LootRng, def.Min2, def.Max2) : 0f;
             if (it.AffixCount < 4)
