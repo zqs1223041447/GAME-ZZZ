@@ -26,4 +26,7 @@
 
 | 日期 | 事项 | 结果 |
 |---|---|---|
-| 2026-09-09 | 规划周期启动请求（prompt：S4 完成 + 硬停止 + 仓库事实摘要） | 规划 AI 下发新周期 **S4R — Direction Readiness & Baseline Lock**（inter-cycle 治理周期，不授权任何新 gameplay capability）及第一个工作令 **S4R-WO-01 — Frozen Baseline & Governance Reconciliation**；回复全文存 `%LOCALAPPDATA%\Temp\game_zzz_planner_kickoff_reply.md`，待落库为 `docs/reviews/S4R/S4R_PLAN.md` |
+| 2026-09-09 | 规划周期启动请求（prompt：S4 完成 + 硬停止 + 仓库事实摘要） | 规划 AI 下发新周期 **S4R — Direction Readiness & Baseline Lock**（inter-cycle 治理周期，不授权任何新 gameplay capability）及第一个工作令 **S4R-WO-01 — Frozen Baseline & Governance Reconciliation**；回复全文存 `%LOCALAPPDATA%\Temp\game_zzz_planner_kickoff_reply.md`，已落库为 `docs/reviews/S4R/S4R_PLAN.md` |
+| 2026-09-09 | S4R-WO-01 执行完毕，Evidence 回传（commit A=cee032c/B=da3db41） | Gate Review=**ACCEPT**（12 项全 PASS）；follow-up=Ledger 计数口径（并入 WO-02）；下发 **S4R-WO-02 — Backlog & Dependency Normalization** |
+| 2026-09-09 | S4R-WO-02 执行完毕，Evidence 回传（commit A=3609515/B=8b86022） | Gate Review=**ACCEPT WITH FOLLOW-UP**（13 项 PASS；follow-up=授权原子粒度）；裁定 BL-024 双门 + RBC 维持 NOT LOCKED；下发 **S4R-WO-03 — Next-Direction Decision Packet** |
+| 2026-09-09 | S4R-WO-03 执行完毕（57 授权原子 + DIR-0~4 决策包 + 导演决策表），Evidence 回传 | **Decision Packet awaiting Director Gate**——规划 AI 明示：导演回填 Decision Form 才做 Direction Gate Review 并生成下一正式 implementation-cycle seed；导演未输入则 S4R runtime freeze 延续，不自动启动 WO-04/任何实现 |

@@ -59,9 +59,9 @@
 
 - **无**。当前工程内数据表中的全部 Stat 均有运行期读取点（`unconsumedDeclaredStats=0`），4 条 Tagged Modifier 全部可达（死 Tagged Modifier=0），3 技能 golden parity 3/3。PoEDB 级全量数据尚未导入（流水线未建立），不存在「已导入未实现」库存。
 
-## 6. Backlog ID Linkage（S4R-WO-02）
+## 6. Backlog ID Linkage（S4R-WO-02；S4R-WO-03 atom 细化）
 
-未支持/部分支持机制的候选扩张已规范化入 Backlog（`S4R_BACKLOG_NORMALIZATION.md`，候选 ≠ 已批准）：Passive 大树镜像/Mastery/Ascendancy→BL-003（+BL-024 pipeline 前置）；Support Level/Quality→BL-022；全量 Support 导入→BL-023；孔色/多 Link→BL-021；10 槽/Weapon 族/Tier/Base Items→BL-001/002；Craft Deepening→BL-013（+BL-014 sim）；Map Tier→BL-015（+BL-017 sim）；Boss→BL-016；Aura→BL-004；Voice→BL-026（BLOCKED，Resume=导演指认）；Death 截断→BL-030。
+未支持/部分支持机制的候选扩张已规范化入 Backlog（`S4R_BACKLOG_NORMALIZATION.md`，候选 ≠ 已批准）：Passive 大树镜像/Mastery/Ascendancy→BL-003（+BL-024 pipeline 前置）；Support Level/Quality→BL-022（授权粒度归 BL-012.A1）；全量 Support 导入→BL-023；孔色/多 Link→BL-021；10 槽/Weapon 族/Tier/Base Items→BL-001/002；Craft Deepening→BL-013（+BL-014 sim）；Map Tier→BL-015（+BL-017 sim）；Boss→BL-016；Aura→BL-004；Voice→BL-026（BLOCKED，Resume=导演指认）；Death 截断→BL-030。聚合行的授权粒度以 `S4R_AUTHORIZATION_ATOMS.md`（57 atoms）为准。
 
 ## 7. Candidate Reference Build Coverage Mapping（非权威；AC-08）
 

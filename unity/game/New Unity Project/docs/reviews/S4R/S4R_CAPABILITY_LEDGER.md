@@ -11,9 +11,10 @@
 - **Summary 必须由实际行状态得出**：**Supported = 18；Partial = 4；Unsupported = 5；Blocked = 1；合计 28 行**。
 - 禁止为凑总数改变行语义；行状态变更只能由已批准 Work Order 驱动并在「刷新记录」登记。
 
-## Backlog 链接（S4R-WO-02）
+## Backlog 链接（S4R-WO-02；S4R-WO-03 细化为授权原子）
 
 Partial/Unsupported/Blocked 行的候选扩张已全部进入规范化 Backlog（`S4R_BACKLOG_NORMALIZATION.md`）：Socket→BL-021、Map System→BL-015、Enemy Taxonomy→BL-016、Aura→BL-004、Weapon/Handedness→BL-001、Mastery/Ascendancy→BL-003（大树镜像族内含，不另立 ID）、Persistence→BL-025、Canonical Pipeline→BL-024、Voice→BL-026。Supported 行的合理后续→BL-001/002/021/022/023/028。**候选 ≠ 已批准。**
+**授权原子（S4R-WO-03）**：聚合行的导演授权粒度以 `S4R_AUTHORIZATION_ATOMS.md`（57 atoms）为准——批准宽泛 Backlog ID 不得隐式批准独立 gated 子能力（如 BL-003.A1 大树 ≠ BL-003.A2 Mastery ≠ BL-003.A3 Ascendancy）；本 Ledger 各行状态不因 atom 拆分而变化。
 
 状态定义：Supported=有 runtime 行为+测试证据；Partial=部分成立/受明确边界限制；Unsupported=当前 runtime 不存在（含数据不存在）；Blocked=被外部条件卡住（须有 Resume Trigger）。
 
