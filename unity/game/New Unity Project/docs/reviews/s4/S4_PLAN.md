@@ -3,6 +3,8 @@
 **来源**：协调席（GPT）S4 Master Plan（2026-09-09，经导演「开启 S4 工作 + 读取仓库 https://github.com/zqs1223041447/GAME-ZZZ 」指令下发）。工作 AI 将其正式写入 Repository-as-Memory，不得重新解释为别的 S4。
 **基线**：main @ 7edbb6f（S3 = COMPLETE; Voice DEFERRED BY DIRECTOR）。
 
+> **Milestone 状态回填（2026-09-09，不改目标定义）**：Phase 0/1/2/3/4 = COMPLETE；Phase 5（Integrated Closeout）= IN PROGRESS —— Gate 1/2/3 全 PASS + Simulation hash exact match + R7/R9 归档 OK，但 Gate 4/Art Gate=ENV_NOT_MET（机器活动显示=远程虚拟显示 1920×1080@144 ≠ 合同锁定 2560×1440；规则⑦ 不自动放宽，待导演恢复 1440p 或正式合同变更令）。总收口评审=`S4_OVERALL_CLOSEOUT_REVIEW.md`（Branch B）。S4=IN PROGRESS。
+
 ## 0. S4 定义
 
 **S4 = Production Scale & Itemization Breadth**——不是 S3 再来一遍，也不是直接跳 Atlas/Boss/深 Craft。在不解锁 Stage0 大系统的前提下，把 S3 已经成立的 Vertical Slice 从「功能完整、表现完整、性能通过」推进到「可以安全扩大装备/词缀内容，并且由生产工具自动证明不会把项目写坏」。
