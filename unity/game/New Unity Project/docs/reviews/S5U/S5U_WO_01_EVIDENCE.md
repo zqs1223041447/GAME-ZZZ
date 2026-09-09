@@ -27,6 +27,32 @@
 | sanity-2 | `04_inventory_build_1080.png` | 状态04 的 1920×1080 layout sanity | 1920×1080 |
 
 **AC-20 = PASS（2560×1440 before 基线 8 张齐）；AC-21 = PASS（1080 sanity 2 张齐）。**
+**Follow-up 修正（规划 AI 裁定，2026-09-09）**：上述 8 张 1440p 图的实际产生通道=编辑器 GameView 缓冲 **3840×2160（16:9）下采样**，DesignScale=1.4（上夹取激活）→ 其证据标签修正为 **「16:9 high-resolution BEFORE reference」**，**不得**称 canonical no-clamp 2560×1440 基线（文件保留不删，见 §1b）。
+
+## §1b Follow-up：Pre-Change Canonical Capture（无夹取真 canonical，WO-02 前置已完成）
+
+**规划 AI 裁定**：真 canonical 2560×1440 = scale=2560/1920=1440/1080=**1.3333…**（不触发 1.4 上限），有效设计空间=1920×1080；3840×2160 夹取态与其设计空间不同。**裁定 Player 为最终 authoritative 视觉通道**（Phase 5 复采）；本 follow-up 允许「使用最稳定可用通道」，不得为采集修改 DesignScale 算法。
+
+**本周期实测达成通道（零运行时改动）**：编辑器 Game 视图经反射序列化属性 `m_TargetSize=(2560,1440)`（配合已选中的自定义尺寸 GAME-ZZZ-CANON 2560×1440 FixedResolution）将缓冲精确钉在 2560×1440——**玩家可见画面为等比缩放预览，缓冲像素为真 canonical**。
+
+| 记录项 | 值 |
+|---|---|
+| Capture Resolution | **2560×1440** |
+| Screen.width/height | 2560×1440 |
+| DesignScale | **1.333333**（≈1.3333，无上夹取） |
+| Derived Design Space | **1920.0 × 1080.0** |
+| Clamp Active | **NO** |
+| Captured Before Product UI Mutation | **YES**（HEAD=1c4061b 视觉状态；本 follow-up 提交零 runtime 改动） |
+
+新增文件（`docs/reviews/S5U/screenshots/`）：
+
+| 文件 | 状态 | 说明 |
+|---|---|---|
+| `before_combat_2560x1440.png` | 进图战斗·无面板·无 hover（装备六件、辅助空、连接=默认映射槽） | canonical no-clamp |
+| `before_link_2560x1440.png` | 进图战斗·辅助×3+**武器组1改挂生效**（`弹道 W=连接 裂石巨刃·组1·容1`；组划分=组0近战容1+组1弹道容1） | canonical no-clamp |
+| `before_tooltip_2560x1440.png` | Build 面板武器卡 hover=完整 ItemCard（词缀+组0/组1 连接真值+第二连接行） | canonical no-clamp |
+
+采集协议存档：状态注入脚本（eval_file）+ `m_TargetSize` 反射通道，均为可复用基建；S5U 各 Phase 的 canonical 截图沿用本通道，Phase 5 最终采集按裁定切换 Player 2560×1440。
 
 ### 运行时几何事实（本次基线的测量记录）
 
