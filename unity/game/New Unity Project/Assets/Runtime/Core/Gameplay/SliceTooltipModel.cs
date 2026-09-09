@@ -123,7 +123,19 @@ namespace Game.Runtime.Core
             string[] body = new string[item.AffixCount];
             for (int i = 0; i < item.AffixCount; i++)
                 body[i] = SliceSession.AffixLine(item, i);
-            c.Body = body;
+            // S5-WO-03：连接组划分行（映射槽物品；真实划分 3 孔拆分=0+1，不暗示免费孔位）
+            string[] groups = session != null ? session.LinkGroupsText(item) : null;
+            if (groups != null)
+            {
+                string[] all = new string[body.Length + groups.Length];
+                for (int i = 0; i < body.Length; i++)
+                    all[i] = body[i];
+                for (int i = 0; i < groups.Length; i++)
+                    all[body.Length + i] = groups[i];
+                c.Body = all;
+            }
+            else
+                c.Body = body;
 
             int eq = session != null ? session.Equipped[(int)item.Slot] : -1;
             bool hasEq = eq >= 0 && session != null && eq < session.InventoryCount;

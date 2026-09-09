@@ -1,6 +1,6 @@
 # S5_LINK_CONTRACT — Multi-Link 权威合同（S5-WO-01 锁定；AC-02/03/04/05/06/07/08/09 交付物）
 
-**性质**：BL-021.A2（多连接组）的唯一权威实现合同。本文由 S5-WO-01 锁定；S5-WO-02 起 runtime 实现必须逐条遵守，不得在本文件之外发明产品行为。**状态=AUTHORIZED NOT IMPLEMENTED**（RUNTIME.md 不描述为已实现）。
+**性质**：BL-021.A2（多连接组）的唯一权威实现合同。本文由 S5-WO-01 锁定；S5-WO-02 起 runtime 实现必须逐条遵守，不得在本文件之外发明产品行为。**状态=域核+运行时/UI 集成已实现（S5-WO-02 域核+S5-WO-03 集成；实现证据=`S5_WO_02_EVIDENCE.md`/`S5_WO_03_EVIDENCE.md`；RUNTIME.md 已同步）**。
 **MaxLinkGroupsPerEligibleItem = 2**（唯一权威数值；其它文档只可引用本句）。
 
 ## 1. 当前真相源指认（合同基线；全部为既有代码事实，本单零改动）
@@ -35,6 +35,13 @@
 - **总容量取舍（有意设计，非回归）**：启用 group 1 消耗第二个技能宝石位。3 孔例：legacy=group 0 3 孔→2 Support；拆分=group 0 1 孔→0 Support + group 1 2 孔→1 Support。
 - **原子容量校验（写入前）**：写入/变更 `LinkSkill1` 前校验拆分后两组容量——host 映射技能既有 Support 数 ≤ 拆分后 group 0 容量；被改挂技能既有 Support 数 ≤ group 1 容量（1）。任一溢出 ⇒ **原子拒绝**（不消耗、不半写入）；**禁止**静默截断、自动移除、自动迁移、重排凑容。
 - **生命周期**：Assign=激活 group 1+抑制被改挂技能默认源+保留其 Support 列表+套用 group 1 容量；Change（A→B）=单次校验事务（无外部可见双源中间态）；Clear（→None）=移除 group 1+恢复被改挂技能默认源+host group 0 恢复完整孔集。
+
+### 2b. S5-WO-03 集成补记（2026-09-09；Phase-2 Integration Guard 落地语义，权威语义以 DECISIONS.md 同名条目为登记）
+
+- **唯一规则所有者**：有效连接源图后置校验=`SliceSession.ValidateLinkGraphPostState`（内核 `ValidateHostState`：可连接技能/孔数≥3/映射槽资格/禁自改挂/全局唯一源/拆分后两组原子容量）。`TryReassignLink`（假设性写入→校验→非法原子回滚；清除=约束放宽恒合法）与 **`TryEquip`（装备/替换提交前同守卫）** 都经它——装备路径与改挂路径禁止规则副本。
+- **装备变更守卫**：任何装备操作不得产生改挂 API 自身会拒绝的后置状态；非法转换=原子拒绝（装备位与 LinkSkill1/Support 字节不变），禁 first/last-wins、禁静默清除/改写 LinkSkill1、禁静默截断/迁移 Support。同槽同技能配置 host 交接=合法移交（旧 host 离图入包休眠）。
+- **UI 有界呈现/配置**：资格呈现=`SecondaryLinkConfigurable`（映射槽∧SocketCount≥3，与域同源）；「第二连接」配置条仅在已装备合格物品卡；候选=`RebindCandidates`（排除自带映射与已被其它装备改挂者）；可用性预判=`PreviewReassignError`（与写入前校验同一内核，零写入）；技能行唯一有效源标注（`LinkSourceLabel`，改挂后原默认位不再呈现为生效源，无重复 Skill 行）；Tooltip 划分行（`LinkGroupsText`，3 孔拆分如实 0+1）；UI 永不直写 LinkSkill1；失败经 LastMessage 5 类可读原因，无内部异常文本。
+- **运行时隔离**：改挂技能经组 1 的 Support 等价生效恰一次（数值型 BuildPlayerHit 与机制型 Fork 真实分裂双证明）；零跨组泄漏。golden 21 组合组位无关维持。
 
 ## 3. Data-Model Decision（AC-08：唯一选定表示）
 

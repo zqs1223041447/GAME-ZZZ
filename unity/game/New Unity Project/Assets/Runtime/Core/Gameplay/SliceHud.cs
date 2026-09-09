@@ -322,8 +322,10 @@ namespace Game.Runtime.Core
 
             string name = SliceSession.SkillDisplayName(skill);
             string key = SliceSession.SkillHotkey(skill);
-            Label(new Rect(r.x + 10, r.y + 4, r.width - 36, 22), name, _title);
+            Label(new Rect(r.x + 10, r.y + 3, r.width - 36, 18), name, _title);
             Label(new Rect(r.x + r.width - 22, r.y + 4, 20, 20), key, _small);
+            // S5-WO-03：技能行唯一有效连接源标注（组号+host+容量；改挂后原默认位不再呈现为生效源）
+            Clipped(new Rect(r.x + 10, r.y + 21, r.width - 36, 13), s.LinkSourceLabel(skill), _small);
 
             SupportId[] arr = s.SupportsOf(skill);
             int cap = s.SupportCapacity(skill);
@@ -332,7 +334,7 @@ namespace Game.Runtime.Core
             float sx = r.x + 10;
             for (int i = 0; i < arr.Length; i++)
             {
-                Rect sock = new Rect(sx + i * 80, r.y + 32, 76, 46);
+                Rect sock = new Rect(sx + i * 80, r.y + 36, 76, 40);
                 DrawSocket(s, skill, i, cap, arr[i], sock);
             }
         }
@@ -540,15 +542,86 @@ namespace Game.Runtime.Core
                 return;
             }
 
-            DrawItemBody(s.Inventory[idx], new Rect(r.x + 10, r.y + 20, r.width - 16, r.height - 24));
+            ItemInstance it = s.Inventory[idx];
+            // S5-WO-03：第二连接配置条=卡底 20px 有界呈现（资格=SecondaryLinkConfigurable 与域同源）；
+            // 配置条物品行转紧凑单行，词缀详情看 Tooltip（无新屏/无重构）
+            bool rebind = SliceSession.SecondaryLinkConfigurable(it);
+            DrawItemBody(it, new Rect(r.x + 10, r.y + 20, r.width - 16, rebind ? 16f : r.height - 24f), rebind);
+            if (rebind)
+                DrawRebindStrip(s, idx, it, new Rect(r.x + 10, r.y + r.height - 20, r.width - 20, 18));
             if (r.Contains(Pointer))
-                RequestTip(SliceTooltipModel.ItemCard(s.Inventory[idx], s), TipPriPanel); // 已装备本体=「已装备」卡
+                RequestTip(SliceTooltipModel.ItemCard(it, s), TipPriPanel); // 已装备本体=「已装备」卡
             if (Click(r))
                 s.SelectedInv = idx;
         }
 
-        void DrawItemBody(ItemInstance it, Rect r)
+        /// <summary>S5-WO-03：第二连接配置条（候选=RebindCandidates；可用性=PreviewReassignError 同一校验内核；
+        /// 写入唯一走 TryReassignLink；不可用候选=灰显+hover 原因+点击=确定性可见拒绝，状态零改动）。</summary>
+        void DrawRebindStrip(SliceSession s, int idx, ItemInstance it, Rect r)
         {
+            Fill(r, new Color(0.10f, 0.10f, 0.12f, 1f));
+            Label(new Rect(r.x + 2, r.y + 3, 46, 14), "第二连接", _small);
+            float bx = r.x + 50;
+            SkillId[] cands = s.RebindCandidates(it);
+            for (int i = 0; i < cands.Length; i++)
+            {
+                SkillId skill = cands[i];
+                Rect b = new Rect(bx + i * 38, r.y + 1, 34, r.height - 2);
+                string reason = s.PreviewReassignError(it, skill);
+                bool on = it.LinkSkill1 == skill;
+                bool usable = reason == null;
+                bool clicked = false;
+                if (usable)
+                {
+                    clicked = NavBtn(b, SliceSession.SkillDisplayName(skill), on);
+                    if (clicked && !on)
+                    {
+                        string err;
+                        if (!s.TryReassignLink(idx, skill, out err) && err != null)
+                            s.LastMessage = err;
+                    }
+                }
+                else
+                {
+                    Event e = Event.current;
+                    bool hover = e != null && b.Contains(Pointer);
+                    Color old = GUI.color;
+                    GUI.color = new Color(0.58f, 0.58f, 0.62f, 1f);
+                    GUI.Box(b, GUIContent.none, hover ? _slotH : _slotN);
+                    GUI.color = old;
+                    Label(b, SliceSession.SkillDisplayName(skill), _center);
+                    if (hover)
+                        RequestTip(SliceTooltipModel.TextCard("第二连接不可用", reason), TipPriPanel);
+                    if (Click(b))
+                        s.LastMessage = reason; // 确定性可见拒绝（不静默、无异常文本）
+                }
+            }
+            Rect cb = new Rect(bx + cands.Length * 38, r.y + 1, 30, r.height - 2);
+            if (it.LinkSkill1 != SkillId.None)
+            {
+                if (NavBtn(cb, "无", false))
+                {
+                    string err;
+                    if (!s.TryReassignLink(idx, SkillId.None, out err) && err != null)
+                        s.LastMessage = err;
+                }
+            }
+            else
+            {
+                GUI.Box(cb, GUIContent.none, _slotN);
+                Label(cb, "无", _center);
+            }
+        }
+
+        void DrawItemBody(ItemInstance it, Rect r, bool compact = false)
+        {
+            if (compact)
+            {
+                // S5-WO-03：第二连接配置条占用卡底时的单行物品体（词缀详情看 Tooltip）
+                Clipped(new Rect(r.x, r.y, r.width, 16),
+                    SliceSession.RarityWord(it.Rarity) + " " + SliceSession.CleanBaseName(it.BaseName) + " " + it.SocketCount + "孔", _small);
+                return;
+            }
             Color rc = it.Rarity == Rarity.Rare ? SlicePalette.Rare : SlicePalette.Ordinary;
             GUI.color = rc;
             Label(new Rect(r.x, r.y, r.width, 16), SliceSession.RarityWord(it.Rarity), _small);

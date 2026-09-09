@@ -229,7 +229,15 @@ namespace Game.Runtime.Core
             ItemInstance it = Inventory[invIndex];
             int slot = (int)it.Slot;
             int old = Equipped[slot];
+            // S5-WO-03（合同 §3B）：装备/替换提交前过共享后置校验器——装备变更不得绕过唯一有效连接源；
+            // 非法=原子拒绝（装备位与 LinkSkill1/Support 全零改动，禁静默清除/改写/截断）
             Equipped[slot] = invIndex;
+            error = ValidateLinkGraphPostState(-1);
+            if (error != null)
+            {
+                Equipped[slot] = old;
+                return false;
+            }
             ClampSupportsToSockets();
             RecalcPlayer(false);
             LastMessage = "装备 " + it.BaseName;
@@ -1063,8 +1071,8 @@ namespace Game.Runtime.Core
                  : EquipSlot.Helmet;
         }
 
-        /// <summary>S5-WO-02：连接槽位→默认技能（映射逆；Gloves/Belt/Boots 无映射=SkillId.None）。</summary>
-        static SkillId MappedSlotOfSlot(EquipSlot slot)
+        /// <summary>S5-WO-02：连接槽位→默认技能（映射逆；Gloves/Belt/Boots 无映射=SkillId.None）。S5-WO-03 起 public（UI 资格呈现与域资格同源）。</summary>
+        public static SkillId MappedSlotOfSlot(EquipSlot slot)
         {
             return slot == EquipSlot.Weapon ? SkillId.Melee
                  : slot == EquipSlot.Body ? SkillId.Projectile
@@ -1126,10 +1134,96 @@ namespace Game.Runtime.Core
             return cap;
         }
 
+        /// <summary>S5-WO-03 UI 资格呈现规则：映射槽物品且 SocketCount≥3 才呈现第二连接配置（与域 2 组资格同源推导，不另设规则）。</summary>
+        public static bool SecondaryLinkConfigurable(ItemInstance it)
+        {
+            return MappedSlotOfSlot(it.Slot) != SkillId.None && it.SocketCount >= 3;
+        }
+
+        /// <summary>
+        /// S5-WO-03 UI 读路径：物品连接组划分行（映射槽物品）。真实划分——3 孔拆分=组0 容0+组1 容1，
+        /// 不暗示免费孔位；非法/腐败绑定=读路径 fail-closed 按 legacy 一组呈现（与 SupportCapacity 同规则）。
+        /// </summary>
+        public string[] LinkGroupsText(ItemInstance it)
+        {
+            SkillId mapped = MappedSlotOfSlot(it.Slot);
+            if (mapped == SkillId.None)
+                return null;
+            bool validSplit = it.LinkSkill1 == SkillId.Melee || it.LinkSkill1 == SkillId.Projectile || it.LinkSkill1 == SkillId.Area;
+            if (validSplit && (it.LinkSkill1 == mapped || it.SocketCount < 3))
+                validSplit = false;
+            if (!validSplit)
+            {
+                int cap = it.SocketCount - 1;
+                if (cap < 0)
+                    cap = 0;
+                return new[] { "组0 连接：" + SkillDisplayName(mapped) + " 容" + cap, "第二连接：无" };
+            }
+            int cap0 = it.SocketCount - 3;
+            if (cap0 < 0)
+                cap0 = 0;
+            return new[]
+            {
+                "组0 连接：" + SkillDisplayName(mapped) + " 容" + cap0,
+                "组1 连接：" + SkillDisplayName(it.LinkSkill1) + " 容1"
+            };
+        }
+
+        /// <summary>S5-WO-03 UI 读路径：技能当前唯一有效连接源标注（组号+host+容量；改挂后原默认位不再呈现为生效源；腐败态 fail-closed 回默认）。</summary>
+        public string LinkSourceLabel(SkillId skill)
+        {
+            int host = RebindHostIndex(skill);
+            if (host >= 0)
+                return CleanBaseName(Inventory[host].BaseName) + "·组1·容" + SupportCapacity(skill);
+            EquipSlot slot = MappedSlot(skill);
+            int idx = Equipped[(int)slot];
+            if (idx < 0 || idx >= InventoryCount)
+                return "未装备";
+            return SlotName(slot) + "·组0·容" + SupportCapacity(skill);
+        }
+
+        /// <summary>S5-WO-03 UI 读路径：物品可呈现为第二连接候选的技能（排除自带映射技能与已被其它装备改挂者；含当前绑定自身）。</summary>
+        public SkillId[] RebindCandidates(ItemInstance it)
+        {
+            SkillId mapped = MappedSlotOfSlot(it.Slot);
+            var list = new List<SkillId>(2);
+            for (int i = 1; i <= 3; i++)
+            {
+                SkillId skill = (SkillId)i;
+                if (skill == mapped)
+                    continue;
+                int host = RebindHostIndex(skill);
+                if (host >= 0 && Inventory[host].Id != it.Id)
+                    continue; // 已被其它装备改挂（腐败态 fail-closed→候选照常给出，可用性预判再拒）
+                list.Add(skill);
+            }
+            return list.ToArray();
+        }
+
+        /// <summary>S5-WO-03 UI 读路径：候选可用性预判（只读零写入；与写入前校验同一内核 ValidateHostState，返回 null=可用）。</summary>
+        public string PreviewReassignError(ItemInstance it, SkillId skill)
+        {
+            if (skill == SkillId.None)
+                return it.LinkSkill1 == SkillId.None ? "该物品无第二连接组" : null; // 清除=约束放宽恒合法
+            int selfIdx = -1;
+            for (int s = 0; s < Equipped.Length; s++)
+            {
+                int idx = Equipped[s];
+                if (idx >= 0 && idx < InventoryCount && Inventory[idx].Id == it.Id)
+                {
+                    selfIdx = idx;
+                    break;
+                }
+            }
+            return ValidateHostState(selfIdx, it, skill);
+        }
+
         /// <summary>
         /// S5-WO-02（BL-021.A2，合同 docs/reviews/S5/S5_LINK_CONTRACT.md）：把一个技能的连接改挂到指定物品的
-        /// group 1（末尾 2 孔），或传 SkillId.None 清除改挂。每技能至多一个有效连接源；写入前全量校验
-        /// （自改挂/双物品改挂/孔数不足/容量溢出=确定性拒绝，无半写入）——不做静默截断/迁移/重排。
+        /// group 1（末尾 2 孔），或传 SkillId.None 清除改挂。每技能至多一个有效连接源。S5-WO-03 起：
+        /// 赋值/变更为「假设性写入 → 共享后置校验器 → 非法原子回滚」（清除=约束放宽，天然合法）；
+        /// 全部拒绝规则（host 资格/孔数/自改挂/双物品同改挂/拆分后两组容量/唯一有效源）
+        /// 唯一所有者=ValidateLinkGraphPostState，本入口零规则复制。
         /// </summary>
         public bool TryReassignLink(int invIndex, SkillId skill, out string error)
         {
@@ -1147,7 +1241,7 @@ namespace Game.Runtime.Core
 
             ItemInstance it = Inventory[invIndex];
 
-            // 清除改挂：被改挂技能回退映射槽 legacy，host group 0 恢复完整孔集
+            // 清除改挂：被改挂技能回退映射槽 legacy，host group 0 恢复完整孔集（容量只增不减=恒合法）
             if (skill == SkillId.None)
             {
                 if (it.LinkSkill1 == SkillId.None)
@@ -1170,53 +1264,96 @@ namespace Game.Runtime.Core
                 return false;
             }
 
-            // 自改挂拒绝：group 1 不能与该物品自带连接同技能
-            SkillId hostSkill = MappedSlotOfSlot(it.Slot);
-            if (hostSkill != SkillId.None && skill == hostSkill)
-            {
-                error = "该物品已自带此技能连接";
-                return false;
-            }
-
-            // 2 组资格：SocketCount >= 3（group 1 固定占末尾 2 孔）
-            if (it.SocketCount < 3)
-            {
-                error = "孔数不足 3，无法承载第二连接组";
-                return false;
-            }
-
-            // 全局唯一连接源：该技能未被其它已装备物品改挂（禁 first/last-wins）
-            for (int s = 0; s < (int)EquipSlot.Count; s++)
-            {
-                int idx = Equipped[s];
-                if (idx == invIndex || idx < 0 || idx >= InventoryCount)
-                    continue;
-                if (Inventory[idx].LinkSkill1 == skill)
-                {
-                    error = SkillDisplayName(skill) + " 已被其它装备改挂";
-                    return false;
-                }
-            }
-
-            // 原子容量校验（写入前；任一溢出=拒绝，禁静默截断/迁移/重排）：
-            // 拆分后 host 映射技能 group 0 容量 = (SocketCount-2)-1；被改挂技能 group 1 容量 = 1。
-            if (CountSupports(SupportsOf(hostSkill)) > it.SocketCount - 3)
-            {
-                error = SkillDisplayName(hostSkill) + " 现有连接超出拆分后容量，先拆除非空连接";
-                return false;
-            }
-            if (CountSupports(SupportsOf(skill)) > 1)
-            {
-                error = SkillDisplayName(skill) + " 现有连接超出第二组容量（1），先拆除非空连接";
-                return false;
-            }
-
+            // S5-WO-03：假设性写入 → 共享校验（含本物品假设态）→ 非法原子回滚（无半写入）
+            SkillId previous = it.LinkSkill1;
             it.LinkSkill1 = skill;
             Inventory[invIndex] = it;
+            error = ValidateLinkGraphPostState(invIndex);
+            if (error != null)
+            {
+                it.LinkSkill1 = previous;
+                Inventory[invIndex] = it;
+                return false;
+            }
             ClampSupportsToSockets();
             RecalcPlayer(false);
             LastMessage = SkillDisplayName(skill) + " 连接改挂至 " + CleanBaseName(it.BaseName);
             return true;
+        }
+
+        /// <summary>
+        /// S5-WO-03（合同 §3A）：有效连接源图后置状态校验——唯一规则所有者。
+        /// 扫描全部已装备 host（LinkSkill1≠None）逐个过 ValidateHostState 内核；
+        /// pendingIdx≥0 时该库存位按「即将写入 LinkSkill1 的假设态」同样过内核（未装备物品的
+        /// 容量侧按其成为 host 的假设核算，装备时经本校验器复核同一规则）。
+        /// 装备路径（TryEquip）与改挂路径（TryReassignLink）都必须经本入口，禁止规则复制。
+        /// 返回 null=合法；非 null=用户可读拒绝原因。
+        /// </summary>
+        string ValidateLinkGraphPostState(int pendingIdx)
+        {
+            for (int s = 0; s < (int)EquipSlot.Count; s++)
+            {
+                int idx = Equipped[s];
+                if (idx < 0 || idx >= InventoryCount)
+                    continue;
+                ItemInstance it = Inventory[idx];
+                if (it.LinkSkill1 == SkillId.None)
+                    continue;
+                string err = ValidateHostState(idx, it, it.LinkSkill1);
+                if (err != null)
+                    return err;
+            }
+            if (pendingIdx >= 0 && pendingIdx < InventoryCount)
+            {
+                bool equipped = false;
+                for (int s = 0; s < Equipped.Length; s++)
+                    equipped = equipped || Equipped[s] == pendingIdx;
+                if (!equipped)
+                {
+                    ItemInstance it = Inventory[pendingIdx];
+                    if (it.LinkSkill1 != SkillId.None)
+                    {
+                        string err = ValidateHostState(-1, it, it.LinkSkill1);
+                        if (err != null)
+                            return err;
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// S5-WO-03 共享校验内核（ValidateLinkGraphPostState 组件，不独立成规则源；UI 只读预判经同一内核）：
+        /// host 绑定合法性（可连接技能/孔数≥3/映射槽/禁自改挂）+ 全局唯一连接源（禁 first/last-wins）
+        /// + 拆分后两组原子容量校验（禁静默截断/迁移/重排）。bound 为假设值；selfIdx 在唯一源扫描中豁免。
+        /// </summary>
+        string ValidateHostState(int selfIdx, ItemInstance host, SkillId bound)
+        {
+            if (bound != SkillId.Melee && bound != SkillId.Projectile && bound != SkillId.Area)
+                return "非可连接技能";
+            if (host.SocketCount < 3)
+                return "孔数不足 3，无法承载第二连接组";
+            SkillId mapped = MappedSlotOfSlot(host.Slot);
+            if (mapped == SkillId.None)
+                return SlotName(host.Slot) + " 不映射技能连接";
+            if (bound == mapped)
+                return "该物品已自带此技能连接";
+            // 全局唯一连接源：同技能不得被第二个已装备 host 改挂（腐败双改挂=写路径拒、读路径 fail-closed）
+            for (int s = 0; s < (int)EquipSlot.Count; s++)
+            {
+                int o = Equipped[s];
+                if (o == selfIdx || o < 0 || o >= InventoryCount)
+                    continue;
+                if (Inventory[o].LinkSkill1 == bound)
+                    return SkillDisplayName(bound) + " 已被其它装备改挂";
+            }
+            // 原子容量校验（写入前）：host 映射技能既有 Support ≤ 拆分后 group 0 容量（SocketCount−3）；
+            // 被改挂技能既有 Support ≤ group 1 容量（1）
+            if (CountSupports(SupportsOf(mapped)) > host.SocketCount - 3)
+                return SkillDisplayName(mapped) + " 现有连接超出拆分后容量，先拆除非空连接";
+            if (CountSupports(SupportsOf(bound)) > 1)
+                return SkillDisplayName(bound) + " 现有连接超出第二组容量（1），先拆除非空连接";
+            return null;
         }
 
         void ClampSupportsToSockets()

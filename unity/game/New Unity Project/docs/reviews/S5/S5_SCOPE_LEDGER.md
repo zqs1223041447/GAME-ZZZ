@@ -6,7 +6,7 @@
 
 | 原子 | 内容 | 硬边界 | 权威合同 |
 |---|---|---|---|
-| BL-021.A2 | Multiple Links / 扩展 Socket-Link 模型 | MaxLinkGroupsPerEligibleItem=**2**；第三组确定性拒绝；连接资格集合不变；每组容量规则不变（容量=组孔数−1）；group 1=末尾 2 孔改挂语义；组隔离/确定性顺序；无孔色/无宝石成长/无存档 | `S5_LINK_CONTRACT.md` |
+| BL-021.A2 | Multiple Links / 扩展 Socket-Link 模型 | MaxLinkGroupsPerEligibleItem=**2**；第三组确定性拒绝；连接资格集合不变；每组容量规则不变（容量=组孔数−1）；group 1=末尾 2 孔改挂语义；组隔离/确定性顺序；无孔色/无宝石成长/无存档。**实现进度：域核=S5-WO-02；运行时+UI 集成=S5-WO-03（共享后置校验器/装备守卫/第二连接配置条/技能行源标注/Tooltip 划分行/运行时隔离实证）** | `S5_LINK_CONTRACT.md` |
 | BL-002.A1 | Bounded Affix Breadth（现有机制内新词缀） | 精确 **N=4**（上限 6）；总目录数 17→21；每条复用既有 stat/modop 语义 + 单一 applicability + 现有生成路径；PoEDB 人工溯源（无 BL-024）；无新族/无 Prefix-Suffix/无 Tier-ModGroup | `S5_AFFIX_ADMISSION.md` |
 
 ## EXPLICITLY REJECTED（导演本周期明确「不做」；作为负向验收条件贯穿 S5 全周期）

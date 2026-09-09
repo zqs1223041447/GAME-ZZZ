@@ -31,7 +31,7 @@ Partial/Unsupported/Blocked 行的候选扩张已全部进入规范化 Backlog�
 | DoT：Ignite | Supported | `COMBAT_MATH.md` GV-IGNITE-*（50%/4s，单实例取高 DPS） | Bleed/Poison/Shock=Unsupported（Stage0/后置） |
 | Aura / Reservation | **Unsupported** | 无 runtime；BDA 计划 Phase 5（Pride/Anger/Determination/Grace） | **Director-gated 周期范围**；S4R 不授权 |
 | Weapon / Handedness / Requirement | **Unsupported** | 当前单武器槽；无武器族/需求模型 | BDA Phase 2 范围，Director-gated |
-| Socket / Link | Partial | RUNTIME.md Support/Socket 节（Weapon 3S→Q、Body 3S→W、Helmet 2S→E、Boots 0S；一条 Link；无孔色；Gloves/Belt 各 1 孔仅展示计数、不映射技能孔位——SupportCapacity 只走 Weapon/Body/Helmet） | **S5 跟踪（2026-09-09）**：Multiple Link Groups=**域核已实现（S5-WO-02，EditMode 260/260），用户侧集成待 Phase 2——不标全 Supported**（Socket/Link 总体保持 Partial）；Socket Color=**显式拒绝（导演，S5）**；Gem Level/Quality=**显式拒绝（导演，S5）**；状态仍 Partial，不晋升 |
+| Socket / Link | Partial | RUNTIME.md Support/Socket 节（Weapon 3S→Q、Body 3S→W、Helmet 2S→E、Boots 0S；一条 Link；无孔色；Gloves/Belt 各 1 孔仅展示计数、不映射技能孔位——SupportCapacity 只走 Weapon/Body/Helmet） | **S5 跟踪（2026-09-09）**：Multiple Link Groups=**域核+运行时/UI 集成已实现（S5-WO-02 域核+S5-WO-03 集成：共享后置校验器/装备原子守卫/第二连接配置条/技能行源标注/Tooltip 划分行/运行时隔离实证，EditMode 291/291）——Socket/Link 总体保持 Partial**（Socket Color 未支持未授权）；Socket Color=**显式拒绝（导演，S5）**；Gem Level/Quality=**显式拒绝（导演，S5）**；状态仍 Partial，不晋升 |
 | Skill Tag | Supported | 9 声明 Tag；golden parity 3/3（`SkillTagGolden` 独立 oracle）；未使用 4 Tag=预留非任务 | 新 Tag=Forbidden（未授权） |
 | Support Compatibility | Supported | 单一判定入口 `SliceSession.IsSupportCompatible`（Tag 路径+机制路径）+ golden 21 组合 parity OK + `SupportGateTests` | 16 兼容/5 不兼容；禁止由 Runtime 反向生成 golden |
 | Passive（16 节点图） | Supported | Production Report `passiveGraph` 16/20/0 + RUNTIME.md 天赋节（Start 免费、2 Notable、1 机制 Cinder Heart、出图免费重置） | 大树/Mastery/Jewel=Unsupported（Stage0 锁） |
