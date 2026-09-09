@@ -145,3 +145,15 @@ S1 技术已放行。输入、对象池、SeededRng、点地移动、Q/W/E 施�
 - **素材裁定**：本机 HD Common Icon Pack 1.2（人人素材分发，包内免责声明「仅供学习研究之用，不得用于商业用途」）=**QUARANTINED / DO NOT IMPORT INTO PRODUCTION**；ORK Okashi RPG Kit / Action Game Starter Kit / Dungeon Breaker Starter Kit（license 未定位）=**REFERENCE ONLY**；Kenney UI Pack（官方标示 CC0）=license-clean fallback；**Primary=GAME-ZZZ 原创美术**；Unity Asset Store 付费候选=**DIRECTOR INPUT REQUIRED（PAID ASSET PURCHASE）**，无人值守不阻塞（原创+CC0 继续）。PoE/D3=REFERENCE ONLY（禁止截图裁切/rip/描摹/近像素重建/专有字体提取）。
 - **S5U-WO-01 放行并执行完毕**（Phase 0，Runtime Product Authority=NONE）：S5U_PLAN / S5U_VISUAL_CONTRACT（技术锁+7 线框+Design Tokens）/ S5U_UI_SURFACE_MAP（23 表层+S5 合同 14 项映射）/ S5U_ASSET_ADMISSION / 截图基线 10 张（8×2560×1440+2×1080 sanity，Arena 实跑）；EditMode 314/314+PlayMode 11/11+Audit fresh+ProdSim hash 精确不变（FNV1A64:9a4c9524d0b3e214）。Capability Ledger：UI Presentation quality 建立独立 evidence/tracking，不因视觉重做晋升 gameplay capability；Mechanic Matrix=VERIFY ONLY。
 - **下一令**：S5U-WO-02（Dark ARPG Skin Foundation & Combat HUD Frame——首张 UI runtime authority 工作令）待规划 AI Gate 后放行。
+
+## S5U-WO-02（2026-09-09，规划 AI 放行 + 执行完毕）
+
+- **WO-02 放行**（规划 AI，紧跟 WO-01 ACCEPT WITH FOLLOW-UP）：Dark ARPG Skin Foundation & Combat HUD Frame；authority=presentation-only（IMGUI 强制延续）；WO-01 follow-up（relabeled 基线+真 canonical before 3 张 @1c4061b 视觉态）已先行交付（commit 4faa148）。
+- **呈现裁定·战斗底栏**：采用 PoE/D3 silhouette——LIFE 球 ─ QWE 图标槽 ─ MANA 球 ─ 辅助 tray；布局单一来源 `SliceHud.CombatBarRects`（公开纯函数=测试锚点，三设计空间不重叠不出界有断言）。连接源文本从格内常驻降为紧凑徽章 `G{组}·容{N}`，**完整真值不删**=悬停 tooltip 承载（LinkSourceLabel 全语义+支持清单+操作提示；S5 合同承载点平移而非削弱）。
+- **资产裁定**：战斗 HUD 全部结构/符文/pip/球环/饰线=GAME-ZZZ 原创运行时程序化合成（SliceHudIcons，SliceSkin 同范式；凭证 9 PNG 留档 asset-source/ 不进 Assets）；未使用任何外部素材；HD pack 维持 QUARANTINED。
+- **禁 Socket Color 语义**（S5 负向条件延续）：支持孔三态=中性金属恒等映射（`PipFor(id,filled,closed)` 与 id 无关，测试锁死）；closed/empty/filled=旧 DrawSocket 语义 1:1。
+- **已知缺陷修复入账（提交前自查）**：①pip 悬停 SupportCard 被同优先级框卡顶掉→pip 行悬停显式排除框卡；②多行真值误入 TextCard 单行 Subtitle 槽被裁剪→显式拆入 Body[]（SliceTooltipModel 冻结 API 未改）。
+- **过程裁定**：EditMode 测试批禁止与存活 Play 会话混跑（本轮混跑被终止后编辑器进入 NRE 风暴死锁，进程重启后全门重跑通过——纪律入账，无仓库损伤）。
+- **Bootstrap→Arena 普通启动桥=未修复**（导演原始抱怨之一「Bootstrap开启后啥也没有」）：现有唯一桥=`-arenaPerf`（测量+自动退出）；修复涉及启动流程（gameplay-adjacent），**未获授权不实施**，列为 S5U-WO-03+ 授权点候选，由规划 AI 裁定边界。
+- **门快照**：EditMode 332/332（314 基线+18 S5UHudTests）+ PlayMode 11/11 + Audit fresh PASS + ProdSim hash=FNV1A64:9a4c9524d0b3e214 精确不变 + 重编译 clean；canonical After 7 张（2560×1440 无夹取×6+1080×1）。Runtime Delta=presentation-only；Gameplay/Content/Balance=NONE；Drift=0；Forbidden=PASS。
+- **下一令**：S5U-WO-03（Equipment & Inventory Presentation Renewal，S-08..S-16）待规划 AI 放行。

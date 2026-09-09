@@ -1169,6 +1169,15 @@ namespace Game.Runtime.Core
             };
         }
 
+        /// <summary>S5U-WO-02：技能连接源紧凑徽章（战斗 HUD 图标化呈现）。
+        /// 语义与 LinkSourceLabel 同源同真值：改挂生效=「G1·容N」，否则=「G0·容N」（N=SupportCapacity 真实容量）。
+        /// 完整 host/物品文本仍由 LinkSourceLabel + tooltip 承载（S5 合同不降级，仅呈现压缩）。</summary>
+        public string LinkBadgeText(SkillId skill)
+        {
+            int group = RebindHostIndex(skill) >= 0 ? 1 : 0;
+            return "G" + group + "·容" + SupportCapacity(skill);
+        }
+
         /// <summary>S5-WO-03 UI 读路径：技能当前唯一有效连接源标注（组号+host+容量；改挂后原默认位不再呈现为生效源；腐败态 fail-closed 回默认）。</summary>
         public string LinkSourceLabel(SkillId skill)
         {

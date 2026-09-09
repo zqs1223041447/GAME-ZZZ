@@ -9,6 +9,8 @@ namespace Game.Runtime.Core
         GUIStyle _body;
         GUIStyle _small;
         GUIStyle _center;
+        GUIStyle _tiny;
+        GUIStyle _caption;
         GUIStyle _clip;
         GUIStyle _panelBg;
         GUIStyle _slotN;
@@ -229,6 +231,21 @@ namespace Game.Runtime.Core
                 wordWrap = true,
                 normal = { textColor = SlicePalette.Text }
             };
+            _tiny = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 10,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                clipping = TextClipping.Clip,
+                normal = { textColor = SliceSkin.TextCream }
+            };
+            _caption = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 11,
+                alignment = TextAnchor.MiddleCenter,
+                clipping = TextClipping.Clip,
+                normal = { textColor = SlicePalette.Dim }
+            };
             _clip = new GUIStyle(GUI.skin.label)
             {
                 fontSize = 12,
@@ -259,12 +276,14 @@ namespace Game.Runtime.Core
         {
             _topBar = new Rect(12, 10, 560, 84);
             PanelBg(_topBar);
-            Label(new Rect(_topBar.x + 16, _topBar.y + 14, 360, 20), s.StatusCopy, _title);
-            Label(new Rect(_topBar.x + 16, _topBar.y + 38, 528, 16),
+            Label(new Rect(_topBar.x + 16, _topBar.y + 12, 360, 20), s.StatusCopy, _title);
+            // S5U-WO-02：标题/数据分隔饰线（SliceHudIcons 原创饰件，缓存一次）
+            GUI.DrawTexture(new Rect(_topBar.x + 16, _topBar.y + 36, 528, 4), SliceHudIcons.Separator);
+            Label(new Rect(_topBar.x + 16, _topBar.y + 44, 528, 16),
                 "稳定度 " + s.Stability + "    收益 x" + s.RewardMultiplier.ToString("0.00") +
                 "    废料 " + s.Scrap + "    蚀刻剂 " + s.Etching +
                 "    天赋点 " + s.Unspent + "/" + s.TotalPoints, _small);
-            Clipped(new Rect(_topBar.x + 16, _topBar.y + 58, 528, 20),
+            Clipped(new Rect(_topBar.x + 16, _topBar.y + 62, 528, 18),
                 s.LastMessage + (string.IsNullOrEmpty(s.LastLoot) ? "" : "  ·  " + s.LastLoot),
                 _small);
         }
@@ -282,96 +301,166 @@ namespace Game.Runtime.Core
                 s.Panel = s.Panel == SlicePanel.Craft ? SlicePanel.None : SlicePanel.Craft;
         }
 
+        /// <summary>S5U-WO-02 战斗底栏布局单一来源（测试锚点）：LIFE 球 ─ QWE 槽 ─ MANA 球 ─ 辅助 tray。</summary>
+        public struct CombatBarLayout
+        {
+            public Rect Bar, LifeOrb, SlotQ, SlotW, SlotE, ManaOrb, Tray;
+        }
+
+        public static CombatBarLayout CombatBarRects(float dw, float dh)
+        {
+            const float orbD = 128f;
+            const float slotSize = 96f;
+            const float slotGap = 10f;
+            const float trayW = 354f;
+            const float trayH = 94f;
+            const float barH = orbD + 16f;
+            float slotsW = slotSize * 3f + slotGap * 2f;
+            float total = orbD + 12f + slotsW + 12f + orbD + 18f + trayW;
+            float x0 = Mathf.Max(12f, (dw - total) * 0.5f);
+            CombatBarLayout L;
+            L.Bar = new Rect(x0, dh - barH - 8f, total, barH);
+            float y = L.Bar.y + 8f;
+            L.LifeOrb = new Rect(x0, y, orbD, orbD);
+            float sx = x0 + orbD + 12f;
+            L.SlotQ = new Rect(sx, y + 6f, slotSize, slotSize);
+            L.SlotW = new Rect(sx + slotSize + slotGap, y + 6f, slotSize, slotSize);
+            L.SlotE = new Rect(sx + (slotSize + slotGap) * 2f, y + 6f, slotSize, slotSize);
+            L.ManaOrb = new Rect(x0 + orbD + 12f + slotsW + 12f, y, orbD, orbD);
+            L.Tray = new Rect(x0 + orbD + 12f + slotsW + 12f + orbD + 18f, y + 25f, trayW, trayH);
+            return L;
+        }
+
+        /// <summary>S5U-WO-02 战斗底栏（Dark ARPG vertical slice）：
+        /// LIFE 球 ─ [Q][W][E] 图标槽 ─ MANA 球 ─ 辅助 tray（PoE/D3 参考 silhouette，combat-critical 聚合居中）。
+        /// 语义冻结：连接源唯一真值（LinkBadgeText=LinkSourceLabel 同源紧凑态）/容量/支持孔 1:1/拖放与点击流不变；
+        /// 各元素自带框体（VA-07：不再整条无装饰纯色板）。</summary>
         void DrawSkillHud(SliceSession s)
         {
-            const float cellW = 178f;
-            const float orbD = 92f;
-            const float gemW = 84f;
-            const float gemH = 44f;
-            const float gemGap = 6f;
-            float cells = cellW * 3f + 16f;
-            float stripW = 4f * gemW + 3f * gemGap;
-            float total = 10f + orbD * 2f + 10f + cells + 14f + stripW + 10f;
-            float x0 = Mathf.Max(12f, (Dw() - total) * 0.5f);
-            _skillHud = new Rect(x0, Dh() - 118, total, 104);
-            PanelBg(_skillHud);
-            float life = s.MaxLife > 0f ? s.Life / s.MaxLife : 0f;
-            float mana = s.MaxMana > 0f ? s.Mana / s.MaxMana : 0f;
-            DrawOrb(new Rect(x0 + 10f, _skillHud.y + 6f, orbD, orbD), life, SlicePalette.Life, s.Life, s.MaxLife);
-            DrawOrb(new Rect(x0 + 10f + orbD + 10f, _skillHud.y + 6f, orbD, orbD), mana, SlicePalette.Mana, s.Mana, s.MaxMana);
-            float cx = x0 + 10f + orbD * 2f + 10f;
-            DrawSkillCell(s, SkillId.Melee, new Rect(cx + 8f, _skillHud.y + 9f, cellW - 8f, 86f));
-            DrawSkillCell(s, SkillId.Projectile, new Rect(cx + cellW + 12f, _skillHud.y + 9f, cellW - 8f, 86f));
-            DrawSkillCell(s, SkillId.Area, new Rect(cx + cellW * 2f + 16f, _skillHud.y + 9f, cellW - 8f, 86f));
-            _tray = new Rect(x0 + 10f + orbD * 2f + 10f + cells + 14f, _skillHud.y + 5f, stripW, 94f);
+            var L = CombatBarRects(Dw(), Dh());
+            _skillHud = L.Bar;
+            DrawOrb(L.LifeOrb,
+                s.MaxLife > 0f ? s.Life / s.MaxLife : 0f, SlicePalette.Life, s.Life, s.MaxLife, true);
+            DrawSkillCell(s, SkillId.Melee, L.SlotQ);
+            DrawSkillCell(s, SkillId.Projectile, L.SlotW);
+            DrawSkillCell(s, SkillId.Area, L.SlotE);
+            DrawOrb(L.ManaOrb,
+                s.MaxMana > 0f ? s.Mana / s.MaxMana : 0f, SlicePalette.Mana, s.Mana, s.MaxMana, false);
+            _tray = L.Tray;
             DrawSupportTray(s);
         }
 
-        void DrawSkillCell(SliceSession s, SkillId skill, Rect r)
+        /// <summary>S5U-WO-02：图标优先技能槽（96² 框 + 符文 + 热键徽章 + 紧凑连接徽章 + 支持孔 pip 行 + 弱化名注）。
+        /// 悬停=完整连接真值 tooltip（LinkSourceLabel/组划分/支持清单——S5 合同不降级）。</summary>
+        void DrawSkillCell(SliceSession s, SkillId skill, Rect frame)
         {
             bool sel = s.SelectedSkill == skill;
             Event e = Event.current;
-            bool hover = e != null && r.Contains(Pointer);
-            bool press = hover && e != null && e.type == EventType.MouseDown && e.button == 0;
-            GUI.Box(r, GUIContent.none, press ? _slotP : (sel ? _slotSel : (hover ? _slotH : _slotN)));
-            if (Click(new Rect(r.x, r.y, r.width, 28)))
+            bool hover = e != null && frame.Contains(Pointer);
+            bool press = hover && e != null && e.type == EventType.MouseDown && e.button == 0
+                && !PipsRect(frame).Contains(Pointer);
+            GUI.Box(frame, GUIContent.none, press ? _slotP : (sel ? _slotSel : (hover ? _slotH : _slotN)));
+            Rect glyph = new Rect(frame.x + 20f, frame.y + 8f, 56f, 56f);
+            var iconTint = sel ? Color.white : (hover ? new Color(1f, 1f, 1f, 0.96f) : new Color(0.80f, 0.78f, 0.72f, 1f));
+            GUI.color = iconTint;
+            GUI.DrawTexture(glyph, SliceHudIcons.GlyphFor(skill));
+            GUI.color = Color.white;
+            Rect hb = new Rect(frame.x + frame.width - 22f, frame.y + 3f, 18f, 14f);
+            Fill(hb, new Color(0.05f, 0.045f, 0.04f, 0.92f));
+            Label(hb, SliceSession.SkillHotkey(skill), _tiny);
+            Rect badge = new Rect(frame.x + 6f, frame.y + 64f, 84f, 14f);
+            Fill(badge, new Color(0.05f, 0.045f, 0.04f, 0.85f));
+            Label(badge, s.LinkBadgeText(skill), _tiny);
+            // 支持孔 pip 行（1:1 映射原 socket 语义；容量外=closed）
+            SupportId[] arr = s.SupportsOf(skill);
+            if (arr != null)
+            {
+                int cap = s.SupportCapacity(skill);
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    var pip = new Rect(frame.x + 6f + i * 20f, frame.y + 79f, 14f, 14f);
+                    DrawSocketPip(s, skill, i, cap, arr[i], pip);
+                }
+            }
+            // 名注（弱化，语义保留）
+            var cap0 = new Rect(frame.x, frame.yMax + 1f, frame.width, 14f);
+            Label(cap0, SliceSession.SkillDisplayName(skill), _caption);
+            if (Click(new Rect(frame.x + 4f, frame.y + 4f, frame.width - 8f, 58f)))
             {
                 s.SelectedSkill = skill;
-                ClickFlash(r);
+                ClickFlash(frame);
             }
-
-            string name = SliceSession.SkillDisplayName(skill);
-            string key = SliceSession.SkillHotkey(skill);
-            Label(new Rect(r.x + 10, r.y + 3, r.width - 36, 18), name, _title);
-            Label(new Rect(r.x + r.width - 22, r.y + 4, 20, 20), key, _small);
-            // S5-WO-03：技能行唯一有效连接源标注（组号+host+容量；改挂后原默认位不再呈现为生效源）
-            Clipped(new Rect(r.x + 10, r.y + 21, r.width - 36, 13), s.LinkSourceLabel(skill), _small);
-
-            SupportId[] arr = s.SupportsOf(skill);
-            int cap = s.SupportCapacity(skill);
-            if (arr == null)
-                return;
-            float sx = r.x + 10;
-            for (int i = 0; i < arr.Length; i++)
+            // pip 行悬停时让位给支持孔 tooltip（同优先级后写胜出，须显式排除）
+            if (hover && !PipsRect(frame).Contains(Pointer) && (e == null || e.type == EventType.Repaint))
+                RequestSkillCellTip(s, skill);
+            // 框级拖放落点（未命中具体 pip 时=第一个有效孔）
+            if (_dragging && e != null && e.type == EventType.MouseUp && frame.Contains(Pointer)
+                && !PipsRect(frame).Contains(Pointer))
             {
-                Rect sock = new Rect(sx + i * 80, r.y + 36, 76, 40);
-                DrawSocket(s, skill, i, cap, arr[i], sock);
+                int idx = FirstOpenSocketIndex(s, skill);
+                PlaceSupport(s, skill, idx, _drag);
+                ClickFlash(frame);
+                e.Use();
             }
         }
 
-        void DrawSocket(SliceSession s, SkillId skill, int index, int cap, SupportId filled, Rect r)
+        /// <summary>pip 行命中区（含容差；供框级落点排除）。</summary>
+        static Rect PipsRect(Rect frame)
+        {
+            return new Rect(frame.x + 4f, frame.y + 77f, frame.width - 8f, 17f);
+        }
+
+        static int FirstOpenSocketIndex(SliceSession s, SkillId skill)
+        {
+            SupportId[] arr = s.SupportsOf(skill);
+            if (arr == null)
+                return 0;
+            int cap = Mathf.Min(s.SupportCapacity(skill), arr.Length);
+            for (int i = 0; i < cap; i++)
+                if (arr[i] == SupportId.None)
+                    return i;
+            return 0;
+        }
+
+        /// <summary>技能槽悬停 tooltip：连接源完整真值（S5 合同承载点）。</summary>
+        void RequestSkillCellTip(SliceSession s, SkillId skill)
+        {
+            SupportId[] arr = s.SupportsOf(skill);
+            string sup = "无辅助";
+            if (arr != null)
+            {
+                var names = new System.Collections.Generic.List<string>(arr.Length);
+                for (int i = 0; i < arr.Length; i++)
+                    if (arr[i] != SupportId.None)
+                        names.Add(SupportCatalog.Get(arr[i]).Name);
+                if (names.Count > 0)
+                    sup = "辅助：" + string.Join(" / ", names.ToArray());
+            }
+            // TextCard(body) 是单元素 Subtitle 语义槽；多行真值须显式拆进 Body[]（15px/行裁剪）
+            var card = SliceTooltipModel.TextCard(
+                SliceSession.SkillDisplayName(skill) + "  " + SliceSession.SkillHotkey(skill), null);
+            card.Body = new[] { s.LinkSourceLabel(skill), sup, "左键选择技能 · 拖辅助入孔" };
+            RequestTip(card, TipPriBottomBar);
+        }
+
+        /// <summary>S5U-WO-02：支持孔 pip（closed/empty/filled 三态语义与旧 DrawSocket 一致；中性金属恒等映射≠Socket Color）。</summary>
+        void DrawSocketPip(SliceSession s, SkillId skill, int index, int cap, SupportId filled, Rect r)
         {
             bool closed = index >= cap;
             Event e = Event.current;
-            bool hover = !closed && e != null && r.Contains(Pointer);
             bool over = e != null && r.Contains(Pointer);
-            Color old = GUI.color;
-            if (closed)
-                GUI.color = new Color(0.55f, 0.55f, 0.58f, 1f);
-            GUI.Box(r, GUIContent.none, hover ? _slotH : _slotN);
-            GUI.color = old;
-            string text;
-            if (closed)
+            GUI.color = closed ? new Color(1f, 1f, 1f, 0.5f) : (over ? Color.white : new Color(0.93f, 0.93f, 0.93f, 1f));
+            GUI.DrawTexture(r, SliceHudIcons.PipFor(filled, filled != SupportId.None, closed));
+            GUI.color = Color.white;
+            if (over)
             {
-                text = "无孔";
-                if (over)
+                if (closed)
                     RequestTip(SliceTooltipModel.TextCard("无孔", "该技能装备孔不足"), TipPriBottomBar);
-            }
-            else if (filled == SupportId.None)
-            {
-                text = "空";
-                if (over)
+                else if (filled == SupportId.None)
                     RequestTip(SliceTooltipModel.TextCard("空", "拖入或点击辅助"), TipPriBottomBar);
-            }
-            else
-            {
-                SupportDef def = SupportCatalog.Get(filled);
-                text = def.Name;
-                if (over)
+                else
                     RequestTip(SliceTooltipModel.SupportCard(filled, s), TipPriBottomBar);
             }
-
-            Clipped(new Rect(r.x + 4, r.y + 6, r.width - 8, 34), text, _center);
             if (closed)
                 return;
             HandleSocketInput(s, skill, index, filled, r);
@@ -941,11 +1030,16 @@ namespace Game.Runtime.Core
             Label(new Rect(r.x + 16, r.y + 10, r.width - 32, 22), title, _title);
         }
 
-        /// <summary>PoE 式双球：底部按比例填充（Group 裁剪）+ 石环金边框 + 球心数值。</summary>
-        void DrawOrb(Rect r, float u, Color c, float cur, float max)
+        /// <summary>S5U-WO-02 双球：底部按比例填充（Group 裁剪，资源 mechanics 不变）+ 暗底衬 + 装饰铁环金钉框
+        /// + 紧凑数值（SliceHudFormat 通用格式化；底层值零改动）+ 悬停精确值 tooltip。</summary>
+        void DrawOrb(Rect r, float u, Color c, float cur, float max, bool isLife)
         {
             if (u < 0f) u = 0f;
             if (u > 1f) u = 1f;
+            // 暗底衬（世界对比 + 空态可读）
+            GUI.color = new Color(0.07f, 0.06f, 0.05f, 0.88f);
+            GUI.DrawTexture(r, SliceSkin.OrbFill);
+            GUI.color = Color.white;
             GUI.BeginGroup(r);
             float d = r.width;
             float fh = Mathf.Round(d * u);
@@ -958,10 +1052,13 @@ namespace Game.Runtime.Core
                 GUI.color = old;
                 GUI.EndGroup();
             }
-            GUI.DrawTexture(new Rect(0f, 0f, d, d), SliceSkin.OrbRing);
             GUI.EndGroup();
-            Label(new Rect(r.x, r.y + r.height * 0.5f - 8f, r.width, 16f),
-                Mathf.CeilToInt(cur) + "/" + Mathf.CeilToInt(max), _orbText);
+            GUI.DrawTexture(r, SliceHudIcons.GlobeFrame);
+            Label(new Rect(r.x, r.y + r.height * 0.5f - 9f, r.width, 18f),
+                SliceHudFormat.Compact(cur) + "/" + SliceHudFormat.Compact(max), _orbText);
+            if (r.Contains(Pointer))
+                RequestTip(SliceTooltipModel.TextCard(isLife ? "生命" : "法力",
+                    "当前 " + Mathf.CeilToInt(cur) + " / " + Mathf.CeilToInt(max)), TipPriBottomBar);
         }
 
         /// <summary>点击效：金色高亮闪（约 0.16s 衰减），命中元素上叠加绘制。</summary>

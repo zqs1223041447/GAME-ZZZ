@@ -79,7 +79,25 @@
 | near-pixel-perfect reconstruction | **FORBIDDEN** |
 | Proprietary-font extraction | **FORBIDDEN** |
 
-## §6 Provenance 台账（初始空账）
+## §6 Provenance 台账
 
-当前 ADMITTED production UI assets：**0 项**（全部槽位待 Phase 1-2 原创绘制落地时逐项登记）。
-CC0 fallback 预登记（未下载、未 import）：Kenney UI Pack（kenney.nl，官方页标示 CC0）——若 Phase 1 需要 placeholder 结构件，下载后按准入合同补全台账（含 Acquisition Date + License Evidence 截图/链接）后再 import。
+**当前 ADMITTED production UI assets：9 项（S5U-WO-02 登记，全部=GAME-ZZZ ORIGINAL 运行时程序化合成）。**
+
+| # | 资产 | 用途（表层） | 源 | 依据 | 存放 |
+|---|---|---|---|---|---|
+| 1 | GlobeFrame（球环 256²） | S-03/S-04 双球框 | GAME-ZZZ 原创 | SliceHudIcons 运行时合成（SliceSkin 同范式：一次合成静态缓存；确定性整数哈希噪声）；零 Resources 契约=无 import 无裁切 | 运行时合成；凭证渲染 `docs/reviews/S5U/asset-source/globe_frame.png` |
+| 2 | SlotFrame（槽框 128² 九宫格） | S-05 技能槽框 | GAME-ZZZ 原创 | 同上 | 凭证 `asset-source/skill_slot_frame.png` |
+| 3 | GlyphMelee（64²） | S-05 Q 符文 | GAME-ZZZ 原创 | 同上（斜置巨剑+横护手+柄尾） | 凭证 `asset-source/skill_melee_glyph.png` |
+| 4 | GlyphProjectile（64²） | S-05 W 符文 | GAME-ZZZ 原创 | 同上（金镞箭+尾羽） | 凭证 `asset-source/skill_projectile_glyph.png` |
+| 5 | GlyphArea（64²） | S-05 E 符文 | GAME-ZZZ 原创 | 同上（新星环+八芒+金核） | 凭证 `asset-source/skill_area_glyph.png` |
+| 6 | PipOn（20²） | S-06 支持孔=填充态 | GAME-ZZZ 原创 | 同上（中性金属，恒等映射） | 凭证 `asset-source/support_pip_on.png` |
+| 7 | PipOff（20²） | S-06 支持孔=空态 | GAME-ZZZ 原创 | 同上 | 凭证 `asset-source/support_pip_off.png` |
+| 8 | PipClosed（20²） | S-06 支持孔=封闭态（容量外） | GAME-ZZZ 原创 | 同上 | 凭证 `asset-source/support_pip_closed.png` |
+| 9 | Separator（256×6） | S-01 顶部标题/数据饰线 | GAME-ZZZ 原创 | 同上（金线+菱形节点） | 凭证 `asset-source/separator.png` |
+
+**台账约束重申**：PNG 凭证仅作 provenance 记录，**不进入 Assets/ 不 import**；运行时唯一真相=`SliceHudIcons` 程序化合成（改样式=改代码=改凭证，单向同步）。审计断言 `PipFor 恒等映射` 禁止出现任何 Socket Color 语义回归（S5 负向条件）。
+
+---
+
+### 历史预登记（WO-01，仍生效）
+CC0 fallback 预登记（未下载、未 import）：Kenney UI Pack（kenney.nl，官方页标示 CC0）——若后续 Phase 需要 placeholder 结构件，下载后按准入合同补全台账（含 Acquisition Date + License Evidence 截图/链接）后再 import。本轮 WO-02 未使用任何外部素材（原创合成全部覆盖战斗 HUD 需求）。

@@ -229,3 +229,21 @@
 ## 3. WO-01 范围声明
 
 本文只做**记录**（Current/Behavior/Problem/Target），不实现任何呈现改动。Runtime Product Delta=NONE；所有「Target」列为 S5U Phase 1-4 的实现规格锚点，经后续工作令逐项落地与测试。
+
+## 4. WO-02 实现真值（战斗表层 S-01..S-07，2026-09-09）
+
+> 下列表层已由 S5U-WO-02 落地「Target」首轮（Dark ARPG Skin Foundation & Combat HUD Frame）；Must Preserve 全部保留且有测试锚定。证据=`S5U_WO_02_EVIDENCE.md`（7 张 canonical After 截图）。
+
+| Surface | WO-02 实现 | Must Preserve 校验 |
+|---|---|---|
+| S-01 顶部状态栏 | 三行结构保留；标题/数据行间加原创金饰线（SliceHudIcons.Separator 256×6） | 四态文案/五资源/消息通道不变（代码同源） |
+| S-02 导航 | 未重绘（WO-03 范围） | 三面板入口+选中态不变 |
+| S-03 生命球 | **已换装**：128² 原创暗铁金圈球环（GlobeFrame）+紧凑文本（10.0M/10.0M）+hover 精确值 tooltip | cur/max 真值；死亡=0 关联不变 |
+| S-04 法力球 | **已换装**：同 S-03 对称 | 数值真值/关联不变 |
+| S-05 技能单元格 | **已换装**：96² 图标优先格（原创符文+热键角标 18×14+连接徽章 `G{组}·容{N}` 84×14+pip 行+弱化名注+点击选择） | LinkSourceLabel 全语义降级为徽章+tooltip 承载（文本真值不删，tooltip 三行 Body）；点击选择流不变 |
+| S-06 支持孔 | **已换装**：14×14 中性金属 pip 三态（closed/empty/filled=旧 DrawSocket 语义 1:1；PipFor 恒等映射测试锁死）；pip 悬停=独立 SupportCard（不与框卡互顶） | 三态语义/拖放+点击流/拒绝提示不变 |
+| S-07 辅助 tray | 未重绘（WO-03 范围）；几何并入战斗底栏单一来源（CombatBarRects） | 7 辅助全集/已用标记/机制徽记/输入流不变 |
+
+**几何单一来源**：`SliceHud.CombatBarRects(dw,dh)`（public 纯函数）——S-03..S-07 全部元素矩形出自同一函数，`S5UHudTests` 三设计空间（1920×1080 共同空间 / 1.4 上夹取空间 / 1280×720 小窗）断言不重叠不出界。
+**连接徽章真值映射**：`SliceSession.LinkBadgeText(skill)` = `"G"+组+"·容"+SupportCapacity(skill)`；与 `LinkSourceLabel` 同源（组/容量逐字符一致有测试）。
+**§0 几何事实补充（canonical 通道）**：WO-02 起所有 After 截图经 canonical 无夹取通道采集——GameView `m_TargetSize`=2560×1440（GAME-ZZZ-CANON FixedResolution 注册）→ Screen=2560×1440、DesignScale=1.3333、**设计空间=1920×1080**；§0 表内 1.4 夹取态换算系数仅适用于 WO-01 历史基线。

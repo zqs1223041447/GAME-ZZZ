@@ -208,3 +208,24 @@ IMGUI 性能规则（全周期有效）：
 ## §5 视觉验收标准（吸收规划 AI ⑫节）
 
 S5U Final Gate 至少提供：Arena clean combat HUD / two-link active / item tooltip / Equipment+Inventory / Build+Passive / Craft / Map。Canonical Director screenshot=**2560×1440**（无夹取态，scale=1.333，设计空间=1920×1080）；同时必须检查 1920×1080。检查项：无 clipping / 无 overlap / 无 unreadable microtext / 无 inaccessible button / 无 tooltip offscreen / 无 action bar collision。
+
+## §6 Phase-1 实现真值（S5U-WO-02 落地记录，2026-09-09）
+
+**范围**：本节记录 WF-1 战斗 HUD（S-01..S-07）的实际实现真值；其余表层（S-08..S-23）尚未换装，线框与 token 继续生效为待实现目标。
+
+### 6.1 战斗底栏已实现结构（=WF-1 首轮落地）
+- 布局单一来源：`SliceHud.CombatBarRects(dw,dh)`（公开纯函数，测试锚点 `S5UHudTests`）——LIFE 球128² ─ QWE 槽各96² ─ MANA 球128² ─ tray 354×94，总宽960 居中，栏高144，底缘8px 边距；2560×1440 与 1920×1080 同设计空间（scale=1.3333/1.0），布局逐字节一致（无夹取）。
+- 双球：`SliceHudIcons.GlobeFrame`（256² 暗铁环+双金圈+8铆钉）+ 球心紧凑文本 `SliceHudFormat.Compact`（999→`999`，1000→`1.0K`，≥1e6→`1.0M`）；hover=精确整数值 tooltip。
+- 技能槽：`SliceHudIcons.GlyphFor(skill)` 64² 原创符文（巨剑/箭/新星环）；热键角标 18×14；连接徽章 84×14 `G{组}·容{N}`（=LinkSourceLabel 同源紧凑态，真值映射有测试）；pip 行 14×14@20px（closed/empty/filled 三态=旧 DrawSocket 语义 1:1，`PipFor` 恒等映射测试锁死禁 Socket Color）；弱化名注（11px dim）。
+- Tooltip：框悬停=连接真值卡（连接源/辅助清单/操作提示三行 Body）；pip 悬停=SupportCard（不与框卡互顶——同优先级后写胜出已显式排除）；球悬停=精确数值。
+- 顶部：标题/数据行间加 `SliceHudIcons.Separator`（256×6 金饰线+菱形）。
+- 导航/tray：沿用 S5 石底金边件（本轮未重绘，WO-03+ 范围）。
+
+### 6.2 Token 落地状态（Phase 1 部分）
+- **已锁**（战斗 HUD 子集）：Slot 状态四态沿用 SliceSkin 程序化石质（Normal/Hover/Press/Selected）；Health/Mana=SlicePalette.Life/Mana；文字三阶=TextCream/Dim；金饰=做旧铜+亮金双圈。
+- **未锁**（WO-03+ 表层）：完整 RGB 值仍以「家族语义」为契约；Equipment/Build/Craft/Map/Passive 换装时逐表锁定并回填本表。
+
+### 6.3 编辑器验证通道（S5U 基础设施，非产品功能）
+- **Canonical GameView 通道**：GameViewSizes 反射注册 `GAME-ZZZ-CANON` 2560×1440 FixedResolution → `m_SelectedSizes[0]`+`m_TargetSize` SerializedObject 设定 → Screen=2560×1440、DesignScale=1.3333、dw=1920 无夹取（编辑器重启后需重注册；已验证可重复建立）。
+- **DebugHover 通道**：`SliceHud.DebugHoverAt(设计空间点)/DebugHoverOff()`——指针钉扎截图通道，正常输入零影响；hover 点必须由运行时 dw 动态换算（禁止硬编码 1920 空间点）。
+- **capture_game_view**：`--source screen --width/--height`；存至 `Assets/TempShots/` 后须移出 Assets 并删除 .meta。
