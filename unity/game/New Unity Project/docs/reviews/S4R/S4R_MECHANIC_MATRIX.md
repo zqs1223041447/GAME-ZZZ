@@ -58,3 +58,12 @@
 ## 5. 数据已导入但未实现的机制（防「假绿」声明）
 
 - **无**。当前工程内数据表中的全部 Stat 均有运行期读取点（`unconsumedDeclaredStats=0`），4 条 Tagged Modifier 全部可达（死 Tagged Modifier=0），3 技能 golden parity 3/3。PoEDB 级全量数据尚未导入（流水线未建立），不存在「已导入未实现」库存。
+
+## 6. Backlog ID Linkage（S4R-WO-02）
+
+未支持/部分支持机制的候选扩张已规范化入 Backlog（`S4R_BACKLOG_NORMALIZATION.md`，候选 ≠ 已批准）：Passive 大树镜像/Mastery/Ascendancy→BL-003（+BL-024 pipeline 前置）；Support Level/Quality→BL-022；全量 Support 导入→BL-023；孔色/多 Link→BL-021；10 槽/Weapon 族/Tier/Base Items→BL-001/002；Craft Deepening→BL-013（+BL-014 sim）；Map Tier→BL-015（+BL-017 sim）；Boss→BL-016；Aura→BL-004；Voice→BL-026（BLOCKED，Resume=导演指认）；Death 截断→BL-030。
+
+## 7. Candidate Reference Build Coverage Mapping（非权威；AC-08）
+
+- 正式 **Reference Build Coverage 字段维持 N/A**（Targets 未锁定，不构成 Gap 判断；不得从 N/A 晋级 PASS/SUPPORTED）。
+- 候选层映射见 `S4R_REFERENCE_BUILD_CANDIDATES.md`（RC-M/RC-P/RC-A，覆盖全部 3 个 canonical Skill，仅用 Supported mechanics，unsupported requirement=NONE，CANDIDATE / NOT LOCKED）。本表与正式 Locked Targets 严格分区：候选映射的任何后续变化不追溯改写本 Matrix 各族状态。

@@ -2,7 +2,7 @@
 
 日期：2026-09-09。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit（S4R-WO-01-GOVERNANCE-RECONCILIATION）：**S4R inter-cycle 治理周期开工（无 gameplay capability 变更，Runtime feature surface 冻结）**。规划 AI 会话（渠道登记 `开发计划/规划AI会话.md`，会话 ID 6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d）下发 S4R — Direction Readiness & Baseline Lock；工作 AI 落库计划 `docs/reviews/S4R/S4R_PLAN.md` 并执行 **WO-01=Frozen Baseline & Governance Reconciliation**：**首次正式建立** Capability Ledger / Mechanic Support Matrix / Source-of-Truth Index / S4 冻结基线+Hard-Stop·Forbidden 清单（`docs/reviews/S4R/` 五件）；核查发现并修复 1 处文档漂移（RUNTIME 装备节 4 槽/「13 条」/2×2 → 6 槽/易变计数改快照指针/2×3 六槽——S4-P2/P3 改变事实后 RUNTIME 未同步）；DECISIONS/ROADMAP 同步；**Runtime/Canonical/Content delta=0**；Quick Gate PASS（EditMode 246/246+PlayMode 11/11+audit fresh；按 S4R Test Policy 不重跑 S4 性能门，引用 S4 Final 证据）；**S4=COMPLETE 与硬停止语义原样保留；下一实施周期=Director-Gated**。（本轮提交：A=cee032c 主体 / B=本行所在回填提交）
+本轮 commit（S4R-WO-02-BACKLOG-NORMALIZATION）：**S4R Phase 1 候选池正规化（纯文档轮，六项 delta=0、New gameplay authorizations=0）**。WO-01 Gate Review=**ACCEPT**（规划 AI 12 项全 PASS；非阻塞 follow-up=Ledger 计数口径，已并入本单）。本单：WO-02 工作令落库（`S4R_WO_02.md`）；**Backlog 正规化**（`S4R_BACKLOG_NORMALIZATION.md`：候选池 32 项——BREADTH 3/DEPTH 9/CONTENT 1/TECH 4/DIRECTOR_GATED 13/FORBIDDEN_UNTIL_APPROVED 1/DEPENDENCY_BLOCKED 1，AUTHORIZED=0，依赖图 DAG 无环，Phase 8→12 顺序仅作依赖语义非执行承诺）；**Reference Build 候选信封**（`S4R_REFERENCE_BUILD_CANDIDATES.md`：RC-M/RC-P/RC-A 覆盖全部 3 canonical Skill，全 Supported mechanics、组合对 golden oracle 合法、unsupported requirement=NONE、CANDIDATE/NOT LOCKED）；**Ledger 计数对账**（计数单位=总览行；Supported 18/Partial 4/Unsupported 5/Blocked 1=28；WO-01 摘要「14」=统计笔误，不改行状态）+ Matrix Backlog linkage 与非权威 Candidate Coverage Mapping；DECISIONS 登记 Candidate≠Approved/RBC≠Locked Target/依赖顺序≠产品承诺；**Candidate≠Approved——候选与依赖先行关系均不构成实施授权**；S4 硬停止与 Voice DEFERRED 原样保留；下一实施周期=Director-Gated。（本轮提交：A=主体本提交 / B=本行所在回填提交——hash 由回填写入）
 
 ## 门状态
 
@@ -20,7 +20,7 @@
 | S3 最小底座 | 已开工 | c2689be ART_BIBLE+内容校验；8f2de35 预留 Tag 钉死 |
 | S3 内容扩张 | **S3=COMPLETE（Voice=DEFERRED BY DIRECTOR）** | Phase 1/2/3(UI)/5(Art)=COMPLETE；Phase 4 人声=导演延期排除出当前完成范围；总收口 `S3_OVERALL_CLOSEOUT_REVIEW.md`（PASS）；Stage0 全锁延续 |
 | S4 Production Scale & Itemization Breadth | **COMPLETE（2026-09-09）** | 规划=`docs/reviews/s4/S4_PLAN.md`；Phase 0/1/2/3/4/5 全 COMPLETE；总收口=`docs/reviews/s4/S4_OVERALL_CLOSEOUT_REVIEW.md`（§11b Recertification：ENV blocker 经系统正常模式切换解除；Final Gate 双 PASS——Canonical worst p99=4.840ms=58.1% / Art worst avg=4.085ms=49.0%、resolvedVisuals=4/fallback=0/clones=0）；Simulation hash exact match=FNV1A64:a1f075f251ec1070；**硬停止：不启动 S5/新内容，等待导演/协调席下一产品方向** |
-| S4R Direction Readiness & Baseline Lock | **IN PROGRESS（2026-09-09，规划 AI 下发）** | **inter-cycle 治理周期：无 gameplay capability 变更授权，Runtime feature surface 冻结**；计划=`docs/reviews/S4R/S4R_PLAN.md`（Phase 0 对账→Backlog 分类→导演决策包→**Director Direction Gate**→下一周期 seed）；WO-01=冻结基线+治理对账（Capability Ledger/Mechanic Matrix/SoT Index 首次正式建立）；**硬停止延续，下一实施周期=Director-Gated** |
+| S4R Direction Readiness & Baseline Lock | **IN PROGRESS（2026-09-09，规划 AI 下发）** | **inter-cycle 治理周期：无 gameplay capability 变更授权，Runtime feature surface 冻结**；计划=`docs/reviews/S4R/S4R_PLAN.md`（Phase 0 对账→Backlog 分类→导演决策包→**Director Direction Gate**→下一周期 seed）；WO-01=Frozen Baseline & Governance Reconciliation（**Gate Review=ACCEPT**；Ledger/Matrix/SoT Index 首次正式建立）；WO-02=Backlog & Dependency Normalization（候选池 32 项+依赖图+RBC 候选 3 例=CANDIDATE/NOT LOCKED；**候选≠承诺**）；**硬停止延续，下一实施周期=Director-Gated** |
 
 ## 玩家视图
 
@@ -68,6 +68,7 @@
 
 | 日期 | HEAD | EditMode | PlayMode | 失败项 |
 |---|---|---|---|---|
+| 2026-09-09 | 本轮 S4R-WO-02-BACKLOG-NORMALIZATION（纯文档轮：Backlog 候选池 32 项去重分类+依赖图 DAG 无环+RBC 候选 3 例（全 Supported、golden 合法、CANDIDATE/NOT LOCKED）+Ledger 计数对账（18/4/5/1=28；WO-01「14」=统计笔误不改行）+Matrix linkage/非权威 Coverage Mapping+DECISIONS Candidate≠Approved；**Capability/Mechanic/Runtime/Canonical/Content/New Authorization delta 全=0**；Quick Gate 复跑 PASS） | 246/246 | 11/11 | 无 |
 | 2026-09-09 | 本轮 S4R-WO-01-GOVERNANCE-RECONCILIATION（治理对账轮：S4R 计划落库 `docs/reviews/S4R/S4R_PLAN.md`+Frozen Baseline+Capability Ledger/Mechanic Matrix/SoT Index 首次正式建立+RUNTIME 装备节漂移修复（4 槽/13 词缀/2×2→6 槽/快照指针/2×3 六槽）；**Runtime/Canonical/Content delta=0**；Quick Gate PASS；按 S4R Test Policy 性能门不重跑、引用 S4 Final 证据；S4 硬停止与 Voice DEFERRED 原样保留） | 246/246 | 11/11 | 无 |
 | 2026-09-09 | 本轮 S4-P5R-LOCKED-ENV-RECERTIFICATION（Display Audit=Branch A（EDID 1440 可用）；系统正常模式切换恢复活动显示 2560×1440@144；**Final Gate `-IncludeArtPerformance` 双 PASS**：Canonical worst avg=1.903/worst p99=4.840=58.1%、Art worst avg=4.085=49.0%/worst p99=6.671=80.1%/resolvedVisuals=4/fallback=0/clones=0；加上 Gate 1/2/3+hash exact match+归档 OK——**S4 = COMPLETE**；硬停止等待导演下一方向） | 246/246 | 11/11 | 无 |
 | 2026-09-09 | 本轮 S4-P5-INTEGRATED-CLOSEOUT（Branch B：Gate 1/2/3 全 PASS+Simulation hash exact match a1f075f251ec1070+R7/R9 归档 OK×4+snapshot 全对齐+零代码 diff；**Gate 4/Art Gate=ENV_NOT_MET**（活动显示=虚拟 1920×1080@144≠锁定 2560×1440，性能余量健康不放行）；S4 仍 IN PROGRESS——Phase 5 blocked，待导演恢复 1440p 或正式合同变更令） | 246/246 | 11/11 | Gate4/Art=ENV |

@@ -3,6 +3,17 @@
 **性质**：高层能力状态地图（BDA 计划 §4.1 定义）。只记录「项目当前能表达什么」的真实状态，不记录未来计划；未来系统一律 Unsupported + 门控标注。细节依赖/测试/覆盖率见 `S4R_MECHANIC_MATRIX.md`。
 **建立**：S4R-WO-01（2026-09-09）。**刷新规则**：规划 AI 每次阶段切换前必须刷新；工作 AI 在改变能力的 Work Order 中同步更新。
 **本轮 reconciliation 结论**：全部条目与 runtime evidence 一致；**无 UNKNOWN；无「文档声称支持但运行时不支持」反向项；capability delta = NONE（本单未新增/晋升任何能力）**。
+**S4R-WO-02 Count Reconciliation（2026-09-09）**：WO-01 Evidence 摘要「Supported（14）」为统计笔误（逐项实为 18），不改变任何行状态（无 promotion/降级）；以本节计数规则为准。
+
+## 计数规则（Count Rule，S4R-WO-02 固定）
+
+- **计数单位 = 状态总览表的一行**（一个 capability/domain 行；同族细分内容如「Mastery/Ascendancy 分属 BDA Phase 3」不拆行，避免双计）。
+- **Summary 必须由实际行状态得出**：**Supported = 18；Partial = 4；Unsupported = 5；Blocked = 1；合计 28 行**。
+- 禁止为凑总数改变行语义；行状态变更只能由已批准 Work Order 驱动并在「刷新记录」登记。
+
+## Backlog 链接（S4R-WO-02）
+
+Partial/Unsupported/Blocked 行的候选扩张已全部进入规范化 Backlog（`S4R_BACKLOG_NORMALIZATION.md`）：Socket→BL-021、Map System→BL-015、Enemy Taxonomy→BL-016、Aura→BL-004、Weapon/Handedness→BL-001、Mastery/Ascendancy→BL-003（大树镜像族内含，不另立 ID）、Persistence→BL-025、Canonical Pipeline→BL-024、Voice→BL-026。Supported 行的合理后续→BL-001/002/021/022/023/028。**候选 ≠ 已批准。**
 
 状态定义：Supported=有 runtime 行为+测试证据；Partial=部分成立/受明确边界限制；Unsupported=当前 runtime 不存在（含数据不存在）；Blocked=被外部条件卡住（须有 Resume Trigger）。
 
