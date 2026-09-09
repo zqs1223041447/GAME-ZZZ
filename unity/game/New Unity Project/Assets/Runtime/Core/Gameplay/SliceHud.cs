@@ -454,17 +454,15 @@ namespace Game.Runtime.Core
             }
         }
 
-        /// <summary>R2 右侧装备抽屉：常驻列=标题+2×2 迷你槽+Build/Craft tab。单渲染器原则：Build/Craft 内容在列左侧面板迁移呈现（move, not duplicate），列永远可见。</summary>
+        /// <summary>R2 右侧装备抽屉：常驻列=标题+2×3 迷你槽（S4-P2 六槽，人体顺序 DisplayOrder）+Build/Craft tab。单渲染器原则：Build/Craft 内容在列左侧面板迁移呈现（move, not duplicate），列永远可见。</summary>
         void DrawDrawer(SliceSession s)
         {
             float dw = Dw();
             _drawer = SliceDrawerLayout.Column(dw);
             PanelBg(_drawer);
             Label(new Rect(_drawer.x + 8, _drawer.y + 6, _drawer.width - 16, 18), "装备", _small);
-            DrawMiniSlot(s, EquipSlot.Weapon, SliceDrawerLayout.Slot(0, dw));
-            DrawMiniSlot(s, EquipSlot.Body, SliceDrawerLayout.Slot(1, dw));
-            DrawMiniSlot(s, EquipSlot.Helmet, SliceDrawerLayout.Slot(2, dw));
-            DrawMiniSlot(s, EquipSlot.Boots, SliceDrawerLayout.Slot(3, dw));
+            for (int i = 0; i < SliceDrawerLayout.DisplayOrder.Length; i++)
+                DrawMiniSlot(s, SliceDrawerLayout.DisplayOrder[i], SliceDrawerLayout.Slot(i, dw));
             if (NavBtn(SliceDrawerLayout.Tab(0, dw), "角色", s.Panel == SlicePanel.Build))
                 s.Panel = s.Panel == SlicePanel.Build ? SlicePanel.None : SlicePanel.Build;
             if (NavBtn(SliceDrawerLayout.Tab(1, dw), "制作", s.Panel == SlicePanel.Craft))
@@ -514,11 +512,16 @@ namespace Game.Runtime.Core
 
         void DrawGearRow(SliceSession s, Rect r)
         {
-            float w = (r.width - 18) / 4f;
-            DrawSlotCard(s, EquipSlot.Weapon, new Rect(r.x, r.y, w, r.height));
-            DrawSlotCard(s, EquipSlot.Body, new Rect(r.x + w + 6, r.y, w, r.height));
-            DrawSlotCard(s, EquipSlot.Helmet, new Rect(r.x + (w + 6) * 2, r.y, w, r.height));
-            DrawSlotCard(s, EquipSlot.Boots, new Rect(r.x + (w + 6) * 3, r.y, w, r.height));
+            // S4-P2：六槽双行 3 列（沿用 Build 面板头部既有区域，不加新屏；DisplayOrder 人体顺序）
+            float w = (r.width - 12) / 3f;
+            float h = (r.height - 6) / 2f;
+            for (int i = 0; i < SliceDrawerLayout.DisplayOrder.Length; i++)
+            {
+                int col = i % 3;
+                int row = i / 3;
+                DrawSlotCard(s, SliceDrawerLayout.DisplayOrder[i],
+                    new Rect(r.x + col * (w + 6), r.y + row * (h + 6), w, h));
+            }
         }
 
         void DrawSlotCard(SliceSession s, EquipSlot slot, Rect r)
