@@ -57,3 +57,12 @@
 - Runtime Product Delta=NONE；Canonical Data Delta=NONE；Content Delta=NONE；Authorization Delta=NONE
 - Defects Found=NONE；Open Questions=无阻塞（显示模式切换披露见 §4）
 - **推荐 Director 结果：批准 S5 收口（S5=COMPLETE）**——由 Director Final Gate 裁定；**本包不预填该裁定**
+
+## 7. Planning AI Recommendation 与 Director Decision Form（2026-09-09 规划 AI 随 WO-06 Gate Review=ACCEPT 回文落库）
+
+- **Planning AI Recommendation: `APPROVE S5 FINAL GATE`**（仅推荐非决定；理由=两且仅两获批原子落地/21 词缀+组 max 2 scope 完整/功能回归全绿/兼容与跨组隔离全绿/词缀可达 4/4/fresh audit/ProdSim 三跑 hash 一致/canonical+Art 锁定硬件全 PASS/视觉 4-0-0/无实质性能回归/Drift 0/冲突 0/禁区 PASS/缺陷 NONE）。
+- **Director Decision Form**（导演填写处）：
+  - `[ ] APPROVE S5 FINAL GATE` —— 授权正式同步 S5=COMPLETE，并允许规划 AI 开始下一周期规划；
+  - `[ ] HOLD / REWORK` —— 保持 S5 非 COMPLETE+实施停止，导演给出具体失败关注点/证据要求后规划 AI 才下发有界纠正工作令。
+  - Director Notes: ____________
+- **等待期权威状态**：S5-WO-06=ACCEPTED / S5 Production Closure=PASSED / S5 Director Final Gate=READY/PENDING / S5=尚未正式 COMPLETE / Implementation=STOPPED / Next Cycle=NOT STARTED。
