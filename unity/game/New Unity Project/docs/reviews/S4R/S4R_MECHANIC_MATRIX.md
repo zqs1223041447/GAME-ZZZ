@@ -40,6 +40,8 @@
 | 掉落可达性（6 槽全 reachable、17 词缀全可达） | Supported | Drop 路径 | Production Simulator（invalidCount=0 + hash exact match） | — | — |
 | 10 槽 / Weapon 族 / Handedness / Prefix-Suffix Tier / Item Level / Base Items | Unsupported | 未建 | — | — | BDA Phase 2 范围；Director 未给方向（Ring/Offhand/Amulet=NOT AUTHORIZED） |
 
+> **S5 授权跟踪（2026-09-09，仅 tracking 不晋升）**：Multiple Link Groups（BL-021.A2）=**AUTHORIZED NOT IMPLEMENTED**（合同 `docs/reviews/S5/S5_LINK_CONTRACT.md`；S5 Phase 1 起实现）；Bounded Affix Breadth（BL-002.A1）=**AUTHORIZED NOT IMPLEMENTED**（清单 `S5_AFFIX_ADMISSION.md`，N=4；S5 Phase 3 起）；Socket Color（BL-021.A1）与 Gem Level/Quality（BL-012.A1）=**导演显式拒绝**（负向验收条件贯穿 S5）。上表各机制状态不因授权变化。
+
 ## 4. 战斗 / 地图 / 表现 / 基础设施机制族
 
 | 机制 | 状态 | 依赖系统 | 测试 | 受影响内容 | Blocked 原因 / Resume Trigger |

@@ -358,7 +358,7 @@ Boots  0S → 只吃词缀
 
 ### 装备 / 掉落 / Craft
 
-6 装备槽（canonical `EquipSlot`：Weapon/Body/Helmet/Boots + S4 扩展 Gloves/Belt；Gloves/Belt 为词缀位无 Socket）。Ordinary 2 Affix，Rare 3–4。词缀见 `AffixCatalog`（**数量为易变快照，以最新 Content Audit / Production Report 为当前事实，本节不复制计数**；双行 Affix 各自独立掷值，第二值存 `ItemInstance` 第二值，消费路径按 `RowCount` 工作；槽位适用性=单一 applicability truth，AllowedSlots 位掩码决定可出现槽位，不兼容槽位不 roll）。击杀用 `LootRng`。随机 Craft（Scrap 洗 Rare）+ 定向 Craft（Etching 写入指定 Affix；物品内已存在同词缀时 deterministic reject，无半写入）。
+6 装备槽（canonical `EquipSlot`：Weapon/Body/Helmet/Boots + S4 扩展 Gloves/Belt；Gloves/Belt 各 1 孔——仅作孔数展示，**不映射技能孔位**，SupportCapacity 仍只走 Weapon/Body/Helmet）。Ordinary 2 Affix，Rare 3–4。词缀见 `AffixCatalog`（**数量为易变快照，以最新 Content Audit / Production Report 为当前事实，本节不复制计数**；双行 Affix 各自独立掷值，第二值存 `ItemInstance` 第二值，消费路径按 `RowCount` 工作；槽位适用性=单一 applicability truth，AllowedSlots 位掩码决定可出现槽位，不兼容槽位不 roll）。击杀用 `LootRng`。随机 Craft（Scrap 洗 Rare）+ 定向 Craft（Etching 写入指定 Affix；物品内已存在同词缀时 deterministic reject，无半写入）。
 
 ### 天赋
 
