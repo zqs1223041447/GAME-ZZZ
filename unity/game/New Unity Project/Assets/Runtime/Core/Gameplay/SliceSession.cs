@@ -26,6 +26,9 @@ namespace Game.Runtime.Core
         public int BodyId;
         public int HelmetId;
         public int BootsId;
+        // S4-P2：6 槽快照（旧四槽字段保持原名原序，新增两个只追加）
+        public int GlovesId;
+        public int BeltId;
         public SupportId Q0, Q1;
         public SupportId W0, W1;
         public SupportId E0;
@@ -41,7 +44,7 @@ namespace Game.Runtime.Core
         public int InventoryCount;
         public int NextItemId = 1;
 
-        public int[] Equipped = new int[4];
+        public int[] Equipped = new int[(int)EquipSlot.Count]; // S4-P2：随 EquipSlot.Count 派生（6 槽），旧四槽 ID 稳定
         public SupportId[] QSupports = new SupportId[2];
         public SupportId[] WSupports = new SupportId[2];
         public SupportId[] ESupports = new SupportId[1];
@@ -1106,6 +1109,8 @@ namespace Game.Runtime.Core
             s.BodyId = Equipped[1];
             s.HelmetId = Equipped[2];
             s.BootsId = Equipped[3];
+            s.GlovesId = Equipped[4];
+            s.BeltId = Equipped[5];
             s.Q0 = QSupports[0];
             s.Q1 = QSupports[1];
             s.W0 = WSupports[0];
@@ -1131,6 +1136,10 @@ namespace Game.Runtime.Core
                 return SliceRules.BodySockets;
             if (slot == EquipSlot.Helmet)
                 return SliceRules.HelmetSockets;
+            if (slot == EquipSlot.Gloves)
+                return SliceRules.GlovesSockets;
+            if (slot == EquipSlot.Belt)
+                return SliceRules.BeltSockets;
             return SliceRules.BootsSockets;
         }
 
@@ -1141,6 +1150,8 @@ namespace Game.Runtime.Core
                 case EquipSlot.Weapon: return "武器";
                 case EquipSlot.Body: return "胸甲";
                 case EquipSlot.Helmet: return "头盔";
+                case EquipSlot.Gloves: return "手套";
+                case EquipSlot.Belt: return "腰带";
                 default: return "靴子";
             }
         }
@@ -1184,6 +1195,8 @@ namespace Game.Runtime.Core
                 case EquipSlot.Weapon: return "铁刃";
                 case EquipSlot.Body: return "皮甲";
                 case EquipSlot.Helmet: return "铁盔";
+                case EquipSlot.Gloves: return "布手";
+                case EquipSlot.Belt: return "皮带";
                 default: return "旧靴";
             }
         }

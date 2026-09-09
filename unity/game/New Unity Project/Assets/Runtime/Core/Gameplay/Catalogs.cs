@@ -41,7 +41,10 @@ namespace Game.Runtime.Core
         Body = 1,
         Helmet = 2,
         Boots = 3,
-        Count = 4
+        // S4-P2（工作令 S4-P2-EQUIPMENT-BREADTH-GLOVES-BELT）：追加在既有正式槽后、Count 前；既有数值 0-3 不得漂移
+        Gloves = 4,
+        Belt = 5,
+        Count = 6
     }
 
     public enum Rarity : byte
@@ -223,6 +226,9 @@ namespace Game.Runtime.Core
         public const int BodySockets = 3;
         public const int HelmetSockets = 2;
         public const int BootsSockets = 0;
+        // S4-P2：新槽孔数（不映射任何技能孔位——SupportCapacity 仍只走 Weapon/Body/Helmet）
+        public const int GlovesSockets = 1;
+        public const int BeltSockets = 1;
         public const int MapSeed = unchecked((int)0xC0FFEE);
         public const int BaseStability = 100;
         public const int DeathStabilityLoss = 10;
