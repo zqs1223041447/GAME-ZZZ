@@ -146,13 +146,13 @@
 | 11 | Downstream enabled | 内容工厂（BL-018）的主消费场景；Map Risk Simulator 的语义输入 |
 | 12 | Canonical-data dependency | 无外部（自设计） |
 | 13 | BL-024 dependency | **不需要** |
-| 14 | Art dependency | HIGH——Boss/新怪/场景资产（理由：现 4 正式视觉+1 图，Boss/新场景需新资产批次） |
+| 14 | Art dependency | HIGH——Boss/新怪/场景资产（理由：现 4 正式视觉+1 图）。**F1 澄清：新资产批次=独立 New Content Batch 导演门（默认 NO），DIR-4 选择不自动批准；验证用有限测试内容归被显式批准的具体 atom/bounded validation scope** |
 | 15 | Audio dependency | 中（Boss/新遭遇 SFX） |
 | 16 | UI dependency | 中（地图选择/进度 UI） |
 | 17 | Test/evidence burden | HIGH——新敌类 AI/遭遇语义/进程数值需全链测试（理由：Boss=新 gameplay taxonomy，现有「无 BossKind」边界反转） |
 | 18 | Performance risk | HIGH——Boss 战/新遭遇密度超出现有 canonical workload（理由：现性能门锁 100-200-300 Dummy 语义，Boss 战形态未测） |
 | 19 | Determinism risk | MEDIUM——进程随机（地图生成）须全走 SeededRng |
-| 20 | Save/migration risk | HIGH——进程状态天然需要持久化语义（理由：tier 进度跨会话存在才完整；触及 BL-025 存档决策） |
+| 20 | Save/migration risk | HIGH——跨会话进程价值依赖 BL-025。**F1 澄清（DIR-4 ↔ BL-025 = Option 2：downstream / separately gated）**：首周期可在无持久化下以会话内 Tier 进程成立（真实依赖结论）；**BL-025=downstream / separately gated，DIR-4 selection does not authorize it**；不从 Progression=YES / Endgame=YES 推导 Persistence approval；implementation seed 阶段若需持久化，必须把 BL-025 显式列入 Required Gates 并单独批准 |
 | 21 | Runtime blast radius | HIGH——AI/状态机/地图系统多面 |
 | 22 | Reference Build impact | 方向会**要求未来新增 candidates**（encounter 验证 build）；且**不得**为 RBC 创建 boss/map-tier clear targets（WO-03 §8 禁止） |
 | 23 | Long-term Phase compatibility | 语义一致（=Phase 11）但**位置靠后**；不得把 Phase 11 长期位置解释为已批准立即实施 |
@@ -172,6 +172,7 @@
 | New Content Batch | 硬停止点名 | 独立 YES/NO | NO |
 | Ring / Offhand / Amulet | BL-028.A1/A2/A3 独立 atoms | 逐槽显式；不得借「Equipment Breadth」隐式解禁 | NO |
 | Technical Route | BL-020.A1..A4 独立 gate | 除非所选方向确需，不混入 scope | 继续锁 |
+| BL-025 Persistence | DIRECTOR_GATED（**downstream / separately gated——F1 裁定**：首周期可无持久化以会话内 Tier 进程成立） | 显式单独批准；**不从 Progression=YES / Endgame=YES 推导**；DIR-4 selection ≠ BL-025 approval | NOT AUTHORIZED（downstream） |
 
 ## §4 Cross-Direction Comparison Matrix（一屏比较）
 
@@ -185,7 +186,7 @@
 | Director gates required | 2（+2 optional） | 3-5 atoms | 8-20 atoms | 1-10 atoms | 9 atoms+硬停止解除 |
 | BL-024 required? | NO | NO | **部分**（仅 Passive 族） | 默认 NO（Tier 可选） | NO |
 | Endgame opening? | NO | NO | NO（为将来铺垫） | NO | **YES（本质）** |
-| Content Batch required? | NO | NO | 可选（表现配套） | NO | YES（Boss/场景资产） |
+| New Content Batch required by direction? | NO | NO | NO | NO | NO（**任何 DIR-0~4 均不因方向本身自动要求或批准 New Content Batch**——独立 YES/NO 导演门，默认 NO；DIR-4 的验证用有限测试内容归被显式批准的具体 atom/bounded validation scope，不得称为或推导为 New Content Batch；单独批准 Content Batch 也不等于激活 Phase 12 Content Factory，除非显式声明） |
 | Save-data implications | N-A | LOW | MEDIUM | LOW-MEDIUM | HIGH（触及 BL-025） |
 | Performance risk | LOW | LOW | HIGH | LOW | HIGH |
 | Determinism risk | N-A | MEDIUM | MEDIUM | HIGH | MEDIUM |
@@ -246,6 +247,8 @@ Additional Director Constraints: ______
 ```
 
 **Default-on-Omission Rule（必须随表生效）**：导演没有明确批准的 capability / authorization atom，继续保持原有 NOT_AUTHORIZED / DEFERRED / BLOCKED / FORBIDDEN 状态；禁止从所选方向名称推导遗漏的授权。
+
+**Direction Gate 授权优先级（规划 AI F1 裁定，CUSTOM/部分授权场景适用）**：`Explicit Atom Decision` > `Explicit individual toggle` > `Selected Direction` > `Planner recommendation`；Default-on-Omission Rule 始终生效。导演选 CUSTOM 或只批准部分 atoms（或方向选择与逐 atom 授权存在差异）时，规划 AI 必须**以 Authorization Atom 为最终授权粒度逐项复核**（原子级 Direction Gate Review）——例：选 DIR-2 但只批准 BL-004.A1 ⇒ 只有该 atom 获得产品授权候选资格，DIR-2 其余 Aura/Passive/Defense/Trigger atoms 不随之视为 approved。
 
 ## §7 Reference Build Treatment（AC-08）
 
