@@ -441,6 +441,15 @@ namespace Game.Runtime.Core
                 error = def.Name + " 不能出现在" + SlotName(it.Slot);
                 return false;
             }
+            // S4-P4（Production Simulation 发现项）：物品内重复词缀=非法 duplicate——deterministic reject（不消耗、不半写入）
+            for (int a = 0; a < it.AffixCount; a++)
+            {
+                if (it.AffixIdAt(a) == (int)pick)
+                {
+                    error = def.Name + " 已在该装备上";
+                    return false;
+                }
+            }
             float v = RngUtil.Range(LootRng, def.Min, def.Max);
             float v2 = def.RowCount > 1 ? RngUtil.Range(LootRng, def.Min2, def.Max2) : 0f;
             if (it.AffixCount < 4)

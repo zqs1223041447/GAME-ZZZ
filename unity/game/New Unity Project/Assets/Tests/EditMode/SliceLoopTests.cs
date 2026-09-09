@@ -304,7 +304,8 @@ namespace Game.Tests.EditMode
             it.SocketCount = 3;
             it.BaseName = "Test";
             it.AffixCount = 4;
-            it.SetAffix(0, AffixId.Life, 20f, 0f);
+            // S4-P4：词缀唯一性契约（物品内不得重复）——slot 0 改用 IncPhys，使定向制作 Life 覆写 slot 3 不触发 duplicate guard
+            it.SetAffix(0, AffixId.IncPhys, 0.20f, 0f);
             it.SetAffix(1, AffixId.Armour, 30f, 0f);
             it.SetAffix(2, AffixId.Evasion, 30f, 0f);
             it.SetAffix(3, AffixId.IgniteFire, 0.20f, 0.15f); // 组合词缀带第二值
