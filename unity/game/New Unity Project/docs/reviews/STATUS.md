@@ -2,7 +2,7 @@
 
 日期：2026-09-09。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
 
-本轮 commit（S4-P5R-LOCKED-ENV-RECERTIFICATION）：**ENV blocker 解除 + S4 = COMPLETE**。Display Capability Audit=Branch A（G2750X/Dell S2719DGF EDID 均含 2560×1440 → 1440P_MODE_AVAILABLE=True）；经交互会话以系统标准 `ChangeDisplaySettingsEx` 将活动显示（\\.\DISPLAY5）恢复至既有 2560×1440@144 mode（零驱动/EDID/registry/自定义分辨率 hack，§六/§七 合规可逆）；WMI 预检 OS mode=2560×1440 ✓。**Final Gate `-IncludeArtPerformance` @ b3eb9fe（合同零修改）双 PASS**：Canonical **PerformanceVerdict=PASS**（worst avg=1.903ms=22.8%/worst p99=4.840ms=58.1%/CPU 1.903/GPU 0.581/alive 97.7-98.3%，100-200-300×3 run 全 PASS）；**ArtPerformanceVerdict=PASS**（resolvedVisuals=4（Troll/FireLion/Gargoyle/Bruce）/fallback=0/clones=0/worst avg=4.085ms=49.0%/worst p99=6.671ms=80.1%/GPU worst 1.281，alive 291-295/300）；加上此前 Gate 1/2/3 全 PASS+Simulation hash exact match（FNV1A64:a1f075f251ec1070）+R7/R9 归档 OK×4+Content 3/7/17/16/5/3/6 全对齐——**S4 四十项完成标准全成立 → S4 = COMPLETE**（Phase 0-5 全 COMPLETE）。总收口评审=`docs/reviews/s4/S4_OVERALL_CLOSEOUT_REVIEW.md`（§11b Recertification）；**完成后硬停止**（§四十九：不启动 S5/Progression Spine/Map Tier/Boss/Unique/Ring/Offhand/Amulet/新 Content Batch/Voice——等待导演/协调席下一产品方向）；S3=COMPLETE；Voice=DEFERRED BY DIRECTOR
+本轮 commit（S4R-WO-01-GOVERNANCE-RECONCILIATION）：**S4R inter-cycle 治理周期开工（无 gameplay capability 变更，Runtime feature surface 冻结）**。规划 AI 会话（渠道登记 `开发计划/规划AI会话.md`，会话 ID 6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d）下发 S4R — Direction Readiness & Baseline Lock；工作 AI 落库计划 `docs/reviews/S4R/S4R_PLAN.md` 并执行 **WO-01=Frozen Baseline & Governance Reconciliation**：**首次正式建立** Capability Ledger / Mechanic Support Matrix / Source-of-Truth Index / S4 冻结基线+Hard-Stop·Forbidden 清单（`docs/reviews/S4R/` 五件）；核查发现并修复 1 处文档漂移（RUNTIME 装备节 4 槽/「13 条」/2×2 → 6 槽/易变计数改快照指针/2×3 六槽——S4-P2/P3 改变事实后 RUNTIME 未同步）；DECISIONS/ROADMAP 同步；**Runtime/Canonical/Content delta=0**；Quick Gate PASS（EditMode 246/246+PlayMode 11/11+audit fresh；按 S4R Test Policy 不重跑 S4 性能门，引用 S4 Final 证据）；**S4=COMPLETE 与硬停止语义原样保留；下一实施周期=Director-Gated**。（本轮提交：A=主体本提交 / B=STATUS 回填提交，hash 由回填写入）
 
 ## 门状态
 
@@ -20,6 +20,7 @@
 | S3 最小底座 | 已开工 | c2689be ART_BIBLE+内容校验；8f2de35 预留 Tag 钉死 |
 | S3 内容扩张 | **S3=COMPLETE（Voice=DEFERRED BY DIRECTOR）** | Phase 1/2/3(UI)/5(Art)=COMPLETE；Phase 4 人声=导演延期排除出当前完成范围；总收口 `S3_OVERALL_CLOSEOUT_REVIEW.md`（PASS）；Stage0 全锁延续 |
 | S4 Production Scale & Itemization Breadth | **COMPLETE（2026-09-09）** | 规划=`docs/reviews/s4/S4_PLAN.md`；Phase 0/1/2/3/4/5 全 COMPLETE；总收口=`docs/reviews/s4/S4_OVERALL_CLOSEOUT_REVIEW.md`（§11b Recertification：ENV blocker 经系统正常模式切换解除；Final Gate 双 PASS——Canonical worst p99=4.840ms=58.1% / Art worst avg=4.085ms=49.0%、resolvedVisuals=4/fallback=0/clones=0）；Simulation hash exact match=FNV1A64:a1f075f251ec1070；**硬停止：不启动 S5/新内容，等待导演/协调席下一产品方向** |
+| S4R Direction Readiness & Baseline Lock | **IN PROGRESS（2026-09-09，规划 AI 下发）** | **inter-cycle 治理周期：无 gameplay capability 变更授权，Runtime feature surface 冻结**；计划=`docs/reviews/S4R/S4R_PLAN.md`（Phase 0 对账→Backlog 分类→导演决策包→**Director Direction Gate**→下一周期 seed）；WO-01=冻结基线+治理对账（Capability Ledger/Mechanic Matrix/SoT Index 首次正式建立）；**硬停止延续，下一实施周期=Director-Gated** |
 
 ## 玩家视图
 
@@ -55,6 +56,7 @@
 
 ## 已对齐（本轮只改文档）
 
+- `docs/RUNTIME.md` S2 节装备陈旧事实对齐（S4R-WO-01）：4 槽/「当前 13 条」/抽屉 2×2 四槽 → 6 槽 canonical EquipSlot/易变计数改为指向最新 Content Audit·Production Report 快照（S3-M1 规则）/抽屉 2×3 六槽（展示顺序 Weapon/Helmet/Body/Gloves/Boots/Belt）——S4-P2/P3 改变事实后 RUNTIME 未同步的文档漂移；只改文档，Runtime 零改动。
 - `docs/art/ART_BIBLE.md` 相机行 (0,17,-15)→(0,10.6,-9.3)：76381c0 改跟拍后 ART_BIBLE 未同步——本页轮对齐。
 - 1.16 / 1.19 并存确认**非矛盾**：1.16=胶囊碰撞体高度（`DarkKnightView.TargetHeight`），1.19=贴地后可见身高；各文档口径一致（RUNTIME / DECISIONS / ART_BIBLE 同）。
 
@@ -66,6 +68,7 @@
 
 | 日期 | HEAD | EditMode | PlayMode | 失败项 |
 |---|---|---|---|---|
+| 2026-09-09 | 本轮 S4R-WO-01-GOVERNANCE-RECONCILIATION（治理对账轮：S4R 计划落库 `docs/reviews/S4R/S4R_PLAN.md`+Frozen Baseline+Capability Ledger/Mechanic Matrix/SoT Index 首次正式建立+RUNTIME 装备节漂移修复（4 槽/13 词缀/2×2→6 槽/快照指针/2×3 六槽）；**Runtime/Canonical/Content delta=0**；Quick Gate PASS；按 S4R Test Policy 性能门不重跑、引用 S4 Final 证据；S4 硬停止与 Voice DEFERRED 原样保留） | 246/246 | 11/11 | 无 |
 | 2026-09-09 | 本轮 S4-P5R-LOCKED-ENV-RECERTIFICATION（Display Audit=Branch A（EDID 1440 可用）；系统正常模式切换恢复活动显示 2560×1440@144；**Final Gate `-IncludeArtPerformance` 双 PASS**：Canonical worst avg=1.903/worst p99=4.840=58.1%、Art worst avg=4.085=49.0%/worst p99=6.671=80.1%/resolvedVisuals=4/fallback=0/clones=0；加上 Gate 1/2/3+hash exact match+归档 OK——**S4 = COMPLETE**；硬停止等待导演下一方向） | 246/246 | 11/11 | 无 |
 | 2026-09-09 | 本轮 S4-P5-INTEGRATED-CLOSEOUT（Branch B：Gate 1/2/3 全 PASS+Simulation hash exact match a1f075f251ec1070+R7/R9 归档 OK×4+snapshot 全对齐+零代码 diff；**Gate 4/Art Gate=ENV_NOT_MET**（活动显示=虚拟 1920×1080@144≠锁定 2560×1440，性能余量健康不放行）；S4 仍 IN PROGRESS——Phase 5 blocked，待导演恢复 1440p 或正式合同变更令） | 246/246 | 11/11 | Gate4/Art=ENV |
 | 2026-09-09 | 本轮 S4-P4-PRODUCTION-SIMULATION（真实 Drop/Craft/Equip 路径 10k cycles：invalidCount=0+同 seed hash 一致+六槽全 reachable+新 4 词缀可达；**发现并修复 TryDirectedCraft 重复词缀缺口=duplicate guard deterministic reject**；产物 PRODUCTION_SIMULATION_REPORT.json 工具再生；EditMode 246/246/PlayMode 11/11；Gate 全 PASS；Performance=NO/Art N/A；Phase 4=COMPLETE、Phase 5 NOT STARTED） | 246/246 | 11/11 | 无 |

@@ -1,6 +1,6 @@
 # ROADMAP
 
-当前阶段：**S3 = COMPLETE（Phase 1/2/3 UI/5 Art 全 COMPLETE；Phase 4 人声=DEFERRED BY DIRECTOR，排除出当前完成范围——总收口 `docs/reviews/s3/S3_OVERALL_CLOSEOUT_REVIEW.md` PASS，2026-09-08）；S4 = COMPLETE（Production Scale & Itemization Breadth，2026-09-09 总收口 PASS——`docs/reviews/s4/S4_OVERALL_CLOSEOUT_REVIEW.md`：Phase 0-5 全 COMPLETE、四门+Art Gate 全 PASS、Simulation hash exact match）；**等待导演/协调席下一产品方向（硬停止——S5/Progression Spine/Map Tier/Boss/Unique 等均不自动启动）**；Stage0 锁全部延续；1440p/120 已于 M7 在锁定硬件下 CLOSED（结论只适用锁定硬件/canonical contract，非所有 Windows PC 保证 120FPS）**（S2 玩法循环已由导演确认，2026-09-06。自制 Eve FBX **已剔除**，换模 Dark Knight 技术放行。碰撞规则仍在。I 不自放行）。
+当前阶段：**S3 = COMPLETE（Phase 1/2/3 UI/5 Art 全 COMPLETE；Phase 4 人声=DEFERRED BY DIRECTOR，排除出当前完成范围——总收口 `docs/reviews/s3/S3_OVERALL_CLOSEOUT_REVIEW.md` PASS，2026-09-08）；S4 = COMPLETE（Production Scale & Itemization Breadth，2026-09-09 总收口 PASS——`docs/reviews/s4/S4_OVERALL_CLOSEOUT_REVIEW.md`：Phase 0-5 全 COMPLETE、四门+Art Gate 全 PASS、Simulation hash exact match）；**S4R inter-cycle 治理周期已由规划 AI 下发并开工（2026-09-09）**——`docs/reviews/S4R/S4R_PLAN.md`：Direction Readiness & Baseline Lock（只做基线冻结/Ledger-Matrix 对账/导演决策包，**不授权任何新 gameplay capability**；Runtime feature surface 冻结）；**下一正式实施周期=Director-Gated（硬停止延续：等待导演/协调席下一产品方向——S5/Progression Spine/Map Tier/Boss/Unique 等均不自动启动）**；Stage0 锁全部延续；1440p/120 已于 M7 在锁定硬件下 CLOSED（结论只适用锁定硬件/canonical contract，非所有 Windows PC 保证 120FPS）**（S2 玩法循环已由导演确认，2026-09-06。自制 Eve FBX **已剔除**，换模 Dark Knight 技术放行。碰撞规则仍在。I 不自放行）。
 
 ## 阶段
 
@@ -12,6 +12,7 @@
 | S2P | 真实系统密度报告 | **1080p 已证（b152610）+ 1440p/120 已于 M7 在锁定硬件下 CLOSED（2026-09-08，证据 `docs/reviews/s2p/1440p-120-m7/`；边界=锁定硬件，非所有 Windows PC 保证）** |
 | S3 | 按队列扩内容 | **S3=COMPLETE（2026-09-08 总收口 `S3_OVERALL_CLOSEOUT_REVIEW.md` PASS）**：Phase 1（内容工厂）+ Phase 2（R1 3 组合词缀/R2 火焰转化）+ Phase 3 Formal UI（R1-R4）+ Phase 5 Art（四正式视觉+Art Gate）全 COMPLETE；**Phase 4 人声=DEFERRED BY DIRECTOR（排除出当前完成范围）** |
 | S4 | Production Scale & Itemization Breadth（扩产工具→装备槽→词缀→生产模拟） | **COMPLETE（2026-09-09）**：Phase 0-5 全 COMPLETE（P1=Production Tooling v1、P2=Gloves+Belt 6 槽、P3=Affix applicability 单一 predicate+4 条专属词缀（affixes 13→17）、P4=10k Production Simulation invalid=0+hash 可复现、P5=Integrated Closeout 四门+Art Gate 全 PASS——ENV blocker 经系统正常模式切换恢复 1440p 后 Recertification）；总收口=`docs/reviews/s4/S4_OVERALL_CLOSEOUT_REVIEW.md`（PASS — S4 COMPLETE）；**硬停止：S5/Progression Spine/Map Tier/Boss/Unique/Ring/Offhand/Amulet/新 Content Batch/Voice 均不自动启动，等待导演/协调席下一产品方向**；Stage0 锁延续、Voice 继续 DEFERRED |
+| S4R | Direction Readiness & Baseline Lock（**inter-cycle 治理**：S4 基线冻结 + Ledger/Matrix 对账 + 下一方向决策包；**不授权任何新 gameplay capability，Runtime feature surface 冻结**） | **IN PROGRESS（2026-09-09 规划 AI 下发）**：计划=`docs/reviews/S4R/S4R_PLAN.md`（Phase 0 对账→Phase 1 Backlog 分类→Phase 2 决策包→Phase 3 **Director Direction Gate**→Phase 4 下一周期 seed）；WO-01=Frozen Baseline & Governance Reconciliation（冻结基线/首次正式建立 Capability Ledger 与 Mechanic Matrix/SoT Index）；**下一实施周期=Director-Gated**——downstream 各 forbidden 项仍未授权，候选项的「存在」不构成「承诺实施」 |
 
 ## Gate S0
 
