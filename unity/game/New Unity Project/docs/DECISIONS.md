@@ -171,3 +171,11 @@ S1 技术已放行。输入、对象池、SeededRng、点地移动、Q/W/E 施�
 - **门快照（最终 HEAD）**：EditMode **344/344**（332 前置全保留+12 新）+ PlayMode 11/11 + Audit fresh PASS + ProdSim hash=FNV1A64:9a4c9524d0b3e214 精确不变；canonical After 7 张。Runtime Delta=presentation-only；Gameplay/Content/Balance=NONE；Drift=0；Forbidden=PASS。
 - **过程披露**：编辑器被外部有序关闭一次（非崩溃；重启后全门重跑通过）。
 - **下一令**：S5U-WO-04 — Bootstrap Entry Affordance（方案B 预授权已锁：显式按钮；禁自动进场/禁 -arenaPerf 复用；无可复用进图路径则 STOP 上报）。
+
+## S5U-WO-03-F1（2026-09-09，规划 AI 裁定：ACCEPT WITH FOLLOW-UP + 视觉门升格）
+
+- **WO-03 Gate=ACCEPT WITH FOLLOW-UP**：功能/回归/布局真值/S5 不漂移全部 ACCEPT（Build 页列表移除、滚动悬停坐标修复均接受）；**阻塞项=导演视觉质量门 NOT YET PROVEN**——证据包只有截图路径与文字，规划 AI 不再依「测试全绿」推定视觉 PASS。
+- **门结构升格（长期有效）**：S5U Gate=**Functional Gate + Director-Facing Visual Gate 两独立维度**；前者全绿不替代后者；自此 Evidence Pack 必须把最终 HEAD 截图**直接附进消息**（工具侧已扩展 chatgpt_ask.py `--image` 剪贴板图像附件能力，向后兼容）。
+- **S5U-WO-03-F1 — Director Visual Cohesion Pass 正式放行（NOW，阻塞优先于 WO-04）**：V-01 底栏统一 action assembly（Life|tray|QWE|Mana 一体框，tray 不再像外挂按钮群）；V-02 金色=强调色专用+三层框系（Outer/Section/Cell，禁每框同强度金边=Excel 观感）；V-03 页面打开时世界压暗（cached scrim，禁每帧 new Texture）；V-04 单一主导页面层级；V-05 顶部导航降权；V-06 左上状态降权（compact strip，信息不删）；V-07 字号层级（页面题 20-22/节题 15-17/正文 13-15/次级 12-13/微标 ≥11/关键 HUD ≥12）；V-08 技能槽图标第一（连接徽章不得比技能身份显眼）；V-09 双球实体感（bezel/内圈/暗缘/高光/深度/可读数值）；V-10 角色/背包壳=页面感（网格不得满屏黄线小矩形）。**Scroll 悬停回归测试**（scroll≠0 + 指针→N 的映射，坐标永不再漂移）。
+- **F1 冻结**：EditMode 344/PlayMode 11/Affix 21/组 2/ProdSim hash=FNV1A64:9a4c9524d0b3e214；零 gameplay/content/balance delta；禁 UI Toolkit/uGUI/场景美术替换/每帧纹理。**视觉终审语：若截图仍像「多个黑色 IMGUI 窗+黄色细线」= F1 不通过。**
+- **WO-04 排队合同（F1 ACCEPT 后自动执行）**：Bootstrap 轻量 entry panel（GAME-ZZZ 标题+校验状态+「进入竞技场」按钮+次级状态行）；仅在既有校验合法态启用；点击走既有合法路径（→TryEnterMap）；双击/重复 OnGUI 不产生多次转换；失败留 Bootstrap+原因可见；测试六项（invalid 禁用/valid 启用/单击恰一次/失败可见/无输入不转换/-arenaPerf 不变）。**WO-04 之后序列：WO-05 Build&Passive → WO-06 Craft&Map → WO-07 全局一致性 polish → WO-08 收口（canonical 批门+锁硬件性能+before/after sheet+S5U Final Addendum → 重送 S5+S5U Director Final Gate）。**
