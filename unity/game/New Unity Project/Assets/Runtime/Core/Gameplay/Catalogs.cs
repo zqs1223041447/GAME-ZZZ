@@ -32,7 +32,12 @@ namespace Game.Runtime.Core
         IgniteFire = 10,
         AccCrit = 11,
         PhysFire = 12,
-        Count = 13
+        // S4-P3（工作令 S4-P3-AFFIX-APPLICABILITY-BREADTH）：Gloves/Belt 定向词缀（全部复用已有 StatId/ModOp，2-4 条；旧 ID 只追加不漂移）
+        SwiftGrip = 13,
+        KeenEdge = 14,
+        Bulwark = 15,
+        VitalWeave = 16,
+        Count = 17
     }
 
     public enum EquipSlot : byte
@@ -91,6 +96,10 @@ namespace Game.Runtime.Core
         public float Min2;
         public float Max2;
         public string Format2;
+        // S4-P3（工作令 S4-P3-AFFIX-APPLICABILITY-BREADTH，Branch B）：槽位适用性 bit mask——bit i = EquipSlot i。
+        // 0 = 不限槽（既有 13 词缀行为完全不变的默认语义）。唯一 eligibility truth = IsApplicable()；
+        // 只决定「Affix 能否出现在该 EquipSlot 的 roll 池」，不得决定数值/结算/rarity/穿戴资格。
+        public ushort AllowedSlots;
 
         public int RowCount
         {
@@ -105,6 +114,12 @@ namespace Game.Runtime.Core
         public ModOp RowOp(int row)
         {
             return row == 0 ? Op : Op2;
+        }
+
+        /// <summary>唯一 canonical applicability 判定（Drop / Random Craft / Directed Craft / 审计 / 报告全部复用，禁止各自再判一遍）。</summary>
+        public bool IsApplicable(EquipSlot slot)
+        {
+            return AllowedSlots == 0 || (AllowedSlots & (ushort)(1 << (int)slot)) != 0;
         }
     }
 
@@ -388,6 +403,44 @@ namespace Game.Runtime.Core
                 Stat = StatId.PhysicalDamage, Op = ModOp.Increased, Min = 0.12f, Max = 0.28f, Format = "{0:0%} 物理伤害",
                 Stat2 = StatId.FireDamage, Op2 = ModOp.Increased, Min2 = 0.12f, Max2 = 0.28f, Format2 = "火焰伤害 {0:0%}"
             };
+            // S4-P3 第一批（Gloves/Belt 定向，AllowedSlots 限定；全部复用已有 StatId/ModOp——运行期消费实证见 ContentAuditS2Tests.RuntimeConsumedStats）
+            _defs[(int)AffixId.SwiftGrip] = new AffixDef
+            {
+                Id = AffixId.SwiftGrip, Name = "迅握",
+                Stat = StatId.AttackSpeed, Op = ModOp.Increased, Min = 0.08f, Max = 0.14f, Format = "{0:0%} 攻击速度",
+                AllowedSlots = SlotsMask(EquipSlot.Gloves)
+            };
+            _defs[(int)AffixId.KeenEdge] = new AffixDef
+            {
+                Id = AffixId.KeenEdge, Name = "锋锐",
+                Stat = StatId.CritChanceAdded, Op = ModOp.Flat, Min = 0.03f, Max = 0.07f, Format = "+{0:0%} 暴击率",
+                Stat2 = StatId.Accuracy, Op2 = ModOp.Flat, Min2 = 15f, Max2 = 35f, Format2 = "+{0:0} 命中",
+                AllowedSlots = SlotsMask(EquipSlot.Gloves)
+            };
+            _defs[(int)AffixId.Bulwark] = new AffixDef
+            {
+                Id = AffixId.Bulwark, Name = "壁垒",
+                Stat = StatId.Armour, Op = ModOp.Increased, Min = 0.10f, Max = 0.22f, Format = "{0:0%} 护甲",
+                AllowedSlots = SlotsMask(EquipSlot.Belt)
+            };
+            _defs[(int)AffixId.VitalWeave] = new AffixDef
+            {
+                Id = AffixId.VitalWeave, Name = "韧脉",
+                Stat = StatId.Life, Op = ModOp.Flat, Min = 15f, Max = 30f, Format = "+{0:0} 生命",
+                Stat2 = StatId.FireResistance, Op2 = ModOp.Flat, Min2 = 0.05f, Max2 = 0.10f, Format2 = "+{0:0%} 火焰抗性",
+                AllowedSlots = SlotsMask(EquipSlot.Belt)
+            };
+        }
+
+        /// <summary>S4-P3：EquipSlot 组合转 AllowedSlots bit mask（canonical 构造入口，避免手写位运算出错）。</summary>
+        public static ushort SlotsMask(params EquipSlot[] slots)
+        {
+            ushort mask = 0;
+            if (slots == null)
+                return mask;
+            for (int i = 0; i < slots.Length; i++)
+                mask |= (ushort)(1 << (int)slots[i]);
+            return mask;
         }
     }
 
