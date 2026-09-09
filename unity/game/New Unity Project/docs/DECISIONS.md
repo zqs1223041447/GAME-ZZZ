@@ -136,3 +136,12 @@ S1 技术已放行。输入、对象池、SeededRng、点地移动、Q/W/E 施�
 - 玩家与怪不要物理互推：分层忽略（Player / Monster）。
 - 怪与怪禁止 Rigidbody 互撞、禁止 CharacterController 互推；在 `DummyCrowd.Separate`（AI 转向之后）距离 < 1 就水平拨开。
 - 无碰撞不等于打不中。走进怪群按 QWE 必须仍能命中。
+
+## S5U 开启（2026-09-09，导演指令 + 规划 AI 裁定）
+
+- **导演 UI/HUD 指令（原话，2026-09-09 Arena 实游）**：「Bootstrap开启后啥也没有啊，反而arena开启后有页面。另外现在的UI和HUD真的让人看不下去，让规划AI重新规划，插入新一轮的页面内容优化。我要求：参考POE或者暗黑3来制作HUD和UI，如果本机有可用素材也可以使用！ 无人值守模式启动」。
+- **S5 Director Final Gate=DEFERRED**：导演未否定 S5 技术收口（BL-002.A1/BL-021.A2/回归/确定性/性能/Production Closure 全部保留 PASS/FROZEN），亦未填写 APPROVE——不得推定批准；正式处理=Final Gate 维持 PENDING，呈现层由独立插入周期 **S5U** 承接；S5U 完成后原 S5 Final Gate Packet + S5U presentation addendum 一并重送 Director Final Review。禁止书写 S5=COMPLETE；禁止把 S5U 反写成 S5 scope expanded。
+- **技术路线=Route A（保持 IMGUI，全面视觉重做）**：UI Toolkit 迁移=NOT AUTHORIZED；uGUI 迁移=NOT AUTHORIZED；工作 AI 不得自行换路线。未来如需迁移，单独开 Architecture Gate。
+- **素材裁定**：本机 HD Common Icon Pack 1.2（人人素材分发，包内免责声明「仅供学习研究之用，不得用于商业用途」）=**QUARANTINED / DO NOT IMPORT INTO PRODUCTION**；ORK Okashi RPG Kit / Action Game Starter Kit / Dungeon Breaker Starter Kit（license 未定位）=**REFERENCE ONLY**；Kenney UI Pack（官方标示 CC0）=license-clean fallback；**Primary=GAME-ZZZ 原创美术**；Unity Asset Store 付费候选=**DIRECTOR INPUT REQUIRED（PAID ASSET PURCHASE）**，无人值守不阻塞（原创+CC0 继续）。PoE/D3=REFERENCE ONLY（禁止截图裁切/rip/描摹/近像素重建/专有字体提取）。
+- **S5U-WO-01 放行并执行完毕**（Phase 0，Runtime Product Authority=NONE）：S5U_PLAN / S5U_VISUAL_CONTRACT（技术锁+7 线框+Design Tokens）/ S5U_UI_SURFACE_MAP（23 表层+S5 合同 14 项映射）/ S5U_ASSET_ADMISSION / 截图基线 10 张（8×2560×1440+2×1080 sanity，Arena 实跑）；EditMode 314/314+PlayMode 11/11+Audit fresh+ProdSim hash 精确不变（FNV1A64:9a4c9524d0b3e214）。Capability Ledger：UI Presentation quality 建立独立 evidence/tracking，不因视觉重做晋升 gameplay capability；Mechanic Matrix=VERIFY ONLY。
+- **下一令**：S5U-WO-02（Dark ARPG Skin Foundation & Combat HUD Frame——首张 UI runtime authority 工作令）待规划 AI Gate 后放行。
