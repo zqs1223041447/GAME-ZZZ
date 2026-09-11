@@ -2,7 +2,7 @@
 
 **Work Order:** S6P-WO-04C — Existing-Consumer Semantic Closure  
 **Base commit:** `8959a60`  
-**Implementation commit:** `8b2f875`  
+**Implementation commit:** `e1d8eea`  
 **Channel A 合同正文：** 未补发（镜像站登录失效）。实现按 04B RELEASED + 原 WO-04「只接已有 consumer」开工。
 
 ## EP-A Entry
