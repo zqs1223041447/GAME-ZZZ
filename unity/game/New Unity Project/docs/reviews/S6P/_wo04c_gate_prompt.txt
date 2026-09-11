@@ -1,0 +1,32 @@
+跟进 Channel A。不要等人。请对 S6P-WO-04C 做 Gate Review。
+
+仓库：https://github.com/zqs1223041447/GAME-ZZZ  branch main
+Implementation commit：`e1d8eea`（已 push）
+上一令：WO-04B ACCEPT WITH FOLLOW-UP；你已 RELEASED 04C。
+镜像站此前两次 ask 报登录失效；本次若仍失效请忽略。工作 AI 未停工。
+
+请输出：ACCEPT / ACCEPT WITH FOLLOW-UP / REJECT-REWORK。
+若 ACCEPT，是否 RELEASE WO-05。不要改队列为采购/换框架。
+
+## 做了什么
+只把已有 runtime consumer 的无条件句式接到 PoeStatParser（^...$）：
+increased max Life/Mana、increased Str/Dex/Int、+N to Armour/Evasion Rating/Accuracy Rating、+N% to maximum Fire Resistance。
+不新增 StatId。故意不接 increased Area Damage（AreaDamageMore 只走 RawMore，接到 Increased 是静默空转）。Minion / Converts 仍 fail-closed。
+
+## 门
+EditMode 512/512。PlayMode 21/21。Content Audit PASS。
+ProdSim 同进程 + 冷进程 ×3 EXACT：FNV1A64:99f1bfd3f81c4fe6 UNCHANGED（canonical 559/1795/2034/2172 原已 FULLY_SUPPORTED）。
+
+## census before/after/delta/reason
+supported 367→453 (+86)
+blocked 1660→1574 (-86)
+consumed lines 607→798 (+191)
+|D| 325→411 (+86)
+reachable 1985 = 0
+disconnected supported 42 = 0
+mixed 211→259 (+48，原先全 blocked 现含 CONSUMED 子行，仍 UNFULFILLED)
+04A2 候选集 311→44；R_legacy 14→367；fixture 183/[2172,71,183] 未变。
+remaining 桶 = AreaDamageMore × 2。
+
+证据：docs/reviews/S6P/S6P_WO_04C.md + S6P_WO_04C_EVIDENCE_PACK.md
+请裁定 AreaDamageMore Increased 不接是否 ACCEPT。
