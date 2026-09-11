@@ -90,19 +90,30 @@ namespace Game.Tests.EditMode
             var s = new SliceSession();
             string err;
 
-            // S6P-WO-04A（本轮行为更正，非削弱）：真实转火基石（Avatar of Fire）的词条里含
-            // "Deal no Non-Fire Damage" 这类引擎兑现不了的行 ⇒ 按"整节点 fail closed"它必须不可分配。
-            // 旧版本沿路径点亮它，等于把"点亮了但只吃半截"冻结成契约。
+            // S6P-WO-04A2（本轮行为更正）：真实转火基石（Avatar of Fire）的词条里含
+            // "Deal no Non-Fire Damage" 这类引擎兑现不了的行 ⇒ EffectTruth=UNFULFILLED、整节点 0 效果；
+            // 但它**仍是合法路径节点**（TraversalTruth=TRAVERSABLE）—— 04A 的"含 blocked 行即不可分配"
+            // 已被本令拆成两个维度：能不能走 ≠ 能不能生效。
             int avatar = FindByStat("Converted to Fire Damage");
             Assert.GreaterOrEqual(avatar, 0, "真实数据里必须存在物理转火的天赋点");
-            Assert.AreEqual(PassiveSupport.NodeStatus.BlockedCurrently, PassiveSupport.EvaluateNode(avatar),
-                "转火基石含当前兑现不了的效果行 ⇒ 必须整体不可分配");
+            PassiveSupport.NodeTruth tr = PassiveSupport.EvaluateTruth(avatar);
+            Assert.AreEqual(PassiveSupport.EffectTruth.Unfulfilled, tr.Effect,
+                "转火基石含当前兑现不了的效果行 ⇒ 效果维度必须是 UNFULFILLED");
+            Assert.AreEqual(PassiveSupport.TraversalTruth.Traversable, tr.Traversal,
+                "普通节点即便效果未兑现也必须是合法路径（本令核心）");
+
             int unspentBefore = s.Unspent;
-            Assert.IsFalse(s.TryAllocate(avatar, out err), "不可兑现节点必须被拒绝");
-            Assert.AreEqual(PassiveSupport.ReasonBlockedCurrently, s.NodeBlockReason(avatar),
-                "不可兑现的稳定原因来自 domain truth（该节点不与起点相连，分配门先报相连性）");
-            Assert.IsFalse(s.Allocated[avatar], "被拒绝的加点不得写入已分配容器");
+            Assert.IsFalse(s.TryAllocate(avatar, out err), "该基石离起点很远，分配门应报相连性");
+            Assert.AreEqual("需与已点亮节点相连", err, "拒绝原因必须来自通行维度，不再是支持门");
             Assert.AreEqual(unspentBefore, s.Unspent, "被拒绝的加点不得扣点");
+
+            // 效果门：即便把它塞进损坏/注入状态的 Allocated，它也**一条 modifier 都不许出**。
+            float convertBefore = s.PlayerStats.Get(StatId.ConvertPhysToFire);
+            s.Allocated[avatar] = true;
+            s.RecalcPlayer(false);
+            Assert.AreEqual(convertBefore, s.PlayerStats.Get(StatId.ConvertPhysToFire), 0.0001f,
+                "route-only 节点必须整节点零效果（不得只吃它可识别的那一条转火行）");
+            s.Allocated[avatar] = false;
 
             // 同一条转换轴上的聚合仍然成立：取**权威 parser** 对该节点真实文本的产出，
             // 与 Support 的 modifier 一起走同一个生产 StatBag 聚合路径（不复制任何解释器）。

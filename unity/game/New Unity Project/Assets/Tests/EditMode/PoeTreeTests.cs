@@ -92,20 +92,18 @@ namespace Game.Tests.EditMode
             Assert.AreEqual(1, CountAllocated(s), "新会话只应点亮起点");
 
             string err;
-            // S6P-WO-04A：起点邻居里既有可兑现的（559/1795/2034），也有含"引擎兑现不了的效果行"的（71 …）。
-            // 加点断言因此改为：可兑现的邻居必须能点，不可兑现的邻居必须整节点原子拒绝。
-            int neighbour = FirstAllocatableNeighbour(Start);
+            // S6P-WO-04A2：起点邻居里既有可兑现的（559/1795/2034），也有含"引擎兑现不了的效果行"的（71 …）。
+            // 本令起这两类**都能点**（通行维度相同）；区别只在效果维度：前者真生效，后者 0 效果。
+            int neighbour = FirstEffectiveNeighbour(Start);
             Assert.GreaterOrEqual(neighbour, 0, "起点必须至少有一个可兑现的邻居");
             Assert.IsTrue(s.TryAllocate(neighbour, out err), "可兑现的起点邻居必须可点亮：" + err);
             Assert.AreEqual(PoeTree.Count, s.Allocated.Length, "Allocated 长度必须等于真实节点数");
 
-            int blockedNeighbour = FirstBlockedNeighbour(Start);
-            Assert.GreaterOrEqual(blockedNeighbour, 0, "起点邻居里必须存在含 blocked 效果行的节点（钉死支持门）");
-            int unspentBefore = s.Unspent;
-            Assert.IsFalse(s.TryAllocate(blockedNeighbour, out err), "不可兑现的邻居必须被拒绝");
-            Assert.AreEqual(PassiveSupport.ReasonBlockedCurrently, err);
-            Assert.IsFalse(s.Allocated[blockedNeighbour], "被拒绝的加点不得写入已分配容器");
-            Assert.AreEqual(unspentBefore, s.Unspent, "被拒绝的加点不得扣点");
+            int routeOnly = FirstRouteOnlyNeighbour(Start);
+            Assert.GreaterOrEqual(routeOnly, 0, "起点邻居里必须存在 route-only 节点（钉死通行/生效分离）");
+            Assert.AreEqual(PassiveSupport.EffectTruth.Unfulfilled,
+                PassiveSupport.EvaluateTruth(routeOnly).Effect, "route-only 邻居的效果维度必须是 UNFULFILLED");
+            Assert.IsTrue(s.TryAllocate(routeOnly, out err), "route-only 邻居必须可作为路径点亮：" + err);
 
             // 与已点亮集合不连通的节点必须被拒绝
             int far = FindDisconnectedNode(s, neighbour);
@@ -119,27 +117,30 @@ namespace Game.Tests.EditMode
             Assert.IsFalse(s.CanAllocate(locked), "无连线节点不得可点");
         }
 
-        /// <summary>起点邻居里第一个被 support truth 判为可兑现的节点（无则 -1）。</summary>
-        static int FirstAllocatableNeighbour(int node)
+        /// <summary>起点邻居里第一个效果可完整兑现的节点（无则 -1）。</summary>
+        static int FirstEffectiveNeighbour(int node)
         {
             int[] links = PoeTree.Get(node).links;
             if (links == null)
                 return -1;
             for (int i = 0; i < links.Length; i++)
-                if (PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(links[i])))
+                if (PassiveSupport.YieldsModifiers(PassiveSupport.EvaluateTruth(links[i]).Effect))
                     return links[i];
             return -1;
         }
 
-        /// <summary>起点邻居里第一个被 support truth 判为当前不可兑现的节点（无则 -1）。</summary>
-        static int FirstBlockedNeighbour(int node)
+        /// <summary>起点邻居里第一个"可通行但效果未兑现"的 route-only 节点（无则 -1）。</summary>
+        static int FirstRouteOnlyNeighbour(int node)
         {
             int[] links = PoeTree.Get(node).links;
             if (links == null)
                 return -1;
             for (int i = 0; i < links.Length; i++)
-                if (PassiveSupport.EvaluateNode(links[i]) == PassiveSupport.NodeStatus.BlockedCurrently)
+            {
+                PassiveSupport.NodeTruth t = PassiveSupport.EvaluateTruth(links[i]);
+                if (PassiveSupport.IsTraversable(t.Traversal) && !PassiveSupport.YieldsModifiers(t.Effect))
                     return links[i];
+            }
             return -1;
         }
 
@@ -148,7 +149,7 @@ namespace Game.Tests.EditMode
         {
             var s = new SliceSession();
             string err;
-            s.TryAllocate(FirstAllocatableNeighbour(Start), out err);
+            s.TryAllocate(FirstEffectiveNeighbour(Start), out err);
             Assert.Greater(CountAllocated(s), 1);
             Assert.IsTrue(s.TryRespec(out err), err);
             Assert.AreEqual(1, CountAllocated(s), "重构后只应保留起点");

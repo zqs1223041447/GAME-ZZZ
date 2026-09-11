@@ -55,22 +55,22 @@ namespace Game.Tests.EditMode
             Assert.IsTrue(sim.Session.Alive);
             Assert.AreEqual(CastPhase.Idle, sim.Caster.Phase);
             Assert.IsFalse(sim.Session.BuildLocked);
-            // 真实天赋域：起点（Scion）恒已点亮，其可兑现的邻居在出图后可加点
-            // （S6P-WO-04A：起点邻居里含 blocked 行的节点不再可点，这里取第一个可兑现邻居）
-            int first = FirstAllocatableNeighbour();
+            // 真实天赋域：起点（Scion）恒已点亮，其邻居在出图后可加点
+            // （S6P-WO-04A2：这里取第一个效果可完整兑现的邻居，避免把断言建在 route-only 节点上）
+            int first = FirstEffectiveNeighbour();
             Assert.GreaterOrEqual(first, 0, "起点必须至少有一个可兑现邻居");
             Assert.IsFalse(sim.Session.Allocated[first]);
             Assert.IsTrue(sim.Session.TryAllocate(first, out err), err);
             Assert.IsTrue(sim.Session.TrySetSupport(SkillId.Projectile, 0, SupportId.Fork, out err), err);
         }
 
-        static int FirstAllocatableNeighbour()
+        static int FirstEffectiveNeighbour()
         {
             int[] links = PoeTree.Get(SliceSession.StartNode).links;
             if (links == null)
                 return -1;
             for (int i = 0; i < links.Length; i++)
-                if (PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(links[i])))
+                if (PassiveSupport.YieldsModifiers(PassiveSupport.EvaluateTruth(links[i]).Effect))
                     return links[i];
             return -1;
         }

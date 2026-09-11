@@ -48,6 +48,40 @@ namespace Game.Runtime.Core
             OutOfDomain = 4
         }
 
+        /// <summary>
+        /// S6P-WO-04A2 —— **效果维度**：这个节点承诺的 gameplay effect 当前能不能完整兑现。
+        /// 与 <see cref="TraversalTruth"/> 相互独立：路由资格不看它，效果兑现不看路由。
+        /// </summary>
+        public enum EffectTruth : byte
+        {
+            /// <summary>全部 gameplay 效果行都可兑现 ⇒ 分配后应用其完整 modifier 集。</summary>
+            FullySupported = 0,
+            /// <summary>含当前兑现不了的 gameplay promise（含 mixed node）⇒ 整节点 0 modifier。</summary>
+            Unfulfilled = 1,
+            /// <summary>需要本令不涉及的专门机制（专精 / 珠宝孔 / 时光珠宝类）⇒ 不作普通节点式兑现。</summary>
+            SpecialPending = 2
+        }
+
+        /// <summary>
+        /// S6P-WO-04A2 —— **通行维度**：这个节点能不能作为被动树路径。
+        /// </summary>
+        public enum TraversalTruth : byte
+        {
+            /// <summary>属当前普通被动分配域：可分配、扣点、进 selected 集、可作为后续邻接节点的路径。</summary>
+            Traversable = 0,
+            /// <summary>在树数据里，但分配/通行需要本令禁止涉及的特殊机制 ⇒ 不可分配、不可作为 transit。</summary>
+            SpecialBlocked = 1,
+            /// <summary>已有结构事实认定它不属当前普通被动分配域。</summary>
+            OutOfDomain = 2
+        }
+
+        /// <summary>一个节点的**两个独立真值**（canonical owner 只在这里产出）。</summary>
+        public struct NodeTruth
+        {
+            public EffectTruth Effect;
+            public TraversalTruth Traversal;
+        }
+
         // 稳定的拒绝/展示原因（UI 与 TryAllocate 共用同一份文本，禁止各自维护一套）。
         public const string ReasonBlockedCurrently = "该节点含当前引擎无法完整兑现的效果";
         public const string ReasonBlockedSpecial = "该节点需要当前尚未实现的特殊交互";
@@ -90,19 +124,52 @@ namespace Game.Runtime.Core
         }
 
         /// <summary>节点/词条级资格（唯一实现；UI、分配门、消费门、census 都调它）。</summary>
+        /// <summary>
+        /// 节点**两个维度的 canonical 真值**（分配门只读 Traversal、消费门只读 Effect）。
+        /// 索引域外（含 403 未上树节点）返回 SPECIAL_PENDING / OUT_OF_DOMAIN。
+        /// </summary>
+        public static NodeTruth EvaluateTruth(int nodeId)
+        {
+            if (nodeId < 0 || nodeId >= PoeTree.Count)
+            {
+                NodeTruth ood;
+                ood.Effect = EffectTruth.SpecialPending;
+                ood.Traversal = TraversalTruth.OutOfDomain;
+                return ood;
+            }
+            EnsureCache();
+            if (!_known[nodeId])
+            {
+                PoeNode n = PoeTree.Get(nodeId);
+                NodeTruth t = ClassifyTruth(n);
+                _truth[nodeId] = t;
+                _status[nodeId] = Project(n, t);
+                _known[nodeId] = true;
+            }
+            return _truth[nodeId];
+        }
+
+        public static NodeTruth EvaluateTruth(PoeNode n)
+        {
+            return ClassifyTruth(n);
+        }
+
+        /// <summary>
+        /// 04A 的四值资格。本令后**降级为 census / 诊断投影**：由 <see cref="EvaluateTruth(int)"/> 唯一派生，
+        /// 不再驱动分配门，也不再驱动消费门 —— 那两个门各自只读一个维度。
+        /// 保留它是为了让 04A 冻结 census（367/1660/87/315）继续可机械复核。
+        /// </summary>
         public static NodeStatus EvaluateNode(int nodeId)
         {
             if (nodeId < 0 || nodeId >= PoeTree.Count)
                 return NodeStatus.OutOfDomain;
-
-            if (_status == null || _status.Length != PoeTree.Count)
-            {
-                _status = new NodeStatus[PoeTree.Count];
-                _known = new bool[PoeTree.Count];
-            }
+            EnsureCache();
             if (!_known[nodeId])
             {
-                _status[nodeId] = ClassifyNode(PoeTree.Get(nodeId));
+                PoeNode n = PoeTree.Get(nodeId);
+                NodeTruth t = ClassifyTruth(n);
+                _truth[nodeId] = t;
+                _status[nodeId] = Project(n, t);
                 _known[nodeId] = true;
             }
             return _status[nodeId];
@@ -110,12 +177,38 @@ namespace Game.Runtime.Core
 
         public static NodeStatus EvaluateNode(PoeNode n)
         {
-            return ClassifyNode(n);
+            return Project(n, ClassifyTruth(n));
         }
 
-        public static bool IsAllocatable(NodeStatus status)
+        /// <summary>通行资格（canonical 判据）：只有 TRAVERSABLE 可分配、可扣点、可作为路径。</summary>
+        public static bool IsTraversable(TraversalTruth traversal)
         {
-            return status == NodeStatus.AllocatableSupported;
+            return traversal == TraversalTruth.Traversable;
+        }
+
+        /// <summary>效果兑现资格（canonical 判据）：只有 FULLY_SUPPORTED 可贡献 modifier。</summary>
+        public static bool YieldsModifiers(EffectTruth effect)
+        {
+            return effect == EffectTruth.FullySupported;
+        }
+
+        static void EnsureCache()
+        {
+            if (_truth == null || _truth.Length != PoeTree.Count)
+            {
+                _truth = new NodeTruth[PoeTree.Count];
+                _status = new NodeStatus[PoeTree.Count];
+                _known = new bool[PoeTree.Count];
+            }
+        }
+
+        /// <summary>本节点不可通行时的稳定原因文本（可通行返回 null）。分配门与 UI 共用。</summary>
+        public static string TraversalReason(int nodeId)
+        {
+            NodeTruth t = EvaluateTruth(nodeId);
+            if (IsTraversable(t.Traversal))
+                return null;
+            return Reason(EvaluateNode(nodeId));
         }
 
         /// <summary>可分配返回 null；否则返回稳定原因（UI 展示与分配拒绝共用）。</summary>
@@ -132,28 +225,55 @@ namespace Game.Runtime.Core
         }
 
         /// <summary>
-        /// 节点级判定（唯一实现）：
-        ///   专精 → 过渡态不可分配；珠宝孔 / 时光珠宝类节点 → 无 handler 的特殊交互；
-        ///   只要出现一条 BLOCKED_BY_DOMAIN 行，整节点 fail closed（§14）；
-        ///   出现无 handler 的 SPECIAL_INTERACTION 同样整节点拒绝（§12）；
-        ///   STRUCTURAL 行不阻止分配（§10）。
+        /// 节点级判定（唯一实现）。产出的两个维度互相独立：
+        ///   专精 / 珠宝孔 / 时光珠宝类 → SPECIAL_PENDING + SPECIAL_BLOCKED（§12/§17）；
+        ///   只要出现一条 BLOCKED_BY_DOMAIN 行，整节点 UNFULFILLED（§14 整节点 fail closed），
+        ///     但**通行不受影响**（本令的核心：路由资格与效果兑现分离）；
+        ///   无 handler 的 SPECIAL_INTERACTION → SPECIAL_PENDING + SPECIAL_BLOCKED；
+        ///   STRUCTURAL 行既不阻止通行也不产生承诺（§10）。
         /// </summary>
-        static NodeStatus ClassifyNode(PoeNode n)
+        static NodeTruth ClassifyTruth(PoeNode n)
         {
-            if (n.Kind == PoeNodeKind.Mastery)
-                return NodeStatus.SpecialPendingMastery;
-            if (n.Kind == PoeNodeKind.Jewel)
-                return NodeStatus.BlockedSpecialInteraction;
-            if (n.locked != 0)
-                return NodeStatus.BlockedSpecialInteraction;
+            NodeTruth t;
+            if (n.Kind == PoeNodeKind.Mastery || n.Kind == PoeNodeKind.Jewel || n.locked != 0)
+            {
+                t.Effect = EffectTruth.SpecialPending;
+                t.Traversal = TraversalTruth.SpecialBlocked;
+                return t;
+            }
 
             bool consumed = false, blocked = false, special = false, structural = false;
             ClassifyText(n.stats, ref consumed, ref blocked, ref special, ref structural);
             ClassifyText(n.choices, ref consumed, ref blocked, ref special, ref structural);
 
-            if (blocked) return NodeStatus.BlockedCurrently;
-            if (special) return NodeStatus.BlockedSpecialInteraction;
-            return NodeStatus.AllocatableSupported;
+            // mixed（部分可兑现 + 部分不可兑现）必须整节点 UNFULFILLED：一条都不许漏出（§4/§14）。
+            if (blocked)
+            {
+                t.Effect = EffectTruth.Unfulfilled;
+                t.Traversal = TraversalTruth.Traversable;
+                return t;
+            }
+            if (special)
+            {
+                t.Effect = EffectTruth.SpecialPending;
+                t.Traversal = TraversalTruth.SpecialBlocked;
+                return t;
+            }
+            t.Effect = EffectTruth.FullySupported;
+            t.Traversal = TraversalTruth.Traversable;
+            return t;
+        }
+
+        /// <summary>两个真值 → 04A 诊断四值（仅供 census/证据；不是任何门的判据）。</summary>
+        static NodeStatus Project(PoeNode n, NodeTruth t)
+        {
+            if (t.Traversal == TraversalTruth.OutOfDomain)
+                return NodeStatus.OutOfDomain;
+            if (t.Traversal == TraversalTruth.SpecialBlocked)
+                return n.Kind == PoeNodeKind.Mastery
+                    ? NodeStatus.SpecialPendingMastery : NodeStatus.BlockedSpecialInteraction;
+            return t.Effect == EffectTruth.FullySupported
+                ? NodeStatus.AllocatableSupported : NodeStatus.BlockedCurrently;
         }
 
         static void ClassifyText(string text, ref bool consumed, ref bool blocked, ref bool special, ref bool structural)
@@ -234,14 +354,62 @@ namespace Game.Runtime.Core
             return null;
         }
 
+        static NodeTruth[] _truth;
         static NodeStatus[] _status;
         static bool[] _known;
+        static bool[] _reach;
 
         /// <summary>测试注入/数据漂移后用（缓存必须与当前树数据同尺寸）。</summary>
         internal static void InvalidateCache()
         {
+            _truth = null;
             _status = null;
             _known = null;
+            _reach = null;
+        }
+
+        /// <summary>
+        /// S6P-WO-04A2 可达性真值：从 <see cref="PoeTree.StartIndex"/> 出发、
+        /// **只以 TRAVERSABLE 节点为 transit** 的图可达集合（seed 本身无条件入集）。
+        ///
+        /// 边只取 canonical 数据里的 <see cref="PoeNode.links"/>（无向、已去重升序），
+        /// 邻接遍历按 nodeId 升序 —— 结果与枚举顺序、渲染顺序、坐标无关。
+        /// 严禁用屏幕坐标 / orbit / group 归属 / 视觉连线推导邻接（§7.1）。
+        /// </summary>
+        public static bool[] ReachableSet()
+        {
+            int n = PoeTree.Count;
+            if (_reach != null && _reach.Length == n)
+                return _reach;
+            _reach = new bool[n];
+            if (n <= 0)
+                return _reach;
+
+            var queue = new int[n];
+            int head = 0, tail = 0;
+            int seed = PoeTree.StartIndex;
+            if (seed >= 0 && seed < n)
+            {
+                _reach[seed] = true;
+                queue[tail++] = seed;
+            }
+            while (head < tail)
+            {
+                int[] links = PoeTree.Get(queue[head++]).links;
+                if (links == null)
+                    continue;
+                for (int i = 0; i < links.Length; i++)
+                {
+                    int nb = links[i];
+                    if (nb < 0 || nb >= n || _reach[nb])
+                        continue;
+                    if (!IsTraversable(EvaluateTruth(nb).Traversal))
+                        continue;
+                    _reach[nb] = true;
+                    queue[tail++] = nb;
+                }
+            }
+            return _reach;
         }
 
         // ================= 缺失玩法轴关键词表（顺序敏感） =================

@@ -385,9 +385,9 @@ namespace Game.Tests.EditMode
                 {
                     if (i == start || PoeTree.Get(i).locked != 0)
                         continue;
-                    // 04A 起"相连"还不够：可分配节点必须同时被 support truth 判为可兑现。
-                    // 优先挑 supported 节点，好让这两条不变量证的仍是"连线/点数"而不是"支持门"。
-                    bool supported = PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(i));
+                    // 04A2 起"相连"由通行维度判定、"真生效"由效果维度判定，二者不再共用布尔值。
+                    // 优先挑 FULLY_SUPPORTED 节点，好让这两条不变量证的仍是"连线/点数"而不是兑现率。
+                    bool supported = PassiveSupport.YieldsModifiers(PassiveSupport.EvaluateTruth(i).Effect);
                     if (linkedToStart.Contains(i))
                     {
                         if (near < 0 && supported) near = i;

@@ -369,11 +369,12 @@ namespace Game.Runtime.Core
                 return false;
             }
 
-            // S6P-WO-04A 支持门：只要有一条效果行当前兑现不了，整节点原子拒绝（点/状态/结果零变化）
-            PassiveSupport.NodeStatus support = PassiveSupport.EvaluateNode(node);
-            if (!PassiveSupport.IsAllocatable(support))
+            // S6P-WO-04A2 **通行门**：只看 TraversalTruth。效果未兑现的普通节点（route-only）
+            // 现在是合法路径节点 —— 可分配、可扣点、可继续连通；它的 0 效果由消费门保证。
+            PassiveSupport.NodeTruth truth = PassiveSupport.EvaluateTruth(node);
+            if (!PassiveSupport.IsTraversable(truth.Traversal))
             {
-                error = PassiveSupport.Reason(support);
+                error = PassiveSupport.TraversalReason(node);
                 return false;
             }
 
@@ -732,9 +733,10 @@ namespace Game.Runtime.Core
             {
                 if (!Allocated[i])
                     continue;
-                // 消费门（§16）：损坏/注入状态里的不可分配节点必须贡献 0 modifier，
-                // 不得半消费它可识别的那几行 —— 挡在入口之外还不够，聚合路径本身也要 fail closed。
-                if (!PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(i)))
+                // 消费门（§16）：只有 EffectTruth=FULLY_SUPPORTED 的节点可以贡献 modifier。
+                // route-only 节点（通行合法但效果未兑现）与损坏/注入状态都必须在聚合路径上 fail closed ——
+                // 不得半消费它可识别的那几行。
+                if (!PassiveSupport.YieldsModifiers(PassiveSupport.EvaluateTruth(i).Effect))
                     continue;
                 AddDefensive(PassiveCatalog.Get(i).Mods);
             }
@@ -853,8 +855,8 @@ namespace Game.Runtime.Core
             {
                 if (!Allocated[i])
                     continue;
-                // 消费门（§16）：与 RecalcPlayer 同一判据（同一 support truth），技能侧也不得半消费。
-                if (!PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(i)))
+                // 消费门（§16）：与 RecalcPlayer 同一判据（同一 EffectTruth），技能侧也不得半消费。
+                if (!PassiveSupport.YieldsModifiers(PassiveSupport.EvaluateTruth(i).Effect))
                     continue;
                 bag.AddAll(PassiveCatalog.Get(i).Mods, tags, ConditionId.Always);
             }
@@ -1668,23 +1670,30 @@ namespace Game.Runtime.Core
                 return false;
             if (Unspent <= 0)
                 return false;
-            if (!PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(node)))
+            if (!PassiveSupport.IsTraversable(PassiveSupport.EvaluateTruth(node).Traversal))
                 return false;
             return AdjacentToAllocated(node);
         }
 
         /// <summary>
-        /// 节点当前为何不可分配（可分配返回 null）。UI 与诊断都读这一份 —— 禁止 UI 自己再造一套不可用清单。
+        /// 节点当前为何不可分配（可通行返回 null）。UI 与诊断都读这一份 —— 禁止 UI 自己再造一套不可用清单。
+        /// 判据是**通行**维度；效果未兑现不构成不可点理由（route-only 节点可点、0 效果）。
         /// </summary>
         public string NodeBlockReason(int node)
         {
             if (node < 0 || node >= Allocated.Length)
                 return PassiveSupport.Reason(PassiveSupport.NodeStatus.OutOfDomain);
-            return PassiveSupport.Reason(PassiveSupport.EvaluateNode(node));
+            return PassiveSupport.TraversalReason(node);
+        }
+
+        /// <summary>节点两个维度的 canonical 真值（UI / 测试 / 证据共用，禁止各自重算）。</summary>
+        public PassiveSupport.NodeTruth NodeTruth(int node)
+        {
+            return PassiveSupport.EvaluateTruth(node);
         }
 
         /// <summary>
-        /// 已分配集合里"当前不可分配"的节点数：正常会话恒为 0；
+        /// 已分配集合里"当前不可通行"的节点数：正常会话恒为 0；
         /// 非 0 说明状态被损坏/注入过（消费门会照样让它们贡献 0 modifier）。
         /// </summary>
         public int BlockedAllocatedCount
@@ -1696,7 +1705,7 @@ namespace Game.Runtime.Core
                 {
                     if (!Allocated[i])
                         continue;
-                    if (!PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(i)))
+                    if (!PassiveSupport.IsTraversable(PassiveSupport.EvaluateTruth(i).Traversal))
                         n++;
                 }
                 return n;

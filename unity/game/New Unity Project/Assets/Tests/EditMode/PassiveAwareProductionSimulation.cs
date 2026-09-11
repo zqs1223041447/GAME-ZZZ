@@ -92,13 +92,18 @@ namespace Game.Tests.EditMode
             return list.ToArray();
         }
 
-        /// <summary>实际进入 runtime 的 passive modifier 语义元组，按 (NodeId, StatId, Op, Value) 稳定排序。</summary>
+        /// <summary>实际进入 runtime 的 passive modifier 语义元组，按 (NodeId, StatId, Op, Value) 稳定排序。
+        /// S6P-WO-04A2：与 <c>RecalcPlayer</c>/<c>CollectSkillMods</c> 读**同一**效果门 ——
+        /// route-only 节点（通行合法、效果未兑现）在这份"实际生效"视图里必须贡献 0 行，
+        /// 否则 payload 会声称一份引擎并不施加的效果（静默空效果的反面泄漏）。</summary>
         internal static List<string> ModifierTuples(SliceSession session)
         {
             int[] ids = AllocatedNodeIds(session);
             var rows = new List<ModRow>();
             for (int i = 0; i < ids.Length; i++)
             {
+                if (!PassiveSupport.YieldsModifiers(PassiveSupport.EvaluateTruth(ids[i]).Effect))
+                    continue;
                 Modifier[] mods = PassiveCatalog.Get(ids[i]).Mods;
                 if (mods == null)
                     continue;

@@ -1,0 +1,38 @@
+```text
+Working-Tree Fingerprint (content-addressed, SHA-256)
+branch                : main
+HEAD                  : ce6f85cd23d324ea68a76f98d28663f1258a3c01
+tracked+untracked files: 2810
+total bytes           : 321582428
+WORKING-TREE HASH     : 2dd76339fec2741e7bbd79df0b2bf9fac4b21ca31c837ca431bdd56956e2cfbd
+dirty                 : YES
+--- changed-file inventory (git status --porcelain, by area) ---
+[Assets/Runtime] 3
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/PassiveSupport.cs
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceHud.cs
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceSession.cs
+[Assets/Tests] 11
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveTraversal04A2.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveTraversal04A2.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/S6PWo04A2Tests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/S6PWo04A2Tests.cs.meta
+    M unity/game/New Unity Project/Assets/Tests/EditMode/PassiveAwareProductionSimulation.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/PassiveCensus.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/PassiveSupportTests.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/PoeTreeTests.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/S3R2FireConversionTests.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/SliceLoopTests.cs
+    M unity/game/New Unity Project/Assets/Tests/PlayMode/S6PPassiveSupportPlayModeTests.cs
+[other] 2
+    M 寮€鍙戣鍒?瑙勫垝AI浼氳瘽.md
+    M 寮€鍙戣鍒?UNATTENDED_STATE.md
+[docs] 8
+    ?? unity/game/New Unity Project/docs/qa/WO_04A2_TRAVERSAL_REPORT.json
+    ?? unity/game/New Unity Project/docs/reviews/S6P/_wo04a2_cold_entry.txt
+    ?? unity/game/New Unity Project/docs/reviews/S6P/_wo04a2_cold_exit.txt
+    ?? unity/game/New Unity Project/docs/reviews/S6P/_wo04a2_fingerprint_entry.txt
+    ?? unity/game/New Unity Project/docs/reviews/S6P/_wo04a2_fingerprint_final.txt
+    ?? unity/game/New Unity Project/docs/reviews/S6P/S6P_WO_04A2_CONTRACT.md
+    ?? unity/game/New Unity Project/docs/reviews/S6P/S6P_WO_04A2_EVIDENCE_PACK.md
+    ?? unity/game/New Unity Project/docs/reviews/S6P/S6P_WO_04A2.md
+```

@@ -42,14 +42,41 @@
 | 周期 | **S6P — Passive Truth & Deterministic Build Backbone** |
 | 计划正文 | `docs/reviews/S6P/S6P_PLAN.md` |
 | 规划 AI 原文 | `docs/reviews/S6P/S6P_PLANNER_REPLY_WO_RELEASE.md` |
-| 规划渠道 | 会话 `game-zzz-planning` / `6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d` |
+| 规划渠道 | **Channel A `game-zzz-planning-2` / `6aa368c5-7478-83ea-a2d3-95003ee4e6ab`**（2026-09-11 新建；旧会话 `game-zzz-planning` 已停用） |
 
 ## 当前令
 
 | 项 | 值 |
 |---|---|
-| 令号 | **S6P-DIR-01 — Director Supplemental Gameplay & Presentation Intervention**（导演插入令；原名误记为 WO-05，已按规划 AI 裁定改名 + 存根） |
-| 状态 | **IMPLEMENTED / GATE PENDING**（编译 0 error；EditMode **462/462**；PlayMode **17/17**；ProdSim canonical `FNV1A64:ec1d3ed67d3035d0` **未变**）。规划 AI 已裁定：本批不得记作 WO-05（该编号=Passive Overview LOD），改记 **S6P-DIR-01**；Gate Addendum 已补（`S6P_DIR_01_GATE_ADDENDUM.md`） |
+| 令号 | **S6P-WO-04A2 — Passive Traversal / Effect Separation** |
+| 状态 | **READY_FOR_GATE_REVIEW**（编译 0 error；EditMode **475/475**；PlayMode **18/18**；ProdSim 入口/出口冷进程 ×3 均 `FNV1A64:ec1d3ed67d3035d0` EXACT MATCH；可达性门 100.000%，缺失集 `[]`；04A census 367/1660/87/315 未变） |
+| 授权来源 | Channel A（新会话 `game-zzz-planning-2`）2026-09-11 下发完整合同（20 AC + PF-1..PF-6 + §7 可达性门 + §8 冻结 fixture + §14 敏感性 + §16 禁止 + §18 Evidence 字段 + §19 STOP 条件） |
+| 合同原文 | `docs/reviews/S6P/S6P_WO_04A2_CONTRACT.md` |
+| 实现记录 | `docs/reviews/S6P/S6P_WO_04A2.md` |
+| 证据包 | `docs/reviews/S6P/S6P_WO_04A2_EVIDENCE_PACK.md` |
+| 机器产物 | `docs/qa/WO_04A2_TRAVERSAL_REPORT.json`（测试再生） |
+| 入口指纹 | `6d2c9ae4536a17665851cadb3a72643fba3b34036c4fc65c2216d3e2d0c32b68`（HEAD `ce6f85c`，2798 files，dirty=NO）→ `_wo04a2_fingerprint_entry.txt` |
+| 出口指纹 | `_wo04a2_fingerprint_final.txt` |
+| 核心结论 | 节点「能不能作为路径」(**TraversalTruth**) 与「承诺的效果能不能兑现」(**EffectTruth**) 已拆成两个独立维度；普通 blocked 节点成为合法 **route-only** 路径节点（扣 1 点、整节点 0 效果），全树可达从 **14 → 1985**；`\|D\|`=325 的 start-connected supported 节点 **100% 可达** |
+| 冻结 fixture | target **183**，路径 `[2172, 71, 183]`，候选集 311，首个 route-only = **71** |
+| 未做（越界项） | 未实现 WO-03 的 Mastery 显式选择（22 个可兑现 choice 一个未动）；未碰 Jewel/Timeless/升华/药剂/新技能/新 Stat 轴；未 rebaseline |
+| 已知限制 | L1 仍有 **42** 个 supported 节点在起点连通域外（被特殊节点围住，已登记 ID 全表）；L2 route-only 节点仍消耗天赋点（合同 §6 规定）；L3 `R_ref` 与 `R_runtime` 按合同字面定义同构，AC-15 构造性成立（已如实说明） |
+| 后续 | **S6P-WO-03 仍为 BLOCKED，等 Channel A 对 WO-04A2 的 Gate Review = ACCEPT** |
+
+## 队列下一令（04A2 之后）
+
+| 项 | 值 |
+|---|---|
+| 队列 | **S6P-WO-04A2**（本令，待 Gate Review）→ WO-03 → WO-04B → [WO-04C 条件] → WO-05 |
+| 下一令 | **S6P-WO-03 — Mastery Explicit Selection & Allocation Correctness**（合同与前置已就绪：`S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md` §4–§19 + `S6P_WO_03_PREFLIGHT.md`；**必须等 04A2 ACCEPT 才动**） |
+| WO-03 新约束（由 04A2 产生） | ① 04A2 的 14→1985 与 `\|D\|`=325 是新的基线事实，WO-03 若使其移动必须显式更新并说明；② 42 个域外 supported 节点是 WO-03 之后实现 Jewel 时的输入，不得在本轮偷偷解；③ `BlockedAllocatedCount` 语义已改为「不可通行却被点亮」，WO-03 不得再把它当「不可兑现」用 |
+
+## 上一令（S6P-DIR-01 — 已实现、已提交入库 `ce6f85c`、已推送）
+
+| 项 | 值 |
+|---|---|
+| 令号 | **S6P-DIR-01 — Director Supplemental Gameplay & Presentation Intervention**（原名误记为 WO-05，已按规划 AI 裁定改名 + 旧名存根） |
+| 状态 | **IMPLEMENTED / 已提交入库**（commit `ce6f85c`）；当轮门：EditMode 462/462、PlayMode 17/17、ProdSim `FNV1A64:ec1d3ed67d3035d0` 未变 |
 | 授权来源 | 导演 2026-09-11 补充要求 4/5/6（原话见 `docs/reviews/S6P/S6P_DIR_01.md` §1）；同批要求 1/2/3 见 `docs/reviews/S6P/S6P_DIRECTOR_FEEDBACK_2026_09_11.md` |
 | 记录 | 实现记录 `S6P_DIR_01.md`；美术来源台账 `S6P_DIR_01_POEDB_SOURCING.md`；证据包 `S6P_DIR_01_EVIDENCE_PACK.md`；取证截图 `docs/_dirshots/s6pwo05/` |
 | 交付要点 | 30 个 poedb 资源（物品图 12 / 技能宝石图 5 / 辅助宝石图 9 / 特效图 4）+ 两条主动技能（冰矛 R / 火球术 T）+ 两条机制型辅助（投射物返回 / 狙击印记）+ 四项机制（穿透 / 返回 / 命中点爆炸 / 单体印记增伤） |
@@ -58,12 +85,12 @@
 | 规划 AI 裁定（2026-09-11） | ① 可达性冲突 = **批准「通行/生效分离」**，但**另立 S6P-WO-04A2 先做**（本令不并入）；② 共享连接组 = **暂时接受**（附 5 条不变量：`MaxLinkGroups=2` / 无 `LinkSkill2` / 无第三组 / 不增容量 / 既有 G0/G1 真值不变），**不得并入 WO-03**；③ 冰冷轴暂缓且**明确不属 WO-03 职权**，未来加 Cold axis 时单独重基线；④ 新四条技能/辅助 = **明确的导演授权内容增量**，不得写成「无内容变化」；ProdSim `ec1d…` 只证明**旧 canonical 场景未破**，**不**证明新轴已被覆盖 |
 | 未做（越界项） | 不新增 StatId/EffectId/EventId/ModOp/Tag/Affix；不碰 Curse/Flask/Jewel 运行时；不改既有 Support 1..7 的身份与语义 |
 
-## 队列下一令（规划 AI 2026-09-11 新队列）
+## 历史：04A2 要点（已由正式合同 `S6P_WO_04A2_CONTRACT.md` 取代，保留作对账用）
 
 | 项 | 值 |
 |---|---|
 | 队列 | **S6P-DIR-01 Gate Addendum ＋ S6P-WO-04A2 → WO-03 → WO-04B → [WO-04C 条件] → WO-05**（WO-05 仍指 Passive Overview LOD & Texture Residency，未开工） |
-| 下一令 | **S6P-WO-04A2 — Passive Traversal / Effect Separation**（规划 AI 裁定 **RELEASED / EXECUTE NOW**，但要先于 WO-03） |
+| 下一令 | **S6P-WO-04A2**（**已执行完毕，待 Gate Review**；合同原文见 `S6P_WO_04A2_CONTRACT.md`） |
 | 04A2 目标 | 把节点的两个问题拆开：① 能不能作为树路径？② gameplay promise 能不能完整兑现？不得共用一个布尔值 |
 | 04A2 真值 | `EffectTruth` = FULLY_SUPPORTED / UNFULFILLED / SPECIAL_PENDING；`TraversalTruth` = TRAVERSABLE / SPECIAL_BLOCKED / OUT_OF_DOMAIN（由现有 `PassiveSupport` 单一 owner 暴露，不另建 oracle） |
 | 04A2 硬约束 | 普通上树节点：fully supported → TRAVERSABLE+FULLY_SUPPORTED；BLOCKED/mixed → TRAVERSABLE+**UNFULFILLED（零 modifier）**；Mastery/Jewel/Timeless → SPECIAL_BLOCKED（WO-03 才解）。mixed node 仍**整节点零效果**（禁 4 条偷偷生效）。04A 消费门保留（即使经 traversal 合法进入 Allocated，`RecalcPlayer`/`CollectSkillMods` 贡献恒 0） |
@@ -72,16 +99,12 @@
 | 04A2 ProdSim | 入口/期望出口均 `FNV1A64:ec1d3ed67d3035d0`；新增敏感性测试证「分配 route-only 节点 → `ps\|` 身份变化，`pm/pe/pk` gameplay 结果不变」；若正式 hash 变化 → **STOP / 调查 / 禁止自行 rebaseline** |
 | 04A2 禁止 | 新 StatId/ModOp/parser 规则、Mastery selector、Jewel/Timeless 机制、元素伤害轴、第三连接组、存档、LOD |
 
-## 后续令（04A2 之后回到 WO-03）
-
-| 项 | 值 |
-|---|---|
-| 令号 | **S6P-WO-03
+## 后续令（04A2 ACCEPT 之后回到 WO-03）
 
 | 项 | 值 |
 |---|---|
 | 令号 | **S6P-WO-03 — Mastery Explicit Selection & Allocation Correctness** |
-| 状态 | **PREFLIGHT PASS / 实现未开始**（2026-09-11；规划 AI 已 RE-RELEASED，强制前置已跑完并落库，未写任何产品代码） |
+| 状态 | **PREFLIGHT PASS / 实现未开始 / 当前 BLOCKED**（等 Channel A 对 S6P-WO-04A2 的 Gate Review = ACCEPT） |
 | 授权来源 | `docs/reviews/S6P/S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md`（04A Gate Review = ACCEPT WITH FOLLOW-UP + WO-03 完整合同 §4–§19） |
 | 前置记录 | `docs/reviews/S6P/S6P_WO_03_PREFLIGHT.md`；entry fingerprint `a85a5e2e23ca5acfae2a96b41a61d12cfdd59fd9fd9ec8a77ab1b43f4a12c926`（13765 files，HEAD `64b614f`） |
 | 入口基线 | EditMode 426/426、PlayMode 17/17、ProdSim `FNV1A64:ec1d3ed67d3035d0` |
@@ -176,8 +199,16 @@ pwsh -NoProfile -File tools/evidence/cold-process-prodsim.ps1 -Runs 3
 
 | 渠道 | 会话 | 角色 |
 |---|---|---|
-| **Channel A** | `game-zzz-planning` / `6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d` | **仲裁 + 可执行队列权威**（唯一 RELEASED 队列） |
+| **Channel A** | **`game-zzz-planning-2` / `6aa368c5-7478-83ea-a2d3-95003ee4e6ab`**（2026-09-11 新建） | **仲裁 + 可执行队列权威**（唯一 RELEASED 队列） |
+| （历史）Channel A 旧会话 | `game-zzz-planning` / `6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d` | **已停用** —— 按导演 2026-09-11 指令「新开一个会话，不要再使用旧的规划 AI 会话」，不再向其发令 |
 | **Channel B** | `game-zzz-plan-v2` / `6aa31495-638c-83e8-bf15-f9952101fc6c` | **独立第二意见**；输出默认 = `PROPOSED / NOT YET EXECUTABLE` |
+
+### 仓库对规划 AI 的可见性（2026-09-11 起）
+
+- 远端 = **公开** GitHub `https://github.com/zqs1223041447/GAME-ZZZ`，`main` 已与本地同步
+  （`git push` 于 2026-09-11 完成：`64eb9fe..ce6f85c`）。
+- **新规则：每次向规划 AI 发令前，先 `git push`，让它能直接读仓库真值**，而不是只靠消息里的现状摘要。
+- 若某轮只提交未推送，必须在发令消息里显式声明「远端落后本地 N 个提交」，否则规划 AI 会读到过期代码。
 
 - 冲突时：**STOP → 交 Channel A 仲裁 → 只保留一份 RELEASED 队列**。
 - **不采用**「两个渠道并行发令、我自己择优执行」——无人值守最大的敌人是同时存在两份都自称权威的未来状态。
@@ -297,3 +328,6 @@ unity command capture_game_view --source screen --width 2560 --height 1440 --sav
 | 2026-09-11 | **WO-04A Gate Review = ACCEPT WITH FOLLOW-UP（技术/产品 42 / 42 AC PASS，Blocking Follow-up = NONE，Evidence Exception ×1）**；**S6P-WO-03 正式 RE-RELEASED / EXECUTE NOW**（完整合同 §4–§19）。三条裁定：① **57 珠宝孔封锁 = 接受**（属 §12/AC-11 授权范围，`424 − 57 = 367` 是合理 truth refinement，不构成实现 Jewel 域）；② **S3R2 测试适配 = 接受，不判削弱**（旧 E2E 路径被产品规则合法关闭；三层互补证据成立）+ 非阻塞整理要求（WO-03 顺手改测试名，**非 04A 返工**）；③ **入口指纹缺失 = `EVIDENCE_EXCEPTION_ACCEPTED`**，不得事后伪造，规则升级为「entry fingerprint → production mutation → tests → final fingerprint」。04A 证据：`S6P_WO_04A_EVIDENCE_PACK.md`；裁定原文：`S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md` |
 | 2026-09-11 | **WO-03 强制前置（只读）执行完毕 = PREFLIGHT PASS**，产品实现尚未开始。entry fingerprint `a85a5e2e…`（13765 files，HEAD `64b614f`）先落库；用 04A 唯一 support truth 全量 census 315 个专精 / **1863** 条 choice：**全可兑现 22**、blocked 1841（域 1833 + 无 handler 特殊 8）；**专精 >=1 可兑现 = 22 ≠ 0 ⇒ 不触发 STOP，允许继续完整 WO-03**；>=2 可兑现 = **0** ⇒ 按 §13 fallback 用「未选择 vs 显式选择」证 hash 敏感性。全部 315 个专精在官方簇内都有 >=1 个 Notable（prerequisite 规则可满足，非死规则）。冻结 fixture 候选 = **node 10 Life Mastery**（group 741，唯一可兑现 choice `+30 to maximum Life` ⇒ `Life:Flat=30`）。记录：`docs/reviews/S6P/S6P_WO_03_PREFLIGHT.md`。实现期耦合点已登记：04A 冻结数字 367/315 会随 WO-03 移动，必须显式更新并说明 |
 | 2026-09-11 | **S6P-WO-04A 实施完毕**。开工前先按导演指令把状态同步发回 Channel A（`--topic game-zzz-planning`），规划 AI 回「**立即开工**」并给 7 条 Execution Amendment（runtime 必须拥有 consumer 清单 / mixed node 完整零增量取证 / 消费门必须绕开分配门取证 / 专精连 baked Mods 一起拆 / supported 正对照 / 出口 hash 不得变 / Evidence hygiene），原文落库 `docs/reviews/S6P/S6P_WO_04A_PLANNER_AMENDMENT.md`。实现：新增 runtime 唯一 support truth `PassiveSupport.cs`（行四分类 + 节点资格 + consumer 清单 + 稳定原因），`TryAllocate` 支持门、`RecalcPlayer`/`CollectSkillMods` 消费门、`NodeBlockReason`/`BlockedAllocatedCount` UI 与 invalid-state 接口、专精不再烘焙 `FirstChoice`、census 反转为消费 runtime（V2 + masteryPending）。门：EditMode **426/426**、PlayMode **17/17**、ProdSim `ec1d3ed67d3035d0` **不变**（出口冷进程 ×3 EXACT，07:58–07:59）、Content Audit PASS。真相：支持 **367** / 阻塞 **1660** / 无 handler 特殊 **87**（57 珠宝孔 + 30 时光珠宝类，**第三处未事前预估的行为变化**，合同 §12 明确要求）/ 专精过渡 **315**；效果行与 WO-01 完全一致（607/4475/12/582，UNKNOWN=0），严格化 CONSUMED **一条都没翻**。证据：`docs/reviews/S6P/S6P_WO_04A.md` + `..._EVIDENCE_PACK.md` + `_wo04a_fingerprint_gate.txt` / `_wo04a_fingerprint_final.txt` / `_wo04a_cold_exit.txt`。**缺口**：入口 working-tree fingerprint 未捕获（已在证据包登记；新规则：改动前先落指纹） |
+| 2026-09-11 | 导演指令「提交 git，然后继续执行原本工作计划，和规划 AI 一起执行；**新开一个会话**，不要再用旧的规划 AI 会话，把仓库地址和现状发给他们」。已执行：① 提交 `ce6f85c`（S6P 结转 + S6P-DIR-01；2020 文件 / 51.1 MB；`.gitignore` 新增本地暂存与外部素材目录，含 1.0GB 无引用的 `Assets/RAEL STUDIOS`）；② 导演追加要求「先推送远端再让 GPT 读仓库」→ `git push` 成功（`64eb9fe..ce6f85c`），远端已与本地同步；③ **新开 Channel A 会话** `game-zzz-planning-2` / `6aa368c5-7478-83ea-a2d3-95003ee4e6ab`，发出仓库地址 + 完整现状，收到 **S6P-WO-04A2 完整合同**（落库 `S6P_WO_04A2_CONTRACT.md`） |
+| 2026-09-11 | **S6P-WO-04A2 执行完毕（Ready for Gate Review）**。入口先落指纹（`6d2c9ae4…`，HEAD `ce6f85c`，dirty=NO），再按 PF-1..PF-6 全过：EditMode 462/462、PlayMode 17/17、04A census 367/1660/87/315、旧可达性 14/2429、PF-5 用 `git stash push -u` 在干净 HEAD 上跑冷进程 ×3 = `ec1d3ed67d3035d0` EXACT、候选集 311。实现：`PassiveSupport` 拆出 `EffectTruth` / `TraversalTruth`（`ClassifyTruth` 唯一分类，`Project` 派生 04A 四值诊断视图），删除共用布尔 `IsAllocatable`；分配门只读通行维度、消费门只读效果维度；新增 `ReachableSet()`。全树可达 **14 → 1985**；`\|D\|`=325 的 start-connected supported **100% 可达**（缺失集 `[]`）；冻结 fixture target **183** / 路径 `[2172, 71, 183]` / 首个 route-only **71**。门：编译 0 error、EditMode **475/475**、PlayMode **18/18**、ProdSim 入口/出口冷进程 ×3 均 `ec1d3ed67d3035d0`（**未 rebaseline**）；敏感性 `ps` DIFFERENT、`pm/pe/pk` EXACT MATCH。证据：`S6P_WO_04A2.md` + `S6P_WO_04A2_EVIDENCE_PACK.md` + `docs/qa/WO_04A2_TRAVERSAL_REPORT.json` + `_wo04a2_cold_entry/exit.txt`。**诚实登记**：42 个 supported 节点仍在起点连通域外（被特殊节点围住，ID 全表已列）；`R_ref` 与 `R_runtime` 按合同字面定义同构 ⇒ AC-15 构造性成立（已在证据包 §F 说明，请 Channel A 确认是否要求更严格的参考图） |
+| 2026-09-11 | **S6P-WO-03 维持 BLOCKED**：未实现任何 Mastery 显式选择功能（22 个可兑现 choice 一个未动），未碰 Jewel/Timeless/升华/药剂/新技能/新 Stat 轴。Evidence Pack 待发回 Channel A 做 Gate Review（`--topic game-zzz-planning-2`） |

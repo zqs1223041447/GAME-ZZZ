@@ -1202,12 +1202,13 @@ namespace Game.Runtime.Core
                     continue;
                 Rect nr = PoeTreeView.NodeRect(n, _treePan, _treeZoom);
                 NodeUiState st = LockedState(n, s.NodeState(i));
+                bool yields = PassiveSupport.YieldsModifiers(s.NodeTruth(i).Effect);
                 if (frameTex != null)
                 {
                     Rect uv;
                     if (frameAtlas.TryRect(FrameSprite(n.Kind, st), out uv))
                     {
-                        GUI.color = FrameTint(n.Kind, st);
+                        GUI.color = FrameTint(n.Kind, st, yields);
                         GUI.DrawTextureWithTexCoords(nr, frameTex, uv);
                         GUI.color = Color.white;
                     }
@@ -1216,7 +1217,7 @@ namespace Game.Runtime.Core
                 if (icon != null)
                 {
                     float s2 = nr.width * 0.66f;
-                    GUI.color = IconTint(st);
+                    GUI.color = IconTint(st, yields);
                     GUI.DrawTexture(new Rect(nr.x + (nr.width - s2) * 0.5f, nr.y + (nr.height - s2) * 0.5f, s2, s2), icon);
                     GUI.color = Color.white;
                 }
@@ -1317,14 +1318,24 @@ namespace Game.Runtime.Core
                 body = string.IsNullOrEmpty(n.stats) ? "（无词条）" : n.stats;
             }
 
-            // S6P-WO-04A §20：可点/不可点与原因全部读 domain support truth，UI 不自己判定
+            // S6P-WO-04A2 §20：可点/不可点读**通行**真值、"是否真生效"读**效果**真值，UI 不自己判定。
             NodeUiState st = LockedState(n, s.NodeState(index));
             string blocked = s.NodeBlockReason(index);
+            bool yields = PassiveSupport.YieldsModifiers(s.NodeTruth(index).Effect);
             string state;
             if (st == NodeUiState.Allocated)
-                state = blocked == null ? "已点亮　·　点击无效果，可用 R 重构" : "已点亮　·　" + blocked;
+            {
+                if (blocked != null)
+                    state = "已点亮　·　" + blocked;
+                else if (yields)
+                    state = "已点亮　·　点击无效果，可用 R 重构";
+                else
+                    state = "已点亮（路径）　·　该节点当前 0 游戏效果（引擎兑现不了其承诺），可用 R 重构";
+            }
             else if (st == NodeUiState.Available)
-                state = "可点亮　·　消耗 1 天赋点";
+                state = yields
+                    ? "可点亮　·　消耗 1 天赋点"
+                    : "可点亮（路径）　·　消耗 1 天赋点；该节点当前无法兑现任何效果（0 效果）";
             else if (n.locked != 0)
                 state = "不可点　·　该类显著点只能由时光珠宝授予";
             else if (blocked != null)
@@ -1374,21 +1385,27 @@ namespace Game.Runtime.Core
                 : (st == NodeUiState.Available ? baseName + "CanAllocate" : baseName + "Unallocated");
         }
 
-        static Color FrameTint(PoeNodeKind kind, NodeUiState st)
+        static Color FrameTint(PoeNodeKind kind, NodeUiState st, bool yields)
         {
             if (st == NodeUiState.Allocated)
+            {
+                if (!yields)
+                    return new Color(0.72f, 0.70f, 0.66f, 1f);   // 路径节点：已点亮但 0 效果，压暗以免当成有效点
                 return kind == PoeNodeKind.Keystone ? new Color(1f, 0.86f, 0.45f, 1f) : Color.white;
+            }
             if (st == NodeUiState.Available)
-                return new Color(1f, 0.93f, 0.66f, 1f);        // 可点亮：金亮（导演：必须一眼看出哪些能点）
-            return new Color(0.40f, 0.40f, 0.45f, 1f);         // 当前不可用：明显压暗（旧的 0.52 灰分不出来）
+                return yields
+                    ? new Color(1f, 0.93f, 0.66f, 1f)            // 可点亮且真生效：金亮（导演：一眼看出哪些能点）
+                    : new Color(0.66f, 0.78f, 0.86f, 1f);        // 可点亮但 0 效果（route-only）：冷灰蓝，与有效点区分
+            return new Color(0.40f, 0.40f, 0.45f, 1f);           // 当前不可用：明显压暗（旧的 0.52 灰分不出来）
         }
 
-        static Color IconTint(NodeUiState st)
+        static Color IconTint(NodeUiState st, bool yields)
         {
             if (st == NodeUiState.Allocated)
-                return Color.white;
+                return yields ? Color.white : new Color(0.78f, 0.78f, 0.74f, 1f);
             if (st == NodeUiState.Available)
-                return new Color(1f, 0.97f, 0.82f, 1f);
+                return yields ? new Color(1f, 0.97f, 0.82f, 1f) : new Color(0.72f, 0.82f, 0.90f, 1f);
             return new Color(0.38f, 0.39f, 0.43f, 0.85f);
         }
 

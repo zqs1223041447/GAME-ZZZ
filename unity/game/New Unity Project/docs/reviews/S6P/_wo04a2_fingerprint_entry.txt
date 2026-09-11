@@ -1,0 +1,19 @@
+Working-Tree Fingerprint (content-addressed, SHA-256)
+tool                  : tools/evidence/working-tree-fingerprint.ps1
+when                  : 2026-09-11 10:35 (+08)
+branch                : main
+HEAD                  : ce6f85cd23d324ea68a76f98d28663f1258a3c01
+tracked+untracked files: 2798
+total bytes           : 321423157
+WORKING-TREE HASH     : 6d2c9ae4536a17665851cadb3a72643fba3b34036c4fc65c2216d3e2d0c32b68
+dirty                 : NO
+--- changed-file inventory (git status --porcelain, by area) ---
+(clean)
+
+NOTE: this file itself was written AFTER the measurement above, so it is not part
+of the fingerprinted set. It is the WO-04A2 entry state (rule adopted at the
+WO-04A gate review: capture the entry fingerprint BEFORE any production mutation).
+Rollback command for the record: `pwsh -NoProfile -File tools/evidence/working-tree-fingerprint.ps1`
+(run it with output redirected to a path OUTSIDE the repo, or capture into a
+variable -- redirecting straight into a file inside the working tree makes the
+script try to hash its own output file and it fails with a sharing violation).

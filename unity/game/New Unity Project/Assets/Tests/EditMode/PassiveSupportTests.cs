@@ -202,19 +202,20 @@ namespace Game.Tests.EditMode
         // ---------------- 5. 分配门：原子拒绝 + 零增量 ----------------
 
         [Test]
-        public void UnsupportedNodeTryAllocateRejectsAtomically()
+        public void RouteOnlyNodeTryAllocateSucceeds_AndSpendsExactlyOnePoint()
         {
             var s = NewSession();
             int unspent = s.Unspent;
             string err;
             Assert.IsTrue(s.CanAllocate(SupportedStartNeighbours[0]), "前置：起点邻居里的 supported 节点本来可点");
-            // 71 与起点相连（相连性成立）⇒ 唯一拒绝原因只能是支持门
-            Assert.IsFalse(s.TryAllocate(MixedNodeId, out err), "含 blocked 行的相连节点必须被拒绝");
-            Assert.AreEqual(PassiveSupport.ReasonBlockedCurrently, err, "必须有稳定拒绝原因");
-            Assert.AreEqual(unspent, s.Unspent, "UnsupportedNodeCostsZeroPoints");
-            Assert.IsFalse(s.Allocated[MixedNodeId], "UnsupportedNodeChangesNoAllocatedState");
-            Assert.AreEqual(PassiveSupport.NodeStatus.BlockedCurrently, PassiveSupport.EvaluateNode(MixedNodeId));
-            Assert.AreEqual(NodeUiState.Locked, s.NodeState(MixedNodeId), "UI 状态必须与 domain truth 一致");
+            // S6P-WO-04A2：71 与起点相连、且是普通节点 ⇒ 通行维度合法 ⇒ 分配必须成功（唯一变化是扣 1 点）。
+            // 04A 的"含 blocked 行即原子拒绝"已被本令拆开：效果未兑现 ≠ 不能作为路径。
+            Assert.IsTrue(s.TryAllocate(MixedNodeId, out err), "含 blocked 行的相连节点必须可作为路径点亮：" + err);
+            Assert.AreEqual(unspent - 1, s.Unspent, "route-only 节点必须花掉恰好 1 点");
+            Assert.IsTrue(s.Allocated[MixedNodeId], "route-only 节点必须进入 selected 集");
+            Assert.AreEqual(PassiveSupport.EffectTruth.Unfulfilled,
+                PassiveSupport.EvaluateTruth(MixedNodeId).Effect, "它的效果维度必须是 UNFULFILLED");
+            Assert.AreEqual(NodeUiState.Allocated, s.NodeState(MixedNodeId), "UI 状态必须与 domain truth 一致");
         }
 
         [Test]
@@ -225,7 +226,7 @@ namespace Game.Tests.EditMode
             string err;
             s.TryAllocate(MixedNodeId, out err);
             s.RecalcPlayer(false);
-            AssertPlayerResultsEqual(baseline, s, "被拒绝的加点不得改变玩家有效结果");
+            AssertPlayerResultsEqual(baseline, s, "route-only 加点（分配合法）不得改变玩家有效结果");
         }
 
         [Test]
@@ -235,7 +236,7 @@ namespace Game.Tests.EditMode
             var baseline = NewSession();
             string err;
             s.TryAllocate(MixedNodeId, out err);
-            AssertSkillResultsEqual(baseline, s, "被拒绝的加点不得改变技能有效结果");
+            AssertSkillResultsEqual(baseline, s, "route-only 加点（分配合法）不得改变技能有效结果");
         }
 
         // ---------------- 6. 消费门：损坏/注入状态也不得半消费 ----------------
@@ -245,7 +246,7 @@ namespace Game.Tests.EditMode
         {
             var s = NewSession();
             var control = NewSession();
-            Assert.AreEqual(0, s.BlockedAllocatedCount, "正常会话不得有不可分配节点被点亮");
+            Assert.AreEqual(0, s.BlockedAllocatedCount, "正常会话不得有不可通行节点被点亮");
 
             float lifeBefore = s.PlayerStats.Get(StatId.Life);
             float manaBefore = s.PlayerStats.Get(StatId.Mana);
@@ -259,7 +260,9 @@ namespace Game.Tests.EditMode
             s.Allocated[MixedNodeId] = true;            // 71：可消费子行 = +5 Intelligence
             s.RecalcPlayer(false);
 
-            Assert.AreEqual(2, s.BlockedAllocatedCount, "损坏状态必须由 invalid-state evidence 暴露");
+            // S6P-WO-04A2：route-only 节点本来就是**合法**分配，不再算损坏状态 ⇒ 该计数恒为 0。
+            // 真正要钉的是"它们贡献 0 modifier"（下面几条）。
+            Assert.AreEqual(0, s.BlockedAllocatedCount, "route-only 分配是合法状态，不算损坏");
             Assert.AreEqual(lifeBefore, s.PlayerStats.Get(StatId.Life), 0.0001f, "blocked 节点不得贡献防御 modifier");
             Assert.AreEqual(manaBefore, s.PlayerStats.Get(StatId.Mana), 0.0001f, "+5 Intelligence 子行也不得泄漏");
 
@@ -268,6 +271,11 @@ namespace Game.Tests.EditMode
             Assert.AreEqual(physBefore, bagAfter.RawIncreased(StatId.PhysicalDamage), 0.0001f,
                 "blocked 节点的可消费子行不得泄漏进技能包");
             Assert.AreEqual(accBefore, bagAfter.Get(StatId.Accuracy));
+
+            // 真正损坏：把**不可通行**节点（专精）塞进 selected 集 ⇒ invalid-state evidence 必须暴露
+            s.Allocated[MasteryNodeId] = true;
+            Assert.AreEqual(1, s.BlockedAllocatedCount, "不可通行节点被点亮必须由 invalid-state evidence 暴露");
+            s.Allocated[MasteryNodeId] = false;
 
             // 对照：同一注入手法放一个 supported 节点，效果必须真的出现（证明"零"不是测量假象）
             control.Allocated[559] = true;
@@ -437,31 +445,35 @@ namespace Game.Tests.EditMode
         public void UIUsesDomainSupportTruth()
         {
             var s = NewSession();
-            int allocatable = 0, unavailable = 0;
+            int traversable = 0, blocked = 0;
             for (int i = 0; i < PoeTree.Count; i++)
             {
-                PassiveSupport.NodeStatus st = PassiveSupport.EvaluateNode(i);
+                PassiveSupport.NodeTruth t = PassiveSupport.EvaluateTruth(i);
                 string reason = s.NodeBlockReason(i);
-                if (PassiveSupport.IsAllocatable(st))
+                if (PassiveSupport.IsTraversable(t.Traversal))
                 {
-                    allocatable++;
-                    Assert.IsNull(reason, "可分配节点不得有禁用原因：" + i);
+                    traversable++;
+                    // S6P-WO-04A2：通行与生效分离 ⇒ "为什么不能点"只由通行维度产生。
+                    // 效果未兑现（route-only）**不是**不可点理由。
+                    Assert.IsNull(reason, "可通行节点不得有禁用原因：" + i);
                 }
                 else
                 {
-                    unavailable++;
-                    Assert.IsNotNull(reason, "不可分配节点必须有稳定原因：" + i);
+                    blocked++;
+                    Assert.IsNotNull(reason, "不可通行节点必须有稳定原因：" + i);
                 }
 
                 if (s.CanAllocate(i))
-                    Assert.IsTrue(PassiveSupport.IsAllocatable(st), "UI 可点必须蕴含 domain truth 可分配：" + i);
+                    Assert.IsTrue(PassiveSupport.IsTraversable(t.Traversal), "UI 可点必须蕴含 domain truth 可通行：" + i);
                 if (s.NodeState(i) == NodeUiState.Available)
-                    Assert.IsTrue(PassiveSupport.IsAllocatable(st), "UI Available 必须蕴含 domain truth 可分配：" + i);
-                if (!PassiveSupport.IsAllocatable(st))
-                    Assert.AreNotEqual(NodeUiState.Available, s.NodeState(i), "不可分配节点不得显示为可点：" + i);
+                    Assert.IsTrue(PassiveSupport.IsTraversable(t.Traversal), "UI Available 必须蕴含 domain truth 可通行：" + i);
+                if (!PassiveSupport.IsTraversable(t.Traversal))
+                    Assert.AreNotEqual(NodeUiState.Available, s.NodeState(i), "不可通行节点不得显示为可点：" + i);
             }
-            Assert.AreEqual(ExpectedSupported, allocatable);
-            Assert.AreEqual(PoeTree.Count - ExpectedSupported, unavailable);
+            Assert.AreEqual(ExpectedSupported + ExpectedBlocked, traversable,
+                "可通行 = 全部普通上树节点（367 可兑现 + 1660 route-only）");
+            Assert.AreEqual(ExpectedSpecial + ExpectedMasteryPending, blocked,
+                "不可通行 = 无 handler 特殊交互 87 + 专精过渡 315");
         }
 
         // ---------------- 11. 不得存在第二套 oracle ----------------
