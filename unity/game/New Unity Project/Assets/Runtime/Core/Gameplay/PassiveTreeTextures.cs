@@ -15,9 +15,27 @@ namespace Game.Runtime.Core
         static Texture2D _group;
 
         public static int ResidentIconCount { get { return Icons.Count; } }
+        public static int ResidentChromeCount
+        {
+            get { return (_frame != null ? 1 : 0) + (_group != null ? 1 : 0); }
+        }
         public static int MissingAttemptCount { get { return Missing.Count; } }
         public static Texture2D FrameAtlas { get { return _frame; } }
         public static Texture2D GroupAtlas { get { return _group; } }
+
+        public static bool ResidentIconsMatch(HashSet<string> required)
+        {
+            if (required == null)
+                return Icons.Count == 0;
+            if (Icons.Count != required.Count)
+                return false;
+            foreach (var kv in Icons)
+            {
+                if (!required.Contains(kv.Key))
+                    return false;
+            }
+            return true;
+        }
 
         public static void Sync(PassiveTreeRenderPlan plan)
         {

@@ -1,0 +1,48 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>wo05 geom oracle</title>
+<pre id="out">pending</pre>
+<script id="view" type="application/json">__VIEW_JSON__</script>
+<script id="tree" type="application/json">__TREE_JSON__</script>
+<script>
+const view = JSON.parse(document.getElementById('view').textContent);
+const raw = JSON.parse(document.getElementById('tree').textContent);
+const radii = raw.constants.orbitRadii, per = raw.constants.skillsPerOrbit;
+const ids = Object.keys(raw.nodes)
+  .filter(id => !raw.nodes[id].ascendancyName && raw.groups[raw.nodes[id].group] !== undefined)
+  .sort((a,b) => Number(a)-Number(b));
+const idx = new Map(); ids.forEach((id,i)=>idx.set(id,i));
+function kindOf(n){
+  if (n.classStartIndex !== undefined) return 5;
+  if (n.isKeystone) return 2;
+  if (n.isNotable) return 1;
+  if (n.isMastery) return 3;
+  if (n.isJewelSocket) return 4;
+  return 0;
+}
+const zoom = view.zoom, panx = view.pan[0], pany = view.pan[1], ds = view.designScale;
+const vw = 1920, vh = 1080, pad = 20;
+function sx(x){ return (panx + x * zoom) * ds; }
+function sy(y){ return (pany + y * zoom) * ds; }
+function vis(x,y,kind){
+  const cx = panx + x * zoom, cy = pany + y * zoom;
+  const sizes = [46,72,104,84,72,104];
+  const r = (sizes[kind]||46)*zoom*0.5 + pad;
+  return cx+r>=0 && cx-r<=vw && cy+r>=0 && cy-r<=vh;
+}
+const nodes = [];
+for (let i=0;i<ids.length;i++){
+  const n = raw.nodes[ids[i]], g = raw.groups[n.group];
+  let x = g.x, y = g.y;
+  if (n.orbit > 0) {
+    const a = n.orbitIndex * 2 * Math.PI / per[n.orbit];
+    x = g.x + radii[n.orbit] * Math.sin(a);
+    y = g.y - radii[n.orbit] * Math.cos(a);
+  }
+  const k = kindOf(n);
+  if (!vis(x,y,k)) continue;
+  nodes.push({id:i, skill:Number(ids[i]), kind:k, x, y, sx:sx(x), sy:sy(y)});
+}
+const out = {name:view.name, zoom, pan:view.pan, designScale:ds, lod:view.lod, visibleNodeCount:nodes.length, nodes};
+document.getElementById('out').textContent = JSON.stringify(out);
+</script>

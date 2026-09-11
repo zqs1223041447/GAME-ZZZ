@@ -1,0 +1,208 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using NUnit.Framework;
+using UnityEngine;
+using Game.Runtime.Core;
+
+namespace Game.Tests.EditMode
+{
+    /// <summary>S6P-WO-05：纹理常驻、全树命中、G0–G3 几何产物。</summary>
+    public sealed class S6PWo05ResidencyTests
+    {
+        static readonly Rect View = new Rect(0f, 0f, 1920f, 1080f);
+
+        [Test]
+        public void CentreProbes_All2429_WinnerDeterministic()
+        {
+            float ds = SliceHud.DesignScale(1920f, 1080f);
+            float z = PassiveTreeLod.ZoomForProjectedPx(12f, ds);
+            var dups = new Dictionary<string, List<int>>();
+            int mismatch = 0;
+            for (int i = 0; i < PoeTree.Count; i++)
+            {
+                PoeNode n = PoeTree.Get(i);
+                string key = n.x.ToString("R") + "," + n.y.ToString("R");
+                List<int> g;
+                if (!dups.TryGetValue(key, out g))
+                {
+                    g = new List<int>();
+                    dups[key] = g;
+                }
+                g.Add(i);
+                Vector2 pan = PassiveTreeLod.FocusPan(View, z, i);
+                Vector2 c = PoeTreeView.ScreenOf(new Vector2(n.x, n.y), pan, z);
+                int hit = PassiveTreeLod.HitNodeId(c, pan, z, ds);
+                if (g.Count == 1)
+                {
+                    if (hit != i)
+                        mismatch++;
+                }
+                else
+                {
+                    int winner = g[0];
+                    for (int k = 1; k < g.Count; k++)
+                        if (g[k] < winner)
+                            winner = g[k];
+                    if (hit != winner)
+                        mismatch++;
+                }
+            }
+            int dupGroups = 0;
+            foreach (var kv in dups)
+                if (kv.Value.Count > 1)
+                    dupGroups++;
+            TestContext.WriteLine("duplicate-position groups=" + dupGroups + " mismatch=" + mismatch);
+            Assert.AreEqual(0, mismatch);
+        }
+
+        [Test]
+        public void AllocatedPath_2172_71_183_IdentityUnchangedAcrossLod()
+        {
+            var s = new SliceSession();
+            s.ResetTown(7u);
+            string err;
+            Assert.IsTrue(s.TryAllocate(71, out err), err);
+            Assert.IsTrue(s.TryAllocate(183, out err), err);
+            var t71 = PassiveSupport.EvaluateTruth(71);
+            var t183 = PassiveSupport.EvaluateTruth(183);
+            float ds = 1f;
+            float[] px = { 6f, 12f, 24f };
+            for (int i = 0; i < px.Length; i++)
+            {
+                float z = PassiveTreeLod.ZoomForProjectedPx(px[i], ds);
+                Vector2 pan = PassiveTreeLod.FocusPan(View, z, 2172);
+                PassiveTreeRenderPlan.Build(View, pan, z, ds);
+                Assert.IsTrue(s.Allocated[2172] && s.Allocated[71] && s.Allocated[183]);
+                Assert.AreEqual(t71.Effect, PassiveSupport.EvaluateTruth(71).Effect);
+                Assert.AreEqual(t71.Traversal, PassiveSupport.EvaluateTruth(71).Traversal);
+                Assert.AreEqual(t183.Effect, PassiveSupport.EvaluateTruth(183).Effect);
+                Assert.AreEqual(NodeUiState.Allocated, s.NodeState(71));
+                Assert.AreEqual(NodeUiState.Allocated, s.NodeState(183));
+            }
+        }
+
+        [Test]
+        public void Residency_Lod0HasZeroIcons_Lod2ThenLod0Releases()
+        {
+            float ds = 1f;
+            PassiveTreeTextures.ReleaseAll();
+            float z0 = PassiveTreeLod.ZoomForProjectedPx(6f, ds);
+            Vector2 pan = PassiveTreeLod.FocusPan(View, z0, 2172);
+            var p0 = PassiveTreeRenderPlan.Build(View, pan, z0, ds);
+            PassiveTreeTextures.Sync(p0);
+            Assert.AreEqual(0, p0.RequiredIconCount);
+            Assert.AreEqual(0, PassiveTreeTextures.ResidentIconCount);
+            Assert.AreEqual(0, PassiveTreeTextures.ResidentChromeCount);
+
+            float z2 = PassiveTreeLod.ZoomForProjectedPx(24f, ds);
+            pan = PassiveTreeLod.FocusPan(View, z2, 2172);
+            var p2 = PassiveTreeRenderPlan.Build(View, pan, z2, ds);
+            PassiveTreeTextures.Sync(p2);
+            Assert.Greater(p2.RequiredIconCount, 0);
+            Assert.IsTrue(PassiveTreeTextures.ResidentIconsMatch(p2.RequiredIconStems));
+
+            PassiveTreeTextures.Sync(p0);
+            Assert.AreEqual(0, PassiveTreeTextures.ResidentIconCount);
+            Assert.AreEqual(0, PassiveTreeTextures.ResidentChromeCount);
+            PassiveTreeTextures.ReleaseAll();
+        }
+
+        [Test]
+        public void Residency_NinePointSweep_NoHistoryAccumulation()
+        {
+            float ds = 1f;
+            float z = PassiveTreeLod.ZoomForProjectedPx(24f, ds);
+            Rect b = PoeTreeView.WorldBounds();
+            float[] xs = { b.xMin, b.xMin + b.width * 0.5f, b.xMax };
+            float[] ys = { b.yMin, b.yMin + b.height * 0.5f, b.yMax };
+            PassiveTreeTextures.ReleaseAll();
+            int lastRequired = -1;
+            for (int iy = 0; iy < 3; iy++)
+                for (int ix = 0; ix < 3; ix++)
+                {
+                    Vector2 pan = new Vector2(View.x + View.width * 0.5f - xs[ix] * z,
+                        View.y + View.height * 0.5f - ys[iy] * z);
+                    var plan = PassiveTreeRenderPlan.Build(View, pan, z, ds);
+                    PassiveTreeTextures.Sync(plan);
+                    Assert.IsTrue(PassiveTreeTextures.ResidentIconsMatch(plan.RequiredIconStems),
+                        "station " + ix + "," + iy + " resident=" + PassiveTreeTextures.ResidentIconCount +
+                        " required=" + plan.RequiredIconCount);
+                    lastRequired = plan.RequiredIconCount;
+                }
+            Assert.GreaterOrEqual(lastRequired, 0);
+            PassiveTreeTextures.ReleaseAll();
+            Assert.AreEqual(0, PassiveTreeTextures.ResidentIconCount);
+        }
+
+        [Test]
+        public void WritesUnityGeomArtifacts_G0G3()
+        {
+            string dir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "docs/qa/wo05"));
+            Directory.CreateDirectory(dir);
+            WriteGeom(dir, "G0_1920", 1920f, 1080f, true, 0f);
+            WriteGeom(dir, "G1_1920", 1920f, 1080f, false, 6f);
+            WriteGeom(dir, "G2_1920", 1920f, 1080f, false, 12f);
+            WriteGeom(dir, "G3_1920", 1920f, 1080f, false, 24f);
+            WriteGeom(dir, "G0_2560", 2560f, 1440f, true, 0f);
+            WriteGeom(dir, "G1_2560", 2560f, 1440f, false, 6f);
+            WriteGeom(dir, "G2_2560", 2560f, 1440f, false, 12f);
+            WriteGeom(dir, "G3_2560", 2560f, 1440f, false, 24f);
+            Assert.IsTrue(File.Exists(Path.Combine(dir, "G0_1920.unity.json")));
+            string g0 = File.ReadAllText(Path.Combine(dir, "G0_1920.unity.json"));
+            StringAssert.Contains("\"lod\": 0", g0);
+        }
+
+        static void WriteGeom(string dir, string name, float screenW, float screenH, bool fit, float projected)
+        {
+            float ds = SliceHud.DesignScale(screenW, screenH);
+            var view = new Rect(0f, 0f, 1920f, 1080f);
+            float z;
+            Vector2 pan;
+            if (fit)
+            {
+                z = PoeTreeView.FitZoom(view, 40f);
+                pan = PoeTreeView.FitPan(view, z);
+            }
+            else
+            {
+                z = PassiveTreeLod.ZoomForProjectedPx(projected, ds);
+                pan = PassiveTreeLod.FocusPan(view, z, 2172);
+            }
+            var plan = PassiveTreeRenderPlan.Build(view, pan, z, ds);
+            var sb = new StringBuilder();
+            sb.Append("{\n");
+            sb.Append("  \"name\": \"").Append(name).Append("\",\n");
+            sb.Append("  \"screen\": [").Append(screenW.ToString("0")).Append(", ").Append(screenH.ToString("0")).Append("],\n");
+            sb.Append("  \"designScale\": ").Append(ds.ToString("R")).Append(",\n");
+            sb.Append("  \"zoom\": ").Append(z.ToString("R")).Append(",\n");
+            sb.Append("  \"pan\": [").Append(pan.x.ToString("R")).Append(", ").Append(pan.y.ToString("R")).Append("],\n");
+            sb.Append("  \"lod\": ").Append((int)plan.Lod).Append(",\n");
+            sb.Append("  \"normalProjectedPx\": ").Append(PassiveTreeLod.NormalProjectedPx(z, ds).ToString("R")).Append(",\n");
+            sb.Append("  \"visibleNodeCount\": ").Append(plan.VisibleNodeCount).Append(",\n");
+            sb.Append("  \"visibleEdgeCount\": ").Append(plan.VisibleEdgeCount).Append(",\n");
+            sb.Append("  \"requiredIconCount\": ").Append(plan.RequiredIconCount).Append(",\n");
+            sb.Append("  \"nodes\": [\n");
+            bool first = true;
+            for (int i = 0; i < PoeTree.Count; i++)
+            {
+                if (!plan.VisibleNodes[i])
+                    continue;
+                PoeNode n = PoeTree.Get(i);
+                Vector2 c = PoeTreeView.ScreenOf(new Vector2(n.x, n.y), pan, z);
+                float px = c.x * ds, py = c.y * ds;
+                if (!first) sb.Append(",\n");
+                first = false;
+                sb.Append("    {\"id\":").Append(i)
+                  .Append(",\"skill\":").Append(n.skill)
+                  .Append(",\"kind\":").Append(n.kind)
+                  .Append(",\"x\":").Append(n.x.ToString("R"))
+                  .Append(",\"y\":").Append(n.y.ToString("R"))
+                  .Append(",\"sx\":").Append(px.ToString("R"))
+                  .Append(",\"sy\":").Append(py.ToString("R")).Append("}");
+            }
+            sb.Append("\n  ]\n}\n");
+            File.WriteAllText(Path.Combine(dir, name + ".unity.json"), sb.ToString(), new UTF8Encoding(false));
+        }
+    }
+}

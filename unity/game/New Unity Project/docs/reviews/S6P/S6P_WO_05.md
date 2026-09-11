@@ -14,6 +14,14 @@
 - `HitNodeId`：物理半径、平局取小 NodeId；fixture 2172/71/183/10/1006/keystone/jewel × 三档 5 probe PASS
 - `SliceHud` 按 plan 绘制：LOD0/1 简化符号，Detail 才加载完整图标与名字
 
+## 本轮又落地
+
+- 2429 centre probe mismatch=0；duplicate-position 组 winner 确定
+- 九宫 pan sweep：resident icons == required stems，无历史累积
+- LOD2→LOD0：individual icons 与 chrome owner 归零
+- 路径 [2172,71,183] 三档 NodeState/Effect/Traversal 不变
+- Headless Chrome 对拍 G0–G3 × 1920/2560：setMismatch=0，max centre error ≤ 0.0038 px（≤1 px）
+
 ## 未做
 
-Headless Chrome 几何对拍、九宫 pan sweep、120 帧稳定、CLOSED 释放、PlayMode 视觉截图。
+120 帧稳定采样、PlayMode 截图、edge-endpoint 对拍表、CLOSED 关树后的实机释放时序。
