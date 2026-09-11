@@ -57,29 +57,25 @@
 
 | 项 | 值 |
 |---|---|
-| 令号 | **S6P-WO-04A2 — Passive Traversal / Effect Separation** |
-| 状态 | **CLOSED / ACCEPT** —— Channel A Gate Review（2026-09-11，审 `c57f55f`）= **ACCEPT，AC-1..AC-20 = 20 / 20 PASS**；Product rework = NONE；Rebaseline = NONE；Blocking technical follow-up = NONE。原文待落库（本轮回复见 `docs/reviews/S6P/S6P_WO_04A2_GATE_REVIEW.md`）。门：编译 0 error；EditMode **475/475**；PlayMode **18/18**；ProdSim 入口/出口冷进程 ×3 均 `FNV1A64:ec1d3ed67d3035d0` EXACT MATCH；可达性门 100.000%，缺失集 `[]`；04A census 367/1660/87/315 未变 |
-| 授权来源 | Channel A（新会话 `game-zzz-planning-2`）2026-09-11 下发完整合同（20 AC + PF-1..PF-6 + §7 可达性门 + §8 冻结 fixture + §14 敏感性 + §16 禁止 + §18 Evidence 字段 + §19 STOP 条件） |
-| 合同原文 | `docs/reviews/S6P/S6P_WO_04A2_CONTRACT.md` |
-| 实现记录 | `docs/reviews/S6P/S6P_WO_04A2.md` |
-| 证据包 | `docs/reviews/S6P/S6P_WO_04A2_EVIDENCE_PACK.md` |
-| 机器产物 | `docs/qa/WO_04A2_TRAVERSAL_REPORT.json`（测试再生） |
-| 入口指纹 | `6d2c9ae4536a17665851cadb3a72643fba3b34036c4fc65c2216d3e2d0c32b68`（HEAD `ce6f85c`，2798 files，dirty=NO）→ `_wo04a2_fingerprint_entry.txt` |
-| 出口指纹 | `_wo04a2_fingerprint_final.txt` |
-| 核心结论 | 节点「能不能作为路径」(**TraversalTruth**) 与「承诺的效果能不能兑现」(**EffectTruth**) 已拆成两个独立维度；普通 blocked 节点成为合法 **route-only** 路径节点（扣 1 点、整节点 0 效果），全树可达从 **14 → 1985**；`\|D\|`=325 的 start-connected supported 节点 **100% 可达** |
-| 冻结 fixture | target **183**，路径 `[2172, 71, 183]`，候选集 311，首个 route-only = **71** |
-| 未做（越界项） | 未实现 WO-03 的 Mastery 显式选择（22 个可兑现 choice 一个未动）；未碰 Jewel/Timeless/升华/药剂/新技能/新 Stat 轴；未 rebaseline |
-| 已知限制 | L1 仍有 **42** 个 supported 节点在起点连通域外（被特殊节点围住，已登记 ID 全表）；L2 route-only 节点仍消耗天赋点（合同 §6 规定）；L3 `R_ref` 与 `R_runtime` 按合同字面定义同构，AC-15 构造性成立（已如实说明） |
-| 后续 | **S6P-WO-03 仍为 BLOCKED，等 Channel A 对 WO-04A2 的 Gate Review = ACCEPT** |
+| 令号 | **S6P-WO-03 — Mastery Explicit Selection & Allocation Correctness** |
+| 状态 | **IN PROGRESS**（2026-09-11 导演指令「继续」后恢复无人值守；产品实现本轮开始） |
+| 授权来源 | Channel A 于 WO-04A2 Gate Review ACCEPT 时 **RELEASED / EXECUTE NOW**；合同 = `S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md` §4–§19（叠加原 `S6P_WO_02_GATE_REVIEW_AND_WO_03_CONTRACT.md` 37 AC） |
+| 前置 | `S6P_WO_03_PREFLIGHT.md` = PASS（22 个专精有可兑现 choice ≠ 0，不触发 STOP）；04A2 约束全部继承 |
+| 入口指纹（生产树） | 干净 HEAD `a91e391` dirty=NO = `fd90468eb7b9ebdc95cb247c5c14d51c02a0c99092154ac0d5516ebaad88fb0a`（2814 files）。治理文档落盘后 working-tree = `bf400b251f2f1c33f37d46a2e633d562138d647f0085556ef2bc82e41298523a`（dirty=YES，仅 Markdown）。明细 `_wo03_fingerprint_entry.txt`。历史 preflight `a85a5e2e…`（HEAD `64b614f`）仅作 04A 收口态档案，**不得**再当本轮 mutation 入口 |
+| 入口基线 | EditMode **475/475**、PlayMode **18/18**、ProdSim `FNV1A64:ec1d3ed67d3035d0`（04A2 出口冷进程 ×3 EXACT） |
+| 冻结 fixture | **node 10 = Life Mastery**（group 741 / 1 Notable / 唯一可兑现 choice `+30 to maximum Life` ⇒ `Life:Flat=30`）；§13 fallback = 未选择 vs 显式选择必须改 gameplay/hash（全树无 >=2 可兑现 choice 的专精） |
+| 实现顺序 | ① prerequisite owner（官方簇 + 同簇 >=1 已分配 Notable）→ ② choice support 只调 04A truth → ③ selection identity = MasteryNodeId + 权威 ordinal → ④ 原子提交/取消零增量 + 恰好 1 点 + 恰好生效一次 → ⑤ UI selector → ⑥ ProdSim V3（`pv\|passive-v2`）→ ⑦ 新 baseline 三独立冷进程 → ⑧ Evidence Pack |
+| 硬约束 | TraversalTruth/EffectTruth 分离不可回退；route-only 不得改回“分配被拒”；Mastery 在正式选择提交前仍 SPECIAL_BLOCKED；Jewel/Timeless 不属本令；04A 367/315 若移动必须 before/after/delta/reason；禁 FirstChoice/choices[0]；禁第二套 Mastery oracle；禁 refund/存档/新玩法域；禁静默更新 14→1985 / `\|D\|`=325 / 42 个 start-disconnected supported nodes |
+| 规划渠道 | Channel A = `game-zzz-planning-2` / `6aa368c5-7478-83ea-a2d3-95003ee4e6ab`（旧 `game-zzz-planning` 已停用） |
 
-## 队列下一令（04A2 之后）
+## 队列（WO-03 进行中）
 
 | 项 | 值 |
 |---|---|
-| 队列 | **S6P-WO-03 → WO-04B → [WO-04C 条件] → WO-05**（04A2 已 CLOSED/ACCEPT，已移出队列头） |
-| 下一令 | **S6P-WO-03 — Mastery Explicit Selection & Allocation Correctness** = **RELEASED / EXECUTE NOW**（合同与前置已就绪：`S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md` §4–§19 + `S6P_WO_03_PREFLIGHT.md`） |
+| 队列 | **S6P-WO-03（进行中） → WO-04B → [WO-04C 条件] → WO-05** |
+| 上一令 | **S6P-WO-04A2 = CLOSED / ACCEPT**（含 Post-Gate UI Addendum ACCEPT）；记录见 `S6P_WO_04A2.md` / `_GATE_REVIEW.md` |
 | WO-03 必须继承的 04A2 事实 | ① `TraversalTruth` / `EffectTruth` 分离**不可回退**；② route-only 不得被重新当成"分配被拒"；③ Mastery 在 WO-03 正式选择提交之前仍为 `SPECIAL_PENDING + SPECIAL_BLOCKED`；④ Jewel / Timeless **不属于 WO-03 职权**；⑤ 04A 的 367 / 315 冻结数字若因 WO-03 合法移动，必须给出 before / after / delta / reason，禁静默更新 |
-| WO-03 新约束（由 04A2 产生） | ① 04A2 的 14→1985 与 `\|D\|`=325 是新的基线事实，WO-03 若使其移动必须显式更新并说明；② 42 个域外 supported 节点是 WO-03 之后实现 Jewel 时的输入，不得在本轮偷偷解；③ `BlockedAllocatedCount` 语义已改为「不可通行却被点亮」，WO-03 不得再把它当「不可兑现」用 |
+| WO-03 新约束（由 04A2 产生） | ① 04A2 的 14→1985 与 `\|D\|`=325 是新的基线事实，WO-03 若使其移动必须显式更新并说明；② **42 个 start-disconnected supported nodes**（不是 `OUT_OF_DOMAIN`）是后续 special-interaction topology 工作的输入，不得在本轮偷偷解，也不得预承诺"实现 Jewel 就全部解开"；③ `BlockedAllocatedCount` 语义已改为「不可通行却被点亮」，WO-03 不得再把它当「不可兑现」用；④ `TraversalTruth`/`EffectTruth` 分离**不可回退**，route-only 不得被重新当成"分配被拒" |
 
 ## 上一令（S6P-DIR-01 — 已实现、已提交入库 `ce6f85c`、已推送）
 
@@ -345,3 +341,4 @@ unity command capture_game_view --source screen --width 2560 --height 1440 --sav
 | 2026-09-11 | 导演指令「提交 git，然后继续执行原本工作计划，和规划 AI 一起执行；**新开一个会话**，不要再用旧的规划 AI 会话，把仓库地址和现状发给他们」。已执行：① 提交 `ce6f85c`（S6P 结转 + S6P-DIR-01；2020 文件 / 51.1 MB；`.gitignore` 新增本地暂存与外部素材目录，含 1.0GB 无引用的 `Assets/RAEL STUDIOS`）；② 导演追加要求「先推送远端再让 GPT 读仓库」→ `git push` 成功（`64eb9fe..ce6f85c`），远端已与本地同步；③ **新开 Channel A 会话** `game-zzz-planning-2` / `6aa368c5-7478-83ea-a2d3-95003ee4e6ab`，发出仓库地址 + 完整现状，收到 **S6P-WO-04A2 完整合同**（落库 `S6P_WO_04A2_CONTRACT.md`） |
 | 2026-09-11 | **S6P-WO-04A2 执行完毕（Ready for Gate Review）**。入口先落指纹（`6d2c9ae4…`，HEAD `ce6f85c`，dirty=NO），再按 PF-1..PF-6 全过：EditMode 462/462、PlayMode 17/17、04A census 367/1660/87/315、旧可达性 14/2429、PF-5 用 `git stash push -u` 在干净 HEAD 上跑冷进程 ×3 = `ec1d3ed67d3035d0` EXACT、候选集 311。实现：`PassiveSupport` 拆出 `EffectTruth` / `TraversalTruth`（`ClassifyTruth` 唯一分类，`Project` 派生 04A 四值诊断视图），删除共用布尔 `IsAllocatable`；分配门只读通行维度、消费门只读效果维度；新增 `ReachableSet()`。全树可达 **14 → 1985**；`\|D\|`=325 的 start-connected supported **100% 可达**（缺失集 `[]`）；冻结 fixture target **183** / 路径 `[2172, 71, 183]` / 首个 route-only **71**。门：编译 0 error、EditMode **475/475**、PlayMode **18/18**、ProdSim 入口/出口冷进程 ×3 均 `ec1d3ed67d3035d0`（**未 rebaseline**）；敏感性 `ps` DIFFERENT、`pm/pe/pk` EXACT MATCH。证据：`S6P_WO_04A2.md` + `S6P_WO_04A2_EVIDENCE_PACK.md` + `docs/qa/WO_04A2_TRAVERSAL_REPORT.json` + `_wo04a2_cold_entry/exit.txt`。**诚实登记**：42 个 supported 节点仍在起点连通域外（被特殊节点围住，ID 全表已列）；`R_ref` 与 `R_runtime` 按合同字面定义同构 ⇒ AC-15 构造性成立（已在证据包 §F 说明，请 Channel A 确认是否要求更严格的参考图） |
 | 2026-09-11 | **S6P-WO-03 维持 BLOCKED**：未实现任何 Mastery 显式选择功能（22 个可兑现 choice 一个未动），未碰 Jewel/Timeless/升华/药剂/新技能/新 Stat 轴。Evidence Pack 待发回 Channel A 做 Gate Review（`--topic game-zzz-planning-2`） |
+| 2026-09-11 | 导演指令「继续」。进程曾在 push-then-planner 步骤遇到 429；醒来后核对：远端已与 `a91e391` 同步、WO-04A2 已 CLOSED/ACCEPT、WO-03 已 RELEASED。入口指纹按当前 HEAD `a91e391` 重取（`fd90468e…`，dirty=NO）；旧 preflight 指纹 `a85a5e2e…`（HEAD `64b614f`）降为档案。按「先 push 再让规划 AI 读仓库」把治理文档推远端后，向 Channel A `game-zzz-planning-2` 通报开工并开始 WO-03 产品实现 |

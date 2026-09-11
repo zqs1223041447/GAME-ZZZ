@@ -6,17 +6,19 @@
 |---|---|
 | 规划 AI | ChatGPT 镜像站（gpt-web skill，web chat 模式） |
 | 站点地址 | https://leopard-x.memofun.net/ |
-| 会话链接 ID | `6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d` |
-| 会话 URL | https://leopard-x.memofun.net/c/6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d |
-| 注册表话题 | `game-zzz-planning`（`%LOCALAPPDATA%\chatgpt-web-debug\sessions.json`） |
-| 会话建立时间 | 2026-09-09T12:10:56（本地） |
+| 会话链接 ID | `6aa368c5-7478-83ea-a2d3-95003ee4e6ab`（Channel A 现行） |
+| 会话 URL | https://leopard-x.memofun.net/c/6aa368c5-7478-83ea-a2d3-95003ee4e6ab |
+| 注册表话题 | `game-zzz-planning-2`（`%LOCALAPPDATA%\chatgpt-web-debug\sessions.json`） |
+| 会话建立时间 | 2026-09-11（导演指令「新开一个会话，不要再用旧会话」） |
 | 当前状态 | ACTIVE |
+| 旧会话（已停用） | `game-zzz-planning` / `6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d` —— 不再向其发令 |
 
 ## 使用规则（对工作 AI 生效）
 
-1. 后续所有与规划 AI 的通信**一律复用本会话**：
-   - 首选 `--session 6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d`（也接受完整 `/c/<id>` URL）；
-   - 或 `--topic game-zzz-planning`（命中注册表自动复用）。
+1. 后续所有与规划 AI 的通信**一律复用 Channel A 现行会话**：
+   - 首选 `--session 6aa368c5-7478-83ea-a2d3-95003ee4e6ab`；
+   - 或 `--topic game-zzz-planning-2`（命中注册表自动复用）。
+   - **禁止**再向已停用的 `game-zzz-planning` / `6aa0dbbf-…` 发令。
 2. 每次 `ask` 成功输出 JSON 中的 `session_id` 应与本登记核对；若出现 `fallback: true`（指定会话失效回退新建），必须把新 ID 更新回本文件并在该轮 Evidence Pack 中声明。
 3. 每完成一个 Work Order，Evidence Pack 摘要须发回本会话，供规划 AI 做 Gate Review（ACCEPT / ACCEPT WITH FOLLOW-UP / REJECT-REWORK）。
 4. 本会话失效（登录失效页"请重新登录"）时：人工在调试 Chrome 重登后重试；若会话被镜像站清除，重建后更新本文件并声明渠道重建事实。
