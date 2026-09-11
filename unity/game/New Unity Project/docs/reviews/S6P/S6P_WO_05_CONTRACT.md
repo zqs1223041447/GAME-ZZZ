@@ -1,0 +1,1286 @@
+# S6P-WO-05 CONTRACT
+
+S6P-WO-05 CONTRACT
+S6P-WO-05 — Passive Tree Overview LOD & Texture Residency
+S6P-WO-05 — Passive Tree Overview LOD & Texture Residency
+Authority: Channel A / 
+game-zzz-planning-2
+Status: 
+RELEASED / EXECUTE NOW
+Scope: Rendering / Geometry / Hit-testing / Texture Residency only
+Canonical ProdSim: 
+V3 / FNV1A64:99f1bfd3f81c4fe6
+S6P_PLAN 对本令的冻结目标是：LOD 按实际屏幕投影大小切档；LOD0 普通节点只画概览符号且不加载完整节点图标；NodeId 命中在三档保持一致；继续用既有 Headless Chrome renderer 做 geometry/state 对拍；显存测树关闭/俯瞰/细节三态；禁止为优化改官方坐标、NodeId、分配、modifier 或 canonical data。
+当前 Unity 侧已有 
+DesignScale(screenW,screenH)，树的 normal node 基准尺寸为 46 design px，节点中心由 canonical 
+x/y → ScreenOf 得到；当前 
+PoeTree.Icon/Chrome 使用静态字典缓存 
+Resources.Load<Texture2D>，但没有现役 release 生命周期。
+1. Mission
+本令只完成两件事：
+整树缩小时建立可读、确定的 LOD0 / LOD1 / LOD2。
+让 passive-tree visual textures 的加载与常驻跟随当前 render plan，而不是随浏览历史无限累积。
+必须同时证明：
+LOD / texture optimization
+ changes presentation only
+
+TraversalTruth
+EffectTruth
+parser truth
+Mastery truth
+allocation
+modifier output
+canonical passive data
+ProdSim gameplay identity
+ all unchanged
+2. Semantic Freeze
+开工前冻结当前正式 gameplay truth。
+04C 收口后的预期为：
+FullySupported ordinary = 453
+Unfulfilled ordinary = 1574
+Special interaction = 87
+Mastery nodes = 315
+
+CONSUMED lines = 798
+BLOCKED lines = 4284
+SPECIAL lines = 12
+STRUCTURAL lines = 582
+UNKNOWN = 0
+
+TRAVERSABLE = 2027
+SPECIAL_BLOCKED = 402
+reachable from 2172 = 1985
+|D| = 411
+start-disconnected supported = 42
+
+Mastery choices total = 1863
+Mastery supported choices = 22
+若 04C 纯 Evidence follow-up 落库后 authoritative Evidence 中数字有不同，只允许在 PF-0 明确记录其最终冻结值。
+WO-05 自身所有上述 delta 必须为 0。
+3. Entry Gate
+任何产品代码 mutation 前必须记录：
+HEAD
+branch
+git status --porcelain
+working-tree fingerprint
+Unity version
+changed-file inventory
+EditMode manifest
+PlayMode manifest
+Content Audit result
+semantic census
+入口必须：
+Compile = 0 error
+EditMode = ALL PASS
+PlayMode = ALL PASS
+fail = 0
+skip = 0
+Content Audit = PASS / fresh
+
+ProdSim = V3
+Hash = FNV1A64:99f1bfd3f81c4fe6
+invalid = 0
+至少执行一次当前 fingerprint 下的 canonical ProdSim。
+不匹配：
+STOP / NO IMPLEMENTATION。
+4. Render-plan Authority
+本令允许建立一个纯 presentation 的：
+PassiveTreeRenderPlan
+或等价结构。
+它必须成为 renderer、LOD tests、texture residency 的共同输入，并至少包含：
+LOD
+viewport
+designScale
+zoom
+pan
+
+visible NodeIds
+visible canonical edge pairs
+
+per-node visual class
+required individual icon stems
+required shared chrome atlas stems
+
+allocated/path state masks
+不得成为 gameplay authority。
+它只能读取：
+canonical PoeTree data
+Allocated
+NodeState
+EffectTruth
+TraversalTruth
+Mastery state
+不得写这些状态。
+5. LOD Authority — 按物理屏幕投影，不按 raw zoom
+LOD 必须由一个 tests 与 production renderer 共用的 pure function 决定。
+当前 normal-node design size 为 46，而整个 IMGUI 设计空间又乘 
+DesignScale()。
+正式 metric：
+NormalProjectedPx =
+ 46
+ * treeZoom
+ * DesignScale(screenWidth, screenHeight)
+禁止：
+LOD = f(treeZoom only)
+正式三档：
+LOD0 / Overview:
+ NormalProjectedPx < 8
+
+LOD1 / Mid:
+ 8 <= NormalProjectedPx < 18
+
+LOD2 / Detail:
+ NormalProjectedPx >= 18
+边界必须精确：
+7.999... → LOD0
+8.000 → LOD1
+17.999... → LOD1
+18.000 → LOD2
+同样的 physical projected size，在 1920×1080 与 2560×1440 下必须得到相同 LOD。
+6. LOD0 — Overview
+LOD0 是结构概览，不是缩小版 Detail。
+Node presentation
+所有可见 canonical nodes 必须仍有 presentation：
+Kind
+LOD0
+Normal
+简化点
+Notable
+与 normal 明确不同的符号
+Keystone
+独立显著符号
+Mastery
+独立专精符号
+Jewel
+独立 special/blocked 符号
+Start
+独立起点符号
+Allocated 必须仍明显高亮。
+现有：
+allocated
+available effective
+available route-only
+special blocked
+状态不得被重新解释。
+LOD0 强制关闭
+individual full node icon load = 0
+individual full node icon draw = 0
+
+node detail frame atlas load/draw = 0
+group decoration atlas load/draw = 0
+
+node name labels = 0
+尤其：
+禁止先 
+PoeTree.Icon() 加载 512² 图标，再决定不画。
+LOD0 的 render plan 根本不得请求 individual icon。
+7. LOD1 — Mid
+LOD1：
+Normal → simplified
+Jewel → simplified special symbol
+
+Notable
+Keystone
+Mastery
+Start
+ → full node art permitted
+允许请求 individual icon 的 kind 集合必须精确为：
+{ Notable, Keystone, Mastery, Start }
+不得动态扩大。
+Normal/Jewel：
+individual icon load/draw = 0
+Cluster decoration
+LOD1 可保留减量后的官方 group decoration，但只能按实际投影尺寸开启：
+GroupProjectedDiameterPx =
+ 2 * PoeTreeView.GroupRadius(group)
+ * treeZoom
+ * designScale
+只有：
+GroupProjectedDiameterPx >= 160
+时允许请求/绘制 group background。
+不得用 raw zoom 阈值代替。
+8. LOD2 — Detail
+LOD2 保留当前完整阅读能力：
+full visible-node icons
+existing frame art
+group decoration
+tooltip
+labels
+route-only disclosure
+Mastery selector interaction
+canonical edge rendering
+LOD2 允许继续使用现有 
+PoeTree.Icon() / 
+PoeTree.Chrome() 与 atlas UV path。
+但只允许加载当前 render plan 需要的 texture。
+9. Official Atlas Rule
+frame / group 等既有官方 atlas 必须继续使用：
+one shared Texture2D
++
+UV Rect
+禁止：
+new Texture2D per sprite
+GetPixels / SetPixels slicing
+ReadPixels
+runtime repack
+runtime atlas rebuild
+重新输出/重采样 canonical art
+10. Geometry Freeze
+geometry authority 继续是 canonical node coordinates + 
+PoeTreeView。
+节点中心：
+ScreenOf(node.x, node.y, pan, zoom)
+所有 LOD exact same。
+edge endpoints：
+ScreenOf(A.x,A.y)
+ScreenOf(B.x,B.y)
+所有 LOD exact same。
+当前 
+PoeTreeView.NodeRect() 已直接使用真实 node x/y；
+FitZoom/FitPan 也基于 canonical world bounds。
+禁止：
+orbit 重算 node location；
+group center 代替 node coordinates；
+为 LOD 移动节点；
+为 Chrome 对拍修改数据。
+11. Visibility / Culling Parity
+LOD 只能改变 representation complexity。
+对于同一：
+viewport
+pan
+zoom
+必须：
+VisibleNodeIds_LOD0
+==
+VisibleNodeIds_LOD1
+==
+VisibleNodeIds_LOD2
+同样：
+VisibleCanonicalEdgePairs_LOD0
+==
+VisibleCanonicalEdgePairs_LOD1
+==
+VisibleCanonicalEdgePairs_LOD2
+“没有完整 icon”不等于 node 不可见。
+12. Hit-test Authority
+当前点击使用由 node rect 放宽得到的 
+NodeClickRect。
+WO-05 必须将 hit truth 收敛到一个 renderer/tests 共用的 pure geometry helper：
+HitNodeId(...)
+视觉 LOD 不得成为 hit identity 的输入。
+候选节点的物理命中半径：
+ProjectedNodeRadius =
+ NodeSize(kind)
+ * zoom
+ * designScale
+ * 0.5
+
+HitRadiusPx =
+ max(ProjectedNodeRadius * 1.2, 6 px)
+即：
+Minimum physical hit radius = 6 px
+若一个 probe 同时命中多个 node：
+1. physical centre distance ascending
+2. exact distance tie → NodeId ascending
+禁止按：
+draw order；
+LOD；
+icon existence；
+dictionary order
+决定 winner。
+13. 三档 NodeId Hit Gate
+冻结至少：
+Start = 2172
+route-only = 71
+supported = 183
+Mastery = 10
+WO-03 Notable prerequisite = 1006
+
++ 至少 1 Keystone
++ 至少 1 Jewel
+对每个 fixture 分别在 LOD0 / 1 / 2 representative projection 下测试：
+centre
++0.4 hit-radius X
+-0.4 hit-radius X
++0.4 hit-radius Y
+-0.4 hit-radius Y
+要求：
+resolved NodeId == expected NodeId
+三档 mismatch：
+0
+另外对全部 2429 node centre 做机械 probe。
+若 canonical 数据存在完全同坐标节点：
+输出 duplicate-position groups；
+winner deterministic；
+三档 winner exact same；
+不准改 coordinate 来消除重叠。
+14. Click Behavior Parity
+LOD 不能新增 allocation API。
+命中之后仍只允许进入既有：
+ordinary:
+ existing CanAllocate / TryAllocate
+
+Mastery:
+ existing Mastery gate / selector / TryAllocateMastery
+
+special blocked:
+ existing rejection path
+禁止：
+TryAllocateOverview
+TryAllocateLOD
+QuickAllocate
+overview auto-path
+15. Allocated-path Fixture
+冻结：
+[2172, 71, 183]
+通过真实 API 构造。
+三档必须 exact same：
+Allocated NodeId set
+edge allocated-state mask
+NodeState
+EffectTruth
+TraversalTruth
+只允许绘制形式不同。
+16. Headless Chrome Geometry Oracle — 仍是 Blocking Gate
+是，仍然要求。
+S6P_PLAN 明确规定继续用现有官方数据 renderer，通过固定 viewport/tree center/zoom/pan 对拍节点中心、edge endpoint、可见类别、allocated path 与 clipping；不要求 Unity 与 Chrome 像素级美术一致。
+Preflight 必须定位并冻结现有：
+renderer path
+launch command
+Chrome/Chromium executable
+input canonical tree source
+output artifact location
+禁止：
+npm install
+新增 Playwright/Puppeteer
+新增 browser framework
+下载另一套 renderer
+换框架
+若仓库登记的既有 Chrome seam 无法定位/运行：
+STOP / Channel A arbitration。
+17. Geometry Comparison Fixtures
+必须固定 physical viewport：
+1920 × 1080
+2560 × 1440
+每档均计算真实 DesignScale。
+G0 — Fit overview
+使用：
+PoeTreeView.FitZoom(...)
+PoeTreeView.FitPan(...)
+要求自然落入 LOD0。
+G1 — LOD0 representative
+令：
+NormalProjectedPx = 6
+则：
+zoom = 6 / (46 * designScale)
+focus = node 2172。
+G2 — LOD1 representative
+NormalProjectedPx = 12
+zoom = 12 / (46 * designScale)
+focus = 2172。
+G3 — LOD2 representative
+NormalProjectedPx = 24
+zoom = 24 / (46 * designScale)
+focus = 2172。
+pan 必须由 canonical focus/world transform 机械产生，不允许手调截图 pan。
+18. Unity ↔ Chrome Artifact
+每个：
+G0..G3
+×
+1920 / 2560
+输出 machine-readable artifact：
+viewport
+designScale
+zoom
+pan
+LOD
+NormalProjectedPx
+
+visible NodeIds
+NodeId → physical screen centre
+NodeId → kind/category mask
+
+visible canonical edge pairs
+edge → endpoint physical coordinates
+
+Allocated NodeIds
+allocated path mask
+
+clipped NodeIds
+clipped edge IDs
+Exact fields
+必须 exact：
+visible NodeId set
+edge NodeId-pair set
+kind/category mask
+allocated mask
+allocated-edge mask
+clip masks
+Numeric tolerance
+node-centre |Unity - Chrome| <= 1.0 physical px
+edge-endpoint error <= 1.0 physical px
+不比较：
+anti-aliasing
+font raster
+shader
+exact color
+pixel-perfect screenshots
+19. Texture Residency Owner
+当前 
+PoeTree 使用 
+_icons 与 
+_chrome 两个静态 Texture2D 字典。
+WO-05 必须把它们收敛为一个 visual residency owner。
+可以：
+继续由 
+PoeTree 拥有；
+或最小抽出专门 owner。
+但禁止出现：
+old PoeTree cache
++
+new HUD cache
+两套并存。
+owner 至少负责：
+required icon stems
+required chrome stems
+
+resident icon textures
+resident chrome textures
+
+negative-cache misses
+
+load count
+unload count
+resident bytes
+
+release/sync lifecycle
+20. Residency 必须由 Render Plan 驱动
+稳定 frame 后：
+ResidentTreeVisualTextures
+==
+CurrentRenderPlan.RequiredTextures
+允许 implementation 有至多 1 completed repaint 的 release lag。
+超过 1 frame：
+FAIL。
+LOD0 required set
+individual icon stems = ∅
+frame chrome stems = ∅
+group chrome stems = ∅
+因此稳定后：
+Resident individual icons = 0
+Resident detail chrome = 0
+LOD1
+resident icons 必须精确等于：
+visible
+∩
+{Notable, Keystone, Mastery, Start}
+的 unique required stems。
+LOD2
+resident individual icons：
+<= unique full-art stems required by current visible nodes
+不得包含此前 pan 位置遗留的 icon。
+21. Pan-sweep Residency Gate
+LOD2 执行固定九宫 sweep：
+NW N NE
+W C E
+SW S SE
+target points 由 canonical world bounds 三等分机械计算。
+每一站等待 residency stable，然后记录：
+visible node count
+
+required icon stems
+resident icon stems
+
+required chrome stems
+resident chrome stems
+
+tree-owned bytes
+
+load calls
+unload calls
+要求：
+RequiredIconDigest == ResidentIconDigest
+RequiredChromeDigest == ResidentChromeDigest
+若某 shared chrome atlas 被多个 draw 共用，只计一次 Texture2D。
+九宫扫完：
+resident set 必须只对应最后一站，而不是九站 union。
+22. LOD Transition Residency
+机械执行：
+cold → LOD0
+LOD0 → LOD2
+LOD2 → LOD1
+LOD1 → LOD0
+LOD0 → LOD2
+LOD2 → tree closed
+要求：
+cold → LOD0
+individual icon load calls = 0
+resident individual icons = 0
+LOD2 → LOD0
+<=1 completed repaint：
+individual icon residency = 0
+detail/group chrome no longer required = released
+Tree closed
+<=1 non-tree repaint：
+tree-owned icon references = 0
+tree-owned chrome references = 0
+tree-owned visual bytes = 0
+passive_tree TextAsset/canonical parsed data 不属于 visual residency Gate，可以保留。
+23. Panel Lifecycle
+release 不允许只绑在 
+P key。
+因为现有 panel 还可通过 Escape / nav / Map / Craft 等路径切换。当前 HUD 的确有多个 Panel transition 路径。
+必须按：
+previous Panel == Build
+AND
+current Panel != Build
+或等价 panel lifecycle truth 触发 visual release。
+至少覆盖：
+P/Tab
+Escape
+Close button
+切到 Map
+切到 Craft
+其它现役 Build→non-Build transition
+release 必须幂等。
+24. Missing-resource Negative Cache
+当前 
+Icon() / 
+Chrome() 对资源 miss 最终缓存 null，但现有 lookup 只在 cached texture 非 null 时直接 return，因此相同 missing stem 可能再次 
+Resources.Load。
+本令要求：
+same missing stem
+within same residency epoch
+→ Resources.Load attempts <= 1
+panel close/reopen 或明确 new residency epoch 后可以再尝试一次。
+不得每个 repaint 重试。
+25. No Per-frame Texture Churn
+固定：
+viewport
+LOD
+pan
+zoom
+gameplay state
+连续 120 completed repaint frames。
+必须：
+additional Resources.Load calls = 0
+additional unload calls = 0
+new tree Texture2D instances = 0
+resident instance IDs stable
+resident byte count stable
+禁止在 passive-tree draw path：
+new Texture2D
+GetPixels
+SetPixels
+ReadPixels
+EncodeToPNG
+runtime sprite extraction
+runtime atlas repack
+HUD 既有全局 cached 1×1 white texture不算 passive art residency expansion。
+26. Memory / VRAM Gate
+必须机械测四态：
+TREE CLOSED
+LOD0 OVERVIEW
+LOD1 MID
+LOD2 DETAIL
+每态至少记录：
+resident individual-icon count
+resident chrome-atlas count
+unique resident Texture2D count
+
+tree-owned bytes
+global Texture.currentTextureMemory
+
+load count
+unload count
+tree-owned bytes 使用当前 resident unique Texture2D references 的：
+Profiler.GetRuntimeMemorySizeLong(texture)
+求和，或 Unity 6 中等价的稳定 API。
+Evidence 必须写明实际 measurement API。
+Blocking requirements
+CLOSED：
+icon count = 0
+chrome count = 0
+tree-owned bytes = 0
+LOD0：
+individual icon count = 0
+full icon draw count = 0
+LOD1：
+normal-node individual icon count = 0
+jewel individual icon count = 0
+LOD2：
+resident icons
+<=
+required visible unique icon stems
+另外：
+LOD0 tree-owned bytes < LOD2 tree-owned bytes
+禁止通过全树预加载换取稳定帧。
+27. Global Memory Operations 禁止
+禁止用：
+Resources.UnloadUnusedAssets()
+GC.Collect()
+作为每帧或 LOD 切换解决方案。
+特别：
+per-frame UnloadUnusedAssets = forbidden
+per-frame GC.Collect = forbidden
+只能释放 residency owner 明确拥有、当前 render plan 不再需要的视觉资源。
+28. Draw Counters
+允许增加 read-only presentation diagnostics，例如：
+CurrentLOD
+
+VisibleNodeCount
+VisibleEdgeCount
+
+SimpleNodeDrawCount
+FullIconDrawCount
+FrameAtlasDrawCount
+GroupAtlasDrawCount
+
+IconLoadCount
+ChromeLoadCount
+UnloadCount
+
+ResidentIconCount
+ResidentChromeCount
+ResidentBytes
+要求：
+不参与 gameplay；
+不参与 hit identity；
+不进入 ProdSim；
+不进入 persistence。
+29. Default View Freeze
+现有：
+DefaultTreeZoom = 0.45
+必须保持，除非 Channel A 另发令。
+同理不得为“让 LOD 看起来通过”修改现有 zoom min/max。
+本令测试可用 deterministic debug zoom，但产品默认视图不得借测试偷改。
+30. Canonical Data Freeze
+本令禁止修改：
+passive_tree.json
+
+NodeId/index
+node x/y
+links
+kind
+group membership
+stats
+choices
+meta.start
+canonical world bounds
+禁止修改节点总数。
+禁止修改 imported canonical art 来降低显存。
+31. Gameplay Freeze
+禁止改：
+PassiveSupport
+PoeStatParser semantics
+TraversalTruth
+EffectTruth
+
+CanAllocate
+TryAllocate
+
+Mastery prerequisite
+Mastery choice identity
+TryAllocateMastery
+
+TryRespec gameplay rules
+passive point accounting
+
+modifier aggregation
+CombatMath
+skill stats
+若发现 LOD 实现“需要”改上述任何行为：
+STOP。
+32. ProdSim Policy
+WO-05 不允许 hash 改变。
+正式 expected：
+Contract = V3
+FNV1A64:99f1bfd3f81c4fe6
+invalid = 0
+S6P_PLAN 已明确规定 WO-05 hash 必须等于 WO-04 基线；本令属于可视化与 texture residency，不是 gameplay/hash surface work。
+最终必须独立冷进程 ×3：
+H1 == H2 == H3
+ == FNV1A64:99f1bfd3f81c4fe6
+若任何一次变化：
+STOP
+NO REBASELINE
+NO V4
+不得把以下任何东西加入 canonical payload：
+LOD
+zoom
+pan
+viewport
+screen resolution
+visible NodeIds
+texture identities
+residency
+memory counters
+33. Required Tests
+至少提供语义等价的以下 tests：
+LOD_UsesPhysicalProjectedSize_NotRawZoom
+LOD_Boundaries_8And18_AreExact
+LOD_SameProjectedSizeAcrossViewports_IsSame
+
+LOD0_LoadsZeroIndividualIcons
+LOD0_DrawsZeroFullIcons
+LOD0_DrawsNoDetailFramesOrGroupBackgrounds
+LOD0_AllNodeKindsHaveOverviewRepresentation
+
+LOD1_NormalAndJewelLoadZeroIndividualIcons
+LOD1_FullArtKindsAreExact
+LOD1_GroupDecorationUsesProjectedDiameter
+
+LOD2_FullDetailRemainsAvailable
+
+Geometry_NodeCentresIdenticalAcrossLods
+Geometry_VisibleNodesIdenticalAcrossLods
+Geometry_VisibleEdgesIdenticalAcrossLods
+Geometry_AllocatedPathIdenticalAcrossLods
+
+HitTest_FrozenFixturesResolveSameNodeAcrossLods
+HitTest_All2429CentresDeterministic
+HitTest_TieBreakDistanceThenNodeId
+
+ChromeUnity_NodeSetsExact
+ChromeUnity_EdgePairsExact
+ChromeUnity_StateMasksExact
+ChromeUnity_ClipMasksExact
+ChromeUnity_NodeCentresWithinOnePixel
+ChromeUnity_EdgeEndpointsWithinOnePixel
+
+Residency_ColdLOD0LoadsZeroIcons
+Residency_LOD1OnlyRequiredImportantIcons
+Residency_LOD2OnlyCurrentVisibleRequiredIcons
+Residency_NinePointPanDoesNotAccumulate
+Residency_LOD2ToLOD0ReleasesDetail
+Residency_CloseTreeReleasesVisualResources
+Residency_MissingStemNegativeCached
+Residency_Stable120Frames_NoTextureChurn
+
+GameplayTruth_UnchangedByLOD
+ProdSim_DoesNotReadLODOrTextureState
+34. Acceptance Criteria
+AC
+Observable criterion
+AC-01
+Entry HEAD/status/fingerprint/test manifest 完整冻结
+AC-02
+Entry compile/tests/Content Audit 全 PASS
+AC-03
+Entry canonical=
+99f1bfd3f81c4fe6, V3, invalid=0
+AC-04
+Entry Traversal/Effect/parser/Mastery census 完整冻结
+AC-05
+一个且仅一个 production LOD authority
+AC-06
+LOD 使用 physical projected size，不只使用 raw zoom
+AC-07
+normal projected formula=
+46*zoom*DesignScale
+AC-08
+<8 / [8,18) / >=18 三档边界机械 PASS
+AC-09
+相同 physical projection 跨 1920/2560 得相同 LOD
+AC-10
+renderer/tests 共用同一 LOD authority
+AC-11
+LOD0 normal 使用 simplified point
+AC-12
+LOD0 notable/keystone/mastery/jewel/start 均有可区分 symbol
+AC-13
+LOD0 allocated state 仍明确可见
+AC-14
+LOD0 individual icon load count=0
+AC-15
+LOD0 full icon draw count=0
+AC-16
+LOD0 detail-frame/group-decoration load/draw=0
+AC-17
+LOD0 node labels=0
+AC-18
+LOD1 Normal/Jewel individual icon load/draw=0
+AC-19
+LOD1 full-art kind set EXACT={Notable,Keystone,Mastery,Start}
+AC-20
+LOD1 group art gate 使用 projected diameter>=160
+AC-21
+LOD2 保留现有完整 detail/tooltip behavior
+AC-22
+三档 node centres exact same canonical transform
+AC-23
+三档 edge pair set/endpoints exact same
+AC-24
+三档 visible NodeId geometry set exact same
+AC-25
+三档 visible edge geometry set exact same
+AC-26
+[2172,71,183] allocation/path-state 三档一致
+AC-27
+hit-test authority 单一且 tests/production 共用
+AC-28
+physical minimum hit radius=6px
+AC-29
+multi-hit ordering=distance→NodeId
+AC-30
+frozen hit fixtures 三档 NodeId mismatch=0
+AC-31
+2429 centre probes 三档 mismatch=0
+AC-32
+duplicate-coordinate groups 若存在，有确定 tie report
+AC-33
+LOD 未新增 allocation/Mastery API
+AC-34
+click 仍走既有 ordinary/Mastery/special production paths
+AC-35
+既有 Headless Chrome seam 被定位并可运行
+AC-36
+无新 Chrome/browser package/framework
+AC-37
+G0–G3 × 1920/2560 均产生 machine artifacts
+AC-38
+Unity↔Chrome NodeId sets EXACT
+AC-39
+Unity↔Chrome canonical edge-pair sets EXACT
+AC-40
+Unity↔Chrome category/allocated/clip masks EXACT
+AC-41
+max node-centre error <=1 physical px
+AC-42
+max edge-endpoint error <=1 physical px
+AC-43
+shared official atlas+UV path 保持
+AC-44
+runtime per-sprite Texture2D extraction/repack=0
+AC-45
+passive-tree visual residency owner 唯一
+AC-46
+LOD0 stable resident individual icons=0
+AC-47
+LOD0 stable unnecessary chrome residency=0
+AC-48
+LOD1 resident icon set只含当前 required allowed-kind stems
+AC-49
+LOD2 resident icon set不超过当前 visible required unique stems
+AC-50
+9-point pan sweep 无历史 icon accumulation
+AC-51
+LOD2→LOD0 后 <=1 repaint detail icons 全释放
+AC-52
+Build panel close 后 <=1 non-tree repaint tree-owned visual bytes=0
+AC-53
+same missing stem 每 residency epoch load attempt<=1
+AC-54
+stable 120 repaints：0 new Texture2D / 0 load delta / 0 unload delta
+AC-55
+CLOSED icon/chrome count=0、tree bytes=0
+AC-56
+LOD0 individual icon count=0 且 bytes < LOD2 bytes
+AC-57
+LOD1 normal/jewel individual icon count=0
+AC-58
+无 per-frame 
+UnloadUnusedAssets / 
+GC.Collect
+AC-59
+DefaultTreeZoom/min/max 无未经授权变化
+AC-60
+canonical node coordinates/NodeIds/links/data delta=NONE
+AC-61
+allocation / modifier / parser / Mastery semantic delta=NONE
+AC-62
+semantic census出口 exact 等于入口
+AC-63
+reachable=1985、`
+D
+=411`、start-disconnected=42 exact unchanged
+AC-64
+predecessor tests 无静默删除/弱化
+AC-65
+Final compile 0；all discovered EditMode/PlayMode PASS；fail=0 skip=0
+AC-66
+Content Audit final PASS/fresh
+AC-67
+cold ProdSim ×3 exact 
+99f1bfd3f81c4fe6, V3, invalid=0
+AC-68
+Forbidden Expansion PASS
+AC-69
+Evidence Pack 完整，只标 
+READY_FOR_GATE_REVIEW
+AC-01..AC-69 全部 PASS 才可请求 ACCEPT。
+35. Evidence Pack Mandatory Fields
+EP-A — Identity / Entry
+Work Order
+Base commit
+Implementation commit
+
+Entry HEAD
+Final HEAD
+
+Entry/final git status
+Entry/final working-tree fingerprint
+
+Unity version
+changed files
+EP-B — Semantic Freeze
+Before / After / Delta：
+FullySupported
+Unfulfilled
+Special interaction
+Mastery nodes
+
+CONSUMED
+BLOCKED
+SPECIAL
+STRUCTURAL
+UNKNOWN
+
+TRAVERSABLE
+SPECIAL_BLOCKED
+reachable
+|D|
+start-disconnected supported
+
+Mastery total choices
+Mastery supported choices
+所有 WO-05 delta 必须 
+0。
+EP-C — LOD Authority
+DesignScale formula
+Normal NodeSize
+NormalProjectedPx formula
+
+LOD0 threshold
+LOD1 range
+LOD2 threshold
+
+7.999 result
+8.000 result
+17.999 result
+18.000 result
+EP-D — Render Matrix
+每 kind × 每 LOD：
+representation
+full icon?
+frame?
+group art?
+label?
+hit enabled?
+tooltip behavior?
+附实际 counters。
+EP-E — Geometry Fixtures
+每个：
+G0 / G1 / G2 / G3
+×
+1920x1080 / 2560x1440
+记录：
+DesignScale
+zoom
+pan
+LOD
+NormalProjectedPx
+visible node count
+visible edge count
+EP-F — Headless Chrome
+renderer path
+launch command
+Chrome/Chromium version
+canonical input
+Unity output
+Chrome output
+
+NodeId set mismatches
+edge-pair mismatches
+category-mask mismatches
+allocated-mask mismatches
+clip-mask mismatches
+
+max node error px
+max edge error px
+PASS：
+all mismatches=0
+max geometry error<=1px
+EP-G — Hit Parity
+冻结 fixture 表：
+NodeId
+kind
+probe
+LOD0 result
+LOD1 result
+LOD2 result
+全树：
+centre probes=2429
+duplicate-coordinate groups
+tie outcomes
+mismatches=0
+EP-H — Allocated Path
+固定：
+[2172,71,183]
+三档输出：
+Allocated IDs
+edge-state mask
+NodeState
+EffectTruth
+TraversalTruth
+EP-I — Residency Owner
+owner class/path
+icon cache
+chrome cache
+negative cache
+sync API
+release API
+diagnostic API
+证明 parallel texture cache=0。
+EP-J — Memory States
+State
+Icon count
+Chrome count
+Unique Texture2D
+Tree bytes
+Global texture memory
+Loads
+Unloads
+CLOSED
+LOD0
+LOD1
+LOD2
+另写：
+measurement API
+warm-up rule
+stable-frame definition
+sample frame
+EP-K — Nine-point Sweep
+每点：
+target world coordinate
+visibleNodeCount
+
+requiredIconCount
+residentIconCount
+requiredIconDigest
+residentIconDigest
+
+requiredChromeDigest
+residentChromeDigest
+
+treeBytes
+稳定后 required/resident digest 必须一致。
+EP-L — Transition Gate
+记录：
+cold→LOD0
+LOD0→LOD2
+LOD2→LOD1
+LOD1→LOD0
+LOD0→LOD2
+LOD2→CLOSED
+每步：
+loads
+unloads
+resident icon count
+resident chrome count
+tree bytes
+frames-to-stable
+EP-M — Stable 120 Frames
+starting texture instance IDs
+ending texture instance IDs
+
+new Texture2D count
+Resources.Load delta
+unload delta
+resident-byte delta
+EP-N — Missing Texture
+missing stem
+epoch
+load attempt count
+repaint count
+要求：
+attempt count=1
+不得改 canonical passive data 制造永久坏资源。
+EP-O — Visual Evidence
+至少：
+1920 LOD0
+1920 LOD1
+1920 LOD2
+
+2560 LOD0
+2560 LOD1
+2560 LOD2
+
+LOD0 allocated path
+LOD2 allocated path
+截图只是辅助，不替代机械 Gate。
+EP-P — Regression / Scope Audit
+Compile
+EditMode pass/fail/skip
+PlayMode pass/fail/skip
+Content Audit
+
+predecessor missing
+predecessor weakened
+
+PassiveSupport delta
+PoeStatParser delta
+SliceSession gameplay delta
+CombatMath delta
+Mastery transaction delta
+
+passive JSON delta
+node-coordinate delta
+NodeId delta
+links delta
+
+new StatId
+new ModOp
+new gameplay domain
+new dependency/framework
+purchased asset
+EP-Q — ProdSim
+Run1 timestamp / hash / contract / invalid
+Run2 timestamp / hash / contract / invalid
+Run3 timestamp / hash / contract / invalid
+
+Distinct hashes=1
+Expected exact match=YES
+Hash=FNV1A64:99f1bfd3f81c4fe6
+Contract=V3
+invalid=0
+EP-R — Governance
+最终只能：
+S6P-WO-05 = READY_FOR_GATE_REVIEW
+S6P successor = BLOCKED_PENDING_CHANNEL_A_REVIEW
+不得自行宣布 S6P CLOSED。
+36. Explicit Prohibitions
+禁止：
+采购；
+换框架；
+新 browser framework；
+新 UI framework；
+Addressables migration；
+AssetBundle migration；
+runtime atlas builder；
+修改/重采样 canonical art；
+修改 passive-tree coordinates；
+修改 NodeId/index；
+修改 links；
+修改 canonical passive JSON；
+修改 allocation；
+修改 point accounting；
+修改 modifier；
+修改 CombatMath；
+修改 TraversalTruth；
+修改 EffectTruth；
+修改 parser；
+修改 Mastery semantics；
+新 StatId；
+新 ModOp；
+新 gameplay domain；
+Jewel/Timeless/Ascendancy/Flask；
+新 skill/support；
+Save/Persistence；
+LOD0 full-icon preload；
+全树 texture preload；
+每 node 
+new Texture2D；
+raw zoom 单独决定 LOD；
+为对拍移动节点；
+per-frame 
+Resources.UnloadUnusedAssets()；
+per-frame 
+GC.Collect()；
+把 LOD/zoom/pan/residency 放进 ProdSim；
+V3 bump；
+canonical rebaseline。
+37. Automatic STOP Conditions
+任一成立立即 STOP：
+entry canonical hash ≠ 
+99f1bfd3f81c4fe6；
+entry semantic census 无法重现；
+需要修改 passive/gameplay semantics；
+需要修改 canonical tree data；
+需要 raw zoom-only LOD 才能实现；
+LOD0 出现 individual icon load；
+LOD0 出现 full icon draw；
+LOD0 存在 detail/group visual residency；
+LOD1 Normal/Jewel 加载 individual icon；
+同一 hit fixture 三档 NodeId 不一致；
+2429 centre probes 有未解释 mismatch；
+visible node/edge geometry set 因 LOD 改变；
+allocated path truth 因 LOD 改变；
+Chrome/Unity NodeId/edge/state/clip set mismatch；
+Chrome/Unity geometry error >1 physical px；
+既有 Headless Chrome seam 无法运行；
+需要安装浏览器 package/framework；
+九宫 sweep residency 累积历史 icons；
+LOD2→LOD0 无法释放 detail textures；
+tree close 后 visual resources 无法释放；
+stable 120 repaint 有 texture/load churn；
+missing resource 每帧重复加载；
+需要 per-frame global unload/GC 才能达标；
+需要重采样/改源纹理才达标；
+Traversal/Effect/parser/Mastery truth 变化；
+reachable / D / disconnected-supported 变化；
+predecessor tests 被静默删/弱化；
+Content Audit fail/stale；
+final ProdSim 任一 hash 变化；
+需要 V3 bump/rebaseline；
+任何采购/换框架/新玩法域被触及。
+STOP 后：
+S6P-WO-05 = BLOCKED / NEEDS CHANNEL A ARBITRATION
+Evidence 必须给：
+expected
+actual
+first divergence
+minimal reproduction
+LOD
+NodeIds
+texture stems
+affected files/tests
+不得自行扩大范围。
+38. Completion Definition
+本令只有在以下全部成立时完成：
+LOD
+ = physical projected size driven
+ != raw zoom driven
+
+LOD0
+ = structural overview
+ = 0 individual full node icons
+ = 0 detail frame/group textures
+
+LOD1
+ = important-node art
+ + simplified Normal/Jewel
+
+LOD2
+ = current full-detail experience
+
+geometry
+ = canonical x/y unchanged
+
+hit identity
+ = NodeId invariant across all 3 LODs
+
+Chrome geometry oracle
+ = still mandatory
+ = exact state/set parity
+ = <=1 physical px geometry error
+
+texture residency
+ = current render-plan set only
+ = no pan-history accumulation
+ = released when leaving detail/closing tree
+ = no stable-frame texture churn
+
+gameplay semantics
+ = zero delta
+
+canonical passive data
+ = zero delta
+
+ProdSim
+ = V3
+ = FNV1A64:99f1bfd3f81c4fe6
+ = cold ×3 EXACT
+完成后只提交：
+S6P-WO-05 Evidence Pack
+等待 Channel A Gate Review

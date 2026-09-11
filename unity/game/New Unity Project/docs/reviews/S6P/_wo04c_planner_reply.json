@@ -1,0 +1,86 @@
+Verdict: ACCEPT WITH FOLLOW-UP
+04C 的产品实现可以通过；
+AreaDamageMore ×2 故意不接是正确裁定。现有 runtime 对 
+AreaDamageMore 只消费 
+RawMore，而源句是 
+increased Area Damage：映成 
+Increased 会静默不生效，映成 
+More 又会篡改 additive→multiplicative 语义。因此它们必须继续 fail-closed，而不是为了清空 remaining bucket 强接。raw.githubusercontent.com+1
+AC
+结果
+Gate Review
+AC-01..03
+PASS
+entry identity/tests/V3 baseline 有证据，canonical 仍 
+99f1bfd3f81c4fe6
+AC-04..05
+PASS
+入口 367/1660/87/315 与 line census 基线有明确 before 数据
+AC-06
+PASS
+parser mutation 前已有 48-line entry gap artifact
+AC-07
+PASS
+扫描 ordinary stats + choices
+AC-08..09
+PASS WITH FOLLOW-UP
+实际 implementation disposition 可重建，但现有 artifact 是“48-line loose bucket + remaining bucket”，没有按最终合同逐行输出完整 disposition/
+OUT_AMBIGUOUS_STOP=0 表
+AC-10..16
+PASS
+新规则全部使用已有 StatId/ModOp，且是全行锚定 exact-unconditional grammar；未新增 consumer
+AC-17..18
+PASS
+production parser diff 只有冻结的 10 个既有-consumer 句式，没有其它 parser expansion。GitHub
+AC-19
+PASS
+未修改既有 parser rules；新增测试集中于 previously-unmapped forms
+AC-20..21
+PASS
+exact positives 与 Minion/while/Convert/Area Damage near-miss negatives 均有机械测试。GitHub
+AC-22..24
+PASS
+RuntimeConsumedStats 未扩张；
+PassiveSupport 产品逻辑仅改注释，无第二 runtime oracle。GitHub
+AC-25..29
+PASS
+supported 367→453 单向 +86；mixed 增至259但仍 whole-node fail-closed；Life Increased 有 production-consumer proof。GitHub
+AC-30..32
+PASS
+Mastery nodes/choices/choice-support 仍 315/1863/22；WO-03 identity/transaction 未改。GitHub
+AC-33..36
+PASS
+TraversalTruth 未动；traversable/special topology 不变，reachable=1985，
+D 325→411，原 42 disconnected supported 不变。GitHub
+AC-37
+PASS
+无 04C 专用 UI support oracle
+AC-38
+PASS
+新 Life-Increased semantic 已有非空 gameplay proof
+AC-39..40
+PASS
+Canonical Data/Content 不变；新 StatId/ModOp/consumer=0
+AC-41..43
+PASS
+EditMode 512/512、PlayMode 21/21、Content Audit PASS/fresh。GitHub
+AC-44
+PASS
+cold ×3 全部 
+FNV1A64:99f1bfd3f81c4fe6, V3, invalid=0。GitHub
+AC-45
+PASS
+Forbidden Expansion 无触发
+AC-46
+PASS WITH FOLLOW-UP
+Evidence Pack 状态正确，但需要按最终合同补齐 disposition/family-manifest 型证据字段
+
+结论：不存在产品 rework blocker。 
+AreaDamageMore Increased 继续 blocked 是本轮正确的 fail-closed 结果；remaining bucket 非零并不等于 04C 失败，因为这两行实际上不满足“现有 consumer 能完整兑现同一语义”的入桶条件。
+Follow-up 仅为纯证据回填：把 48 个入口 unique lines 按最终合同 disposition 补成机械表，并明确 
+OUT_AMBIGUOUS_STOP=0；补 family manifest 与“Mastery choice census 22→22、>=2 仍 0”。不需要改 parser，不需要重跑 Gate，不需要重跑 cold ×3。
+S6P-WO-04C = CLOSED / ACCEPT WITH FOLLOW-UP。
+S6P-WO-05 = RELEASED / EXECUTE NOW。
+队列现在直接前移为：
+S6P-WO-05
+不插采购令、不换框架、不新增 WO。

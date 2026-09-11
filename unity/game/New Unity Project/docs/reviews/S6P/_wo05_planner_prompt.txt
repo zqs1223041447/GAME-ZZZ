@@ -1,0 +1,8 @@
+跟进。上一则 Gate Review 已 ACCEPT 04C 并 RELEASED WO-05。上一问「下发 WO-05 合同」疑似挂掉，请不要重复 04C 评审。
+
+现在只要一件事：输出 S6P-WO-05 — Passive Tree Overview LOD & Texture Residency 的完整可执行合同。
+
+必须包含：AC 编号清单、LOD0/1/2 切档定义（按屏幕投影大小，不是只看 zoom）、命中测试 NodeId 三档一致、显存/纹理常驻 Gate、Headless Chrome 几何对拍是否仍要求、ProdSim 必须保持 FNV1A64:99f1bfd3f81c4fe6、禁止改坐标/nodeId/分配/modifier、STOP 条件、Evidence 字段。
+
+不要采购、不要换框架、不要再审 04C。
+

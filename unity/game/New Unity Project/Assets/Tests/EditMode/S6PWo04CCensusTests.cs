@@ -122,6 +122,88 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void EntryDisposition_All48_NoAmbiguousStop()
+        {
+            var rows = CollectEntryLoose();
+            Assert.AreEqual(48, rows.Count, "入口 unique lines 必须仍为 48");
+
+            int wired = 0, skipped = 0, excluded = 0, ambiguous = 0;
+            var byFamily = new SortedDictionary<string, int[]>();
+            var sb = new StringBuilder();
+            sb.Append("{\n  \"total\": ").Append(rows.Count).Append(",\n  \"OUT_AMBIGUOUS_STOP\": 0,\n  \"lines\": [\n");
+            for (int i = 0; i < rows.Count; i++)
+            {
+                string disp = Disposition(rows[i].Line, rows[i].Family);
+                if (disp == "WIRED_EXISTING_CONSUMER") wired++;
+                else if (disp == "INTENTIONAL_SKIP_SEMANTIC_MISMATCH") skipped++;
+                else if (disp.StartsWith("EXCLUDED_")) excluded++;
+                else ambiguous++;
+
+                int[] c;
+                if (!byFamily.TryGetValue(rows[i].Family, out c))
+                {
+                    c = new int[4];
+                    byFamily[rows[i].Family] = c;
+                }
+                if (disp == "WIRED_EXISTING_CONSUMER") c[0]++;
+                else if (disp == "INTENTIONAL_SKIP_SEMANTIC_MISMATCH") c[1]++;
+                else if (disp.StartsWith("EXCLUDED_")) c[2]++;
+                else c[3]++;
+
+                if (i > 0) sb.Append(",\n");
+                sb.Append("    {\"family\":\"").Append(rows[i].Family)
+                  .Append("\",\"disposition\":\"").Append(disp)
+                  .Append("\",\"node\":").Append(rows[i].Node)
+                  .Append(",\"line\":\"").Append(rows[i].Line.Replace("\"", "'")).Append("\"}");
+            }
+            sb.Append("\n  ],\n  \"families\": {\n");
+            bool first = true;
+            foreach (var kv in byFamily)
+            {
+                if (!first) sb.Append(",\n");
+                first = false;
+                sb.Append("    \"").Append(kv.Key).Append("\": {\"wired\":").Append(kv.Value[0])
+                  .Append(",\"skipped\":").Append(kv.Value[1])
+                  .Append(",\"excluded\":").Append(kv.Value[2])
+                  .Append(",\"ambiguous\":").Append(kv.Value[3]).Append("}");
+            }
+            sb.Append("\n  },\n  \"counts\": {\"wired\":").Append(wired)
+              .Append(",\"skipped\":").Append(skipped)
+              .Append(",\"excluded\":").Append(excluded)
+              .Append(",\"ambiguous\":").Append(ambiguous).Append("}\n}\n");
+
+            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "docs/qa/WO_04C_DISPOSITION.json"));
+            File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
+            Assert.AreEqual(0, ambiguous, "OUT_AMBIGUOUS_STOP 必须为 0");
+            Assert.AreEqual(2, skipped, "AreaDamageMore Increased ×2 必须 INTENTIONAL_SKIP");
+            Assert.Greater(wired, 0);
+            Assert.Greater(excluded, 0);
+        }
+
+        [Test]
+        public void MasteryChoiceCensus_Unchanged_22_AndNoSecondChoice()
+        {
+            int masteries = 0, choices = 0, supported = 0, withOne = 0, withTwo = 0;
+            for (int i = 0; i < PoeTree.Count; i++)
+            {
+                if (PoeTree.Get(i).Kind != PoeNodeKind.Mastery)
+                    continue;
+                masteries++;
+                int n = PassiveSupport.ChoiceCount(i);
+                choices += n;
+                int ok = PassiveSupport.CountSupportedChoices(i);
+                supported += ok;
+                if (ok >= 1) withOne++;
+                if (ok >= 2) withTwo++;
+            }
+            Assert.AreEqual(315, masteries, "before=315 after=315 delta=0");
+            Assert.AreEqual(1863, choices, "before=1863 after=1863 delta=0");
+            Assert.AreEqual(22, supported, "before=22 after=22 delta=0 reason=04C 不改 Mastery choice support");
+            Assert.AreEqual(22, withOne);
+            Assert.AreEqual(0, withTwo, ">=2 可兑现 choice 仍为 0");
+        }
+
+        [Test]
         public void FullySupportedLifeIncreased_RaisesMaxLife()
         {
             int id = FirstFullySupportedWith(StatId.Life, ModOp.Increased);
@@ -164,6 +246,101 @@ namespace Game.Tests.EditMode
                     n++;
             }
             return n;
+        }
+
+        static string Disposition(string line, string family)
+        {
+            if (family == "AreaDamageMore")
+                return "INTENTIONAL_SKIP_SEMANTIC_MISMATCH";
+            string lower = line.ToLowerInvariant();
+            if (lower.IndexOf("minions") >= 0)
+                return "EXCLUDED_NOT_PLAYER_CONSUMER";
+            if (line.IndexOf("Converts ", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "EXCLUDED_CONVERSION_KEYSTONE";
+            if (!HasLeadingNumber(line))
+                return "EXCLUDED_NOT_EXACT_UNCOND";
+            string domain;
+            if (PassiveSupport.ClassifyLine(line, out domain) == PassiveSupport.LineBucket.Consumed)
+                return "WIRED_EXISTING_CONSUMER";
+            return "OUT_AMBIGUOUS_STOP";
+        }
+
+        static bool HasLeadingNumber(string line)
+        {
+            int i = 0;
+            if (i < line.Length && line[i] == '+') i++;
+            return i < line.Length && line[i] >= '0' && line[i] <= '9';
+        }
+
+        /// <summary>入口 48 行重建：用接线前的松散关键词，且不因现已 CONSUMED 而丢掉。</summary>
+        internal static List<Gap> CollectEntryLoose()
+        {
+            var list = new List<Gap>();
+            var seen = new HashSet<string>();
+            PoeNode[] nodes = PoeTree.Nodes;
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                AddLoose(list, seen, i, nodes[i].name, "stats", nodes[i].stats);
+                AddLoose(list, seen, i, nodes[i].name, "choices", nodes[i].choices);
+            }
+            return list;
+        }
+
+        static void AddLoose(List<Gap> list, HashSet<string> seen, int node, string name, string src, string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return;
+            int start = 0;
+            while (start < text.Length)
+            {
+                int nl = text.IndexOf('\n', start);
+                string line = nl < 0 ? text.Substring(start) : text.Substring(start, nl - start);
+                start = nl < 0 ? text.Length : nl + 1;
+                line = line.Trim();
+                if (line.Length == 0 || line[0] == '(')
+                    continue;
+                string family = LooseEntryFamily(line);
+                if (family == null)
+                    continue;
+                if (!seen.Add(line))
+                    continue;
+                string domain;
+                Gap g;
+                g.Node = node;
+                g.Name = name;
+                g.Source = src;
+                g.Line = line;
+                g.Family = family;
+                g.Bucket = PassiveSupport.ClassifyLine(line, out domain).ToString();
+                list.Add(g);
+            }
+        }
+
+        static string LooseEntryFamily(string line)
+        {
+            if (ContainsAny(line, "while ", "if ", "when ", "per ", "against ", "recently", "with ", "during "))
+                return null;
+            if (line.IndexOf("maximum Fire Resistance") >= 0)
+                return "MaxFireResistance";
+            if (line.IndexOf("Area Damage") >= 0)
+                return "AreaDamageMore";
+            if (line.EndsWith(" to Armour") || line.EndsWith(" to Armour Rating"))
+                return "ArmourFlat";
+            if (line.EndsWith(" to Evasion Rating") || line.EndsWith(" to Evasion"))
+                return "EvasionFlat";
+            if (line.EndsWith(" to Accuracy Rating"))
+                return "AccuracyFlat";
+            if (line.IndexOf("increased maximum Life") >= 0)
+                return "LifeIncreased";
+            if (line.IndexOf("increased maximum Mana") >= 0)
+                return "ManaIncreased";
+            if (line.IndexOf("increased Strength") >= 0)
+                return "StrengthIncreased";
+            if (line.IndexOf("increased Dexterity") >= 0)
+                return "DexterityIncreased";
+            if (line.IndexOf("increased Intelligence") >= 0)
+                return "IntelligenceIncreased";
+            return null;
         }
 
         internal static List<Gap> Collect()

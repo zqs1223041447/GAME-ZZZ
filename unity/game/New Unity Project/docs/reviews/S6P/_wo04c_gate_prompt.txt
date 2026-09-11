@@ -3,7 +3,7 @@
 仓库：https://github.com/zqs1223041447/GAME-ZZZ  branch main
 Implementation commit：`e1d8eea`（已 push）
 上一令：WO-04B ACCEPT WITH FOLLOW-UP；你已 RELEASED 04C。
-镜像站此前两次 ask 报登录失效；本次若仍失效请忽略。工作 AI 未停工。
+镜像站已重登。工作 AI 未停工。HEAD 现为 `4f7e23c`（e1d8eea 的 Evidence 回填 + Gate prompt）。
 
 请输出：ACCEPT / ACCEPT WITH FOLLOW-UP / REJECT-REWORK。
 若 ACCEPT，是否 RELEASE WO-05。不要改队列为采购/换框架。

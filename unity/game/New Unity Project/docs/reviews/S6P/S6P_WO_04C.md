@@ -1,6 +1,6 @@
 # S6P-WO-04C — Existing-Consumer Semantic Closure
 
-**状态：** READY_FOR_GATE_REVIEW  
+**状态：** CLOSED / ACCEPT WITH FOLLOW-UP（Channel A 2026-09-12；Follow-up = 纯证据 disposition 表，不改 parser）  
 **入口：** HEAD `8959a60` / fingerprint `7310214b…` dirty=NO  
 **ProdSim：** 同进程 + 冷进程 ×3 均为 `FNV1A64:99f1bfd3f81c4fe6` EXACT（V3，未 rebaseline）  
 **门：** EditMode **512/512**、PlayMode **21/21**、Content Audit PASS

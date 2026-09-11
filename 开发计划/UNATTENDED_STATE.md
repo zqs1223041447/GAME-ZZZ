@@ -57,24 +57,21 @@
 
 | 项 | 值 |
 |---|---|
-| 令号 | **S6P-WO-04C — Existing-Consumer Semantic Closure** |
-| 状态 | **RELEASED / EXECUTE NOW（实现中）**（WO-04B = CLOSED / ACCEPT WITH FOLLOW-UP） |
-| 授权来源 | Channel A 于 WO-04B Gate Review **RELEASED / EXECUTE NOW**（条件桶非 0，不跳过）。完整 AC 合同仍待 Channel A 补发；实现按原 WO-04「只接已有 runtime consumer」+ 04A/04A2 硬约束开工，不等人。 |
-| 入口指纹（生产树） | 干净 HEAD `8959a60` dirty=NO = `7310214b9657450a81281496048d22949e4b64a232b17bcdb3782621c097e95e`（2834 files）。明细 `_wo04c_fingerprint_entry.txt` |
-| 入口基线 | EditMode **506/506**、PlayMode **21/21**、ProdSim `FNV1A64:99f1bfd3f81c4fe6`（V3，04B 出口冷进程 ×3 EXACT） |
-| 入口 census | 松散关键词桶 **48** 行（`docs/qa/WO_04C_EXISTING_CONSUMER_GAP.json`）。含必须排除的 Minion / Iron Reflexes 样本 |
-| 接线范围 | 无条件 `increased maximum Life/Mana`、`increased Str/Dex/Int`、`+N to Armour/Evasion Rating/Accuracy Rating`、`+N% to maximum Fire Resistance`。不新增 StatId |
-| 故意不接 | `increased Area Damage`（AreaDamageMore 只走 RawMore，接到 Increased = 静默空转）；Minion 前缀；Converts 转换句；Fork/Adds 无简单无条件句式 |
-| 硬约束 | TraversalTruth/EffectTruth 分离不可回退；route-only 不得改回“分配被拒”；Jewel/Timeless/Mastery 静态资格不属本令；367/1660/`\|D\|`/42 若移动必须 before/after/delta/reason；禁新玩法域；禁静默 rebaseline `99f1bfd3f81c4fe6` |
-| 规划渠道 | Channel A = `game-zzz-planning-2` / `6aa368c5-7478-83ea-a2d3-95003ee4e6ab`（旧 `game-zzz-planning` 已停用） |
+| 令号 | **S6P-WO-05 — Passive Tree Overview LOD & Texture Residency** |
+| 状态 | **RELEASED / EXECUTE NOW** |
+| 授权来源 | Channel A 于 04C Gate **RELEASED / EXECUTE NOW**；合同 `S6P_WO_05_CONTRACT.md`（69 AC） |
+| 上一令 | **S6P-WO-04C = CLOSED / ACCEPT WITH FOLLOW-UP**（AreaDamageMore Increased 不接 ACCEPT；disposition 48 行 OUT_AMBIGUOUS_STOP=0） |
+| 入口基线（04C 收口） | EditMode **514/514**、PlayMode **21/21**、ProdSim `FNV1A64:99f1bfd3f81c4fe6`（V3，冷 ×3 EXACT） |
+| LOD 切档 | `NormalProjectedPx = 46 * treeZoom * DesignScale`：<8 LOD0；[8,18) LOD1；>=18 LOD2。禁止 raw zoom 单独决定 |
+| 硬约束 | 只改 presentation；Traversal/Effect/parser/Mastery/allocation/modifier/canonical data delta=0；可达 1985 / \|D\|=411 / 42 不得动；禁采购/换框架；禁静默 rebaseline `99f1bfd3f81c4fe6` |
+| 规划渠道 | Channel A = `game-zzz-planning-2` / `6aa368c5-7478-83ea-a2d3-95003ee4e6ab` |
 
-## 队列（WO-04C 进行中）
+## 队列（WO-05 进行中）
 
 | 项 | 值 |
 |---|---|
-| 队列 | **S6P-WO-04C（进行中） → WO-05** |
-| 上一令 | **S6P-WO-04B = CLOSED / ACCEPT WITH FOLLOW-UP**；记录见 `S6P_WO_04B.md` / `S6P_WO_04B_GATE_REVIEW.md` |
-| 04C 必须继承的事实 | ① `TraversalTruth` / `EffectTruth` 分离**不可回退**；② route-only 不得改回"分配被拒"；③ Mastery 静态资格仍 SPECIAL_BLOCKED（本令不改选择语义）；④ Jewel / Timeless **不属于 04C**；⑤ 367 / 1660 / `\|D\|`=325 / 42 若因 parser 接线合法移动，必须 before / after / delta / reason，禁静默更新；⑥ 可达 1985 不应因本令移动 |
+| 队列 | **S6P-WO-05（进行中）** |
+| 上一令 | **S6P-WO-04C = CLOSED / ACCEPT WITH FOLLOW-UP**；记录见 `S6P_WO_04C.md` / `S6P_WO_04C_GATE_REVIEW.md` |
 
 
 ## 上一令（S6P-DIR-01 — 已实现、已提交入库 `ce6f85c`、已推送）

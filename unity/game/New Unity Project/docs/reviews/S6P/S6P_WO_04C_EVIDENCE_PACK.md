@@ -86,6 +86,18 @@ EXACT MATCH     : YES
 
 ## EP-I Handoff
 
-`S6P-WO-04C = READY_FOR_GATE_REVIEW`  
-`successor WO-05 = BLOCKED_PENDING_CHANNEL_A_GATE_REVIEW`  
-规划渠道登录当前失效：已 `chatgpt_ask.py open` + `ask` 两次，均「未检测到已登录状态」。登录恢复后把本 Evidence Pack 发回 Channel A。
+`S6P-WO-04C = CLOSED / ACCEPT WITH FOLLOW-UP`（Channel A 2026-09-12）  
+`S6P-WO-05 = RELEASED / EXECUTE NOW`
+
+## EP-J Follow-up（纯证据，不改 parser）
+
+`docs/qa/WO_04C_DISPOSITION.json`：入口 48 unique lines 逐行 disposition。
+
+| disposition | count |
+|---|---|
+| WIRED_EXISTING_CONSUMER | 37 |
+| INTENTIONAL_SKIP_SEMANTIC_MISMATCH | 2（AreaDamageMore Increased） |
+| EXCLUDED_NOT_PLAYER_CONSUMER / CONVERSION / NOT_EXACT_UNCOND | 9 |
+| OUT_AMBIGUOUS_STOP | **0** |
+
+Mastery choice census：315 / 1863 / 全可兑现 **22→22**、`>=2` 仍 **0**。
