@@ -24,10 +24,12 @@ namespace Game.Tests.EditMode
     /// </summary>
     internal static class PassiveAwareProductionSimulation
     {
+        /// <summary>报告层合同版本（WO-03 §11 = V3）。</summary>
+        internal const string SimulationContractVersion = "V3";
         /// <summary>哈希负载 schema marker（合同 §16：显式区分"数据变了"与"evidence surface 升级了"）。</summary>
-        internal const string ContractVersion = "pv|passive-v1";
+        internal const string ContractVersion = "pv|passive-v2";
 
-        internal const string ScenarioVersion = "s6p-wo02-canonical-v1";
+        internal const string ScenarioVersion = "s6p-wo03-canonical-v3";
 
         /// <summary>
         /// canonical fixture —— 官方 NodeId，冻结（禁止 find-first-supported 动态挑选；合同 §3）。
@@ -102,9 +104,7 @@ namespace Game.Tests.EditMode
             var rows = new List<ModRow>();
             for (int i = 0; i < ids.Length; i++)
             {
-                if (!PassiveSupport.YieldsModifiers(PassiveSupport.EvaluateTruth(ids[i]).Effect))
-                    continue;
-                Modifier[] mods = PassiveCatalog.Get(ids[i]).Mods;
+                Modifier[] mods = session.EffectivePassiveMods(ids[i]);
                 if (mods == null)
                     continue;
                 for (int m = 0; m < mods.Length; m++)
@@ -129,8 +129,7 @@ namespace Game.Tests.EditMode
             {
                 if (i > 0)
                     sb.Append('|');
-                sb.Append(i.ToString(CultureInfo.InvariantCulture)).Append(':')
-                  .Append(((StatId)i).ToString()).Append('=');
+                sb.Append(i.ToString(CultureInfo.InvariantCulture)).Append('=');
                 AppendStatComponents(sb, session.PlayerStats, (StatId)i);
             }
             return sb.ToString();
@@ -192,6 +191,21 @@ namespace Game.Tests.EditMode
             }
             sb.Append('\n');
 
+            // px| = 专精显式选择 identity（nodeId:ordinal 升序）。无选择时仍输出空行，使表面存在。
+            sb.Append("px|");
+            bool firstPx = true;
+            for (int i = 0; i < ids.Length; i++)
+            {
+                int ord = session.MasterySelectedOrdinal(ids[i]);
+                if (ord < 0)
+                    continue;
+                if (!firstPx)
+                    sb.Append(',');
+                firstPx = false;
+                sb.Append(PassiveSupport.MasteryChoiceKey(ids[i], ord));
+            }
+            sb.Append('\n');
+
             List<string> mods = ModifierTuples(session);
             sb.Append("pm|");
             for (int i = 0; i < mods.Count; i++)
@@ -240,7 +254,7 @@ namespace Game.Tests.EditMode
 
         static bool IsOffensive(string tuple)
         {
-            // tuple 形如 "<nodeId>:<statId>:<StatName>:<opId>:<OpName>:<value>:<tags>:<condition>"
+            // tuple 形如 "<nodeId>:<statId>:<opId>:<value>:<tags>:<condition>"
             int first = tuple.IndexOf(':');
             int second = first < 0 ? -1 : tuple.IndexOf(':', first + 1);
             if (second < 0)
@@ -288,9 +302,10 @@ namespace Game.Tests.EditMode
 
             internal string Format()
             {
+                // V3：只保留稳定数值 token，禁止 Enum.ToString() 进 hash。
                 return _nodeId.ToString(CultureInfo.InvariantCulture) + ":"
-                    + ((int)_mod.Stat).ToString(CultureInfo.InvariantCulture) + ":" + _mod.Stat + ":"
-                    + ((int)_mod.Op).ToString(CultureInfo.InvariantCulture) + ":" + _mod.Op + ":"
+                    + ((int)_mod.Stat).ToString(CultureInfo.InvariantCulture) + ":"
+                    + ((int)_mod.Op).ToString(CultureInfo.InvariantCulture) + ":"
                     + Fmt(_mod.Value) + ":"
                     + ((uint)_mod.RequiredTags).ToString(CultureInfo.InvariantCulture) + ":"
                     + ((int)_mod.Condition).ToString(CultureInfo.InvariantCulture);

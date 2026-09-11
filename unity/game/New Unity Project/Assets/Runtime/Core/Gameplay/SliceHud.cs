@@ -98,6 +98,9 @@ namespace Game.Runtime.Core
         bool _treeToastOk;
         Vector2 _treeToastAt;
         float _treeToastUntil;
+        /// <summary>打开中的专精选择器节点；-1 = 关闭。打开/关闭不得改变 gameplay 状态。</summary>
+        int _masterySelector = -1;
+        Vector2 _masterySelectorScroll;
 
         /// <summary>天赋树组内的局部指针（GUI 组会平移绘制，但 Event.mousePosition 仍是设计空间坐标）。</summary>
         Vector2 TreePointer
@@ -217,7 +220,10 @@ namespace Game.Runtime.Core
         {
             // 天赋树开关（导演：天赋树通过快捷键打开和关闭）；P 与 Tab 同义，Tab 保留给老习惯
             if (Input.GetKeyDown(KeyCode.P) || Input.GetKeyDown(KeyCode.Tab))
+            {
+                CloseMasterySelector();
                 s.Panel = s.Panel == SlicePanel.Build ? SlicePanel.None : SlicePanel.Build;
+            }
             // 背包开关（导演 2026-09-11：背包改成快捷键开关式）
             if (Input.GetKeyDown(KeyCode.I))
                 s.BagOpen = !s.BagOpen;
@@ -227,11 +233,17 @@ namespace Game.Runtime.Core
                 s.Panel = s.Panel == SlicePanel.Craft ? SlicePanel.None : SlicePanel.Craft;
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                s.Panel = SlicePanel.None;
-                s.BagOpen = false;
+                if (_masterySelector >= 0)
+                    CloseMasterySelector();
+                else
+                {
+                    s.Panel = SlicePanel.None;
+                    s.BagOpen = false;
+                }
             }
             if (Input.GetKeyDown(KeyCode.R) && s.Panel != SlicePanel.None)
             {
+                CloseMasterySelector();
                 string err;
                 if (!s.TryRespec(out err) && err != null)
                     s.LastMessage = err;
@@ -1094,6 +1106,104 @@ namespace Game.Runtime.Core
             DrawPoeTreeCanvas(s, local);
             GUI.EndGroup();
             _treeOrigin = Vector2.zero;
+            if (_masterySelector >= 0)
+                DrawMasterySelector(s, dw, dh);
+        }
+
+        void CloseMasterySelector()
+        {
+            _masterySelector = -1;
+            _masterySelectorScroll = Vector2.zero;
+        }
+
+        /// <summary>专精选择器面板（设计空间；1920 与 2560 共用 1920×1080 布局）。</summary>
+        public static Rect MasterySelectorPanel(float dw, float dh)
+        {
+            float w = 560f;
+            float h = Mathf.Min(560f, dh - 80f);
+            return new Rect((dw - w) * 0.5f, (dh - h) * 0.5f, w, h);
+        }
+
+        public static Rect MasterySelectorChoiceRow(Rect panel, int index)
+        {
+            const float rowH = 48f;
+            return new Rect(panel.x + 16f, panel.y + 56f + index * rowH, panel.width - 32f, rowH - 6f);
+        }
+
+        public static Rect MasterySelectorCancelRect(Rect panel)
+        {
+            return new Rect(panel.xMax - 100f, panel.y + 10f, 84f, 28f);
+        }
+
+        void DrawMasterySelector(SliceSession s, float dw, float dh)
+        {
+            int node = _masterySelector;
+            if (node < 0 || node >= PoeTree.Count)
+            {
+                CloseMasterySelector();
+                return;
+            }
+            PoeNode n = PoeTree.Get(node);
+            int count = PassiveSupport.ChoiceCount(n);
+            Rect panel = MasterySelectorPanel(dw, dh);
+            Fill(new Rect(0f, 0f, dw, dh), new Color(0.02f, 0.02f, 0.015f, 0.55f));
+            Fill(panel, new Color(0.07f, 0.065f, 0.055f, 0.98f));
+            Fill(new Rect(panel.x, panel.y, 4f, panel.height), SliceSkin.Gold);
+            Label(new Rect(panel.x + 16f, panel.y + 8f, panel.width - 130f, 28f),
+                n.name + "　·　显式选择", _title);
+            if (NavBtnSmall(MasterySelectorCancelRect(panel), "取消", false))
+            {
+                CloseMasterySelector();
+                return;
+            }
+
+            float rowsH = Mathf.Max(1, count) * 48f + 8f;
+            Rect view = new Rect(panel.x + 8f, panel.y + 48f, panel.width - 16f, panel.height - 64f);
+            Rect content = new Rect(0f, 0f, view.width - 18f, rowsH);
+            _masterySelectorScroll = GUI.BeginScrollView(view, _masterySelectorScroll, content);
+            if (count == 0)
+                Label(new Rect(8f, 8f, content.width - 16f, 40f), "（无官方选项）", _small);
+            for (int i = 0; i < count; i++)
+            {
+                string line = PassiveSupport.ChoiceAt(n, i);
+                bool ok = PassiveSupport.IsChoiceSelectable(line);
+                bool selected = s.Allocated[node] && s.MasterySelectedOrdinal(node) == i;
+                Rect row = new Rect(4f, i * 48f + 4f, content.width - 8f, 42f);
+                Fill(row, selected ? new Color(0.28f, 0.22f, 0.10f, 0.95f)
+                    : ok ? new Color(0.14f, 0.13f, 0.11f, 0.95f)
+                    : new Color(0.10f, 0.09f, 0.09f, 0.95f));
+                Fill(new Rect(row.x, row.y, 3f, row.height),
+                    selected ? SliceSkin.Gold : (ok ? SlicePalette.NodeAvail : SlicePalette.NodeLock));
+                GUI.color = ok ? SlicePalette.Text : SlicePalette.Dim;
+                Label(new Rect(row.x + 12f, row.y + 2f, row.width - 20f, 22f), line ?? "", _small);
+                GUI.color = SlicePalette.Dim;
+                Label(new Rect(row.x + 12f, row.y + 22f, row.width - 20f, 18f),
+                    selected ? "已选择" : (ok ? "可提交　·　消耗 1 天赋点" : PassiveSupport.ReasonMasteryChoiceBlocked),
+                    _caption);
+                GUI.color = Color.white;
+                if (GUI.Button(row, GUIContent.none, GUIStyle.none))
+                {
+                    if (!ok)
+                    {
+                        s.LastMessage = PassiveSupport.ReasonMasteryChoiceBlocked;
+                        TreeToast(PassiveSupport.ReasonMasteryChoiceBlocked, false);
+                    }
+                    else
+                    {
+                        string err;
+                        if (s.TryAllocateMastery(node, i, out err))
+                        {
+                            TreeToast("专精 " + n.name, true);
+                            CloseMasterySelector();
+                            GUI.EndScrollView();
+                            return;
+                        }
+                        s.LastMessage = err ?? PassiveSupport.ReasonMasteryChoiceBlocked;
+                        TreeToast(err ?? "提交失败", false);
+                    }
+                }
+            }
+            GUI.EndScrollView();
         }
 
         /// <summary>视口内画布（局部坐标）：簇底衬 → 连线 → 节点 → tooltip。</summary>
@@ -1254,19 +1364,35 @@ namespace Game.Runtime.Core
             {
                 PoeNode n = nodes[hovered];
                 RequestTip(NodeCard(s, hovered, n), TipPriPanel);
-                if (ClickLocal(NodeClickRect(n)))
+                if (_masterySelector < 0 && ClickLocal(NodeClickRect(n)))
                 {
-                    string err;
-                    if (s.TryAllocate(hovered, out err))
+                    if (n.Kind == PoeNodeKind.Mastery)
                     {
-                        TreeToast("点亮 " + n.name, true);
+                        if (s.Allocated[hovered])
+                            TreeToast("已点亮　·　可用 R 重构", false);
+                        else if (s.CanEnterMasterySelection(hovered))
+                            _masterySelector = hovered;
+                        else
+                        {
+                            string why = s.MasteryGateReason(hovered) ?? s.NodeBlockReason(hovered);
+                            if (why != null)
+                                s.LastMessage = why;
+                            TreeToast(why ?? "该专精当前不可选择", false);
+                        }
                     }
                     else
                     {
-                        // 导演 2026-09-11：点击不能"点了没反应"——拒绝必须就地、可见、带原因
-                        if (err != null)
-                            s.LastMessage = err;
-                        TreeToast(err ?? "该节点当前不可点亮", false);
+                        string err;
+                        if (s.TryAllocate(hovered, out err))
+                        {
+                            TreeToast("点亮 " + n.name, true);
+                        }
+                        else
+                        {
+                            if (err != null)
+                                s.LastMessage = err;
+                            TreeToast(err ?? "该节点当前不可点亮", false);
+                        }
                     }
                 }
             }
@@ -1348,12 +1474,31 @@ namespace Game.Runtime.Core
 
             if (n.Kind == PoeNodeKind.Mastery)
             {
-                if (string.IsNullOrEmpty(n.choices))
-                    lines.Add("（无生效词条）");
+                int selected = s.MasterySelectedOrdinal(index);
+                int nChoice = PassiveSupport.ChoiceCount(n);
+                if (s.Allocated[index] && selected >= 0)
+                    lines.Add("已选择第 " + (selected + 1) + " 项（共 " + nChoice + "）");
+                else if (s.CanEnterMasterySelection(index))
+                    lines.Add("点击打开选择器　·　消耗 1 天赋点");
                 else
                 {
-                    lines.Add("可选效果（本轮尚未开放显式选择）：");
-                    AppendLines(lines, n.choices);
+                    string gate = s.MasteryGateReason(index);
+                    if (gate != null)
+                        lines.Add("当前不可选择　·　" + gate);
+                }
+                if (string.IsNullOrEmpty(n.choices))
+                    lines.Add("（无官方选项）");
+                else
+                {
+                    lines.Add("官方选项（blocked 可见不可提交）：");
+                    for (int c = 0; c < nChoice; c++)
+                    {
+                        string choice = PassiveSupport.ChoiceAt(n, c);
+                        bool ok = PassiveSupport.IsChoiceSelectable(choice);
+                        string mark = (s.Allocated[index] && selected == c) ? "【已选】 "
+                            : ok ? "【可兑现】 " : "【不可兑现】 ";
+                        lines.Add(mark + choice);
+                    }
                 }
             }
             else if (string.IsNullOrEmpty(n.stats))

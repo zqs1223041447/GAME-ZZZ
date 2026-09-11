@@ -319,14 +319,24 @@ namespace Game.Tests.EditMode
             // 被动语义状态被喂进哈希：喂点里出现 canonical payload 序列化器；payload 由已分配状态构造。
             d.ProdSimReadsAllocatedState = ContainsAny(lines, "AllocatedNodeIds") || ContainsAny(lines, "Allocated[");
             d.ProdSimHashDependsOnPassiveResult = ContainsAny(lines, "StatePayload");
-            d.ProdSimMasterySensitive = ContainsAny(lines, "Mastery") || ContainsAny(lines, "choices");
 
-            if (d.ProdSimMasterySensitive || d.ProdSimForbiddenTokensFound.Count > 0)
+            string awarePath = Path.GetFullPath(Path.Combine(Application.dataPath, "..",
+                "Assets/Tests/EditMode/PassiveAwareProductionSimulation.cs"));
+            bool masteryInPayload = false;
+            if (File.Exists(awarePath))
+            {
+                string[] aware = File.ReadAllLines(awarePath);
+                masteryInPayload = ContainsAny(aware, "px|") || ContainsAny(aware, "MasteryChoiceKey")
+                    || ContainsAny(aware, "MasterySelectedOrdinal");
+            }
+            d.ProdSimMasterySensitive = masteryInPayload;
+
+            if (d.ProdSimForbiddenTokensFound.Count > 0)
                 d.ProdSimVerdict = "NEEDS_MANUAL_REVIEW";
             else if (mentionsPassive && d.ProdSimReadsAllocatedState && d.ProdSimHashDependsOnPassiveResult)
-                d.ProdSimVerdict = "PASSIVE_SENSITIVE";      // S6P-WO-02 之后的期望结论
+                d.ProdSimVerdict = d.ProdSimMasterySensitive ? "PASSIVE_AND_MASTERY_SENSITIVE" : "PASSIVE_SENSITIVE";
             else if (!mentionsPassive && !d.ProdSimReadsAllocatedState && !d.ProdSimHashDependsOnPassiveResult)
-                d.ProdSimVerdict = "NOT_PASSIVE_SENSITIVE"; // S6P-WO-01 的结论（历史）
+                d.ProdSimVerdict = "NOT_PASSIVE_SENSITIVE";
             else
                 d.ProdSimVerdict = "NEEDS_MANUAL_REVIEW";
         }

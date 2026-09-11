@@ -85,7 +85,7 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void SupportAndPassiveConversion_ComposeOnSameAxis()
+        public void SupportAndParsedPassiveConversion_ComposeOnSameAxis()
         {
             var s = new SliceSession();
             string err;

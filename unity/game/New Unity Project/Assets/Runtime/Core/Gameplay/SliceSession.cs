@@ -52,6 +52,11 @@ namespace Game.Runtime.Core
         public SupportId[] ESupports = new SupportId[1];
 
         public readonly bool[] Allocated = new bool[SliceRules.PassiveCount];
+        /// <summary>
+        /// S6P-WO-03：已分配专精的显式 choice ordinal（权威 source 序，-1=未选择）。
+        /// 与 Allocated 等长；非专精槽位恒为 -1。禁止用本地化文本 / GUI 下标当 identity。
+        /// </summary>
+        public readonly int[] MasteryChoice = new int[SliceRules.PassiveCount];
         /// <summary>天赋域起点（真实 PoE 树心节点，恒定已点亮；重构不清除）。</summary>
         public static int StartNode { get { return PoeTree.StartIndex; } }
         public int Unspent = SliceRules.StartPoints;
@@ -139,7 +144,10 @@ namespace Game.Runtime.Core
             WSupports[0] = WSupports[1] = SupportId.None;
             ESupports[0] = SupportId.None;
             for (int i = 0; i < Allocated.Length; i++)
+            {
                 Allocated[i] = false;
+                MasteryChoice[i] = -1;
+            }
             int start = StartNode;
             if (start >= 0 && start < Allocated.Length)
                 Allocated[start] = true;
@@ -386,6 +394,139 @@ namespace Game.Runtime.Core
             return true;
         }
 
+        /// <summary>
+        /// S6P-WO-03 专精原子提交。不走 TraversalTruth.Traversable（专精保持 SPECIAL_BLOCKED）。
+        /// 成功：分配节点 + 写入 choice identity + 扣恰好 1 点 + 所选 choice 生效恰好一次。
+        /// 失败：点数 / 分配 / 选择 / 玩家结果 / 技能结果全部不变。
+        /// </summary>
+        public bool TryAllocateMastery(int node, int choiceOrdinal, out string error)
+        {
+            error = null;
+            if (BuildLocked)
+            {
+                error = SliceCopy.LockFail;
+                return false;
+            }
+            if (node < 0 || node >= Allocated.Length)
+            {
+                error = "无此节点";
+                return false;
+            }
+            if (PoeTree.Get(node).Kind != PoeNodeKind.Mastery)
+            {
+                error = PassiveSupport.ReasonNotMastery;
+                return false;
+            }
+            if (Allocated[node])
+            {
+                error = "已点亮";
+                return false;
+            }
+            if (Unspent <= 0)
+            {
+                error = "没有天赋点";
+                return false;
+            }
+            if (!AdjacentToAllocated(node))
+            {
+                error = "需与已点亮节点相连";
+                return false;
+            }
+            if (!PassiveSupport.MasteryPrerequisiteMet(node, Allocated))
+            {
+                error = PassiveSupport.ReasonMasteryPrerequisite;
+                return false;
+            }
+            string line = PassiveSupport.ChoiceAt(node, choiceOrdinal);
+            if (line == null)
+            {
+                error = PassiveSupport.ReasonMasteryChoiceRange;
+                return false;
+            }
+            if (!PassiveSupport.IsChoiceSelectable(line))
+            {
+                error = PassiveSupport.ReasonMasteryChoiceBlocked;
+                return false;
+            }
+
+            Allocated[node] = true;
+            MasteryChoice[node] = choiceOrdinal;
+            Unspent--;
+            RecalcPlayer(false);
+            LastMessage = "专精 " + PassiveCatalog.Get(node).Name;
+            return true;
+        }
+
+        /// <summary>可打开 selector（状态级）：未分配、有点、相连、前置满足。不要求当前就能提交成功。</summary>
+        public bool CanEnterMasterySelection(int node)
+        {
+            if (BuildLocked)
+                return false;
+            if (node < 0 || node >= Allocated.Length)
+                return false;
+            if (Allocated[node])
+                return false;
+            if (Unspent <= 0)
+                return false;
+            if (PoeTree.Get(node).Kind != PoeNodeKind.Mastery)
+                return false;
+            if (!AdjacentToAllocated(node))
+                return false;
+            return PassiveSupport.MasteryPrerequisiteMet(node, Allocated);
+        }
+
+        /// <summary>状态级拒绝原因（可进入 selection 返回 null）。UI 只展示这份文本。</summary>
+        public string MasteryGateReason(int node)
+        {
+            if (node < 0 || node >= Allocated.Length)
+                return PassiveSupport.ReasonOutOfDomain;
+            if (PoeTree.Get(node).Kind != PoeNodeKind.Mastery)
+                return PassiveSupport.ReasonNotMastery;
+            if (Allocated[node])
+                return "已点亮";
+            if (BuildLocked)
+                return SliceCopy.LockFail;
+            if (Unspent <= 0)
+                return "没有天赋点";
+            if (!AdjacentToAllocated(node))
+                return "需与已点亮节点相连";
+            if (!PassiveSupport.MasteryPrerequisiteMet(node, Allocated))
+                return PassiveSupport.ReasonMasteryPrerequisite;
+            return null;
+        }
+
+        public int MasterySelectedOrdinal(int node)
+        {
+            if (node < 0 || node >= MasteryChoice.Length)
+                return -1;
+            return MasteryChoice[node];
+        }
+
+        /// <summary>
+        /// 该已分配节点当前真正进入 RecalcPlayer / CollectSkillMods 的 modifier。
+        /// 专精：只解析显式选中且可兑现的那一条；未选择 / blocked / 损坏注入 = 空。
+        /// 普通节点：仍受 EffectTruth 消费门约束。
+        /// </summary>
+        public Modifier[] EffectivePassiveMods(int node)
+        {
+            if (node < 0 || node >= Allocated.Length || !Allocated[node])
+                return EmptyMods;
+            if (PoeTree.Get(node).Kind == PoeNodeKind.Mastery)
+            {
+                int ord = MasteryChoice[node];
+                if (ord < 0)
+                    return EmptyMods;
+                string line = PassiveSupport.ChoiceAt(node, ord);
+                return PassiveSupport.ParseSelectableChoice(line);
+            }
+            if (!PassiveSupport.YieldsModifiers(PassiveSupport.EvaluateTruth(node).Effect))
+                return EmptyMods;
+            Modifier[] mods = PassiveCatalog.Get(node).Mods;
+            return mods ?? EmptyMods;
+        }
+
+        static readonly Modifier[] EmptyMods = new Modifier[0];
+
         public bool TryRespec(out string error)
         {
             error = null;
@@ -404,6 +545,7 @@ namespace Game.Runtime.Core
                 if (Allocated[i])
                 {
                     Allocated[i] = false;
+                    MasteryChoice[i] = -1;
                     spent++;
                 }
             }
@@ -733,12 +875,8 @@ namespace Game.Runtime.Core
             {
                 if (!Allocated[i])
                     continue;
-                // 消费门（§16）：只有 EffectTruth=FULLY_SUPPORTED 的节点可以贡献 modifier。
-                // route-only 节点（通行合法但效果未兑现）与损坏/注入状态都必须在聚合路径上 fail closed ——
-                // 不得半消费它可识别的那几行。
-                if (!PassiveSupport.YieldsModifiers(PassiveSupport.EvaluateTruth(i).Effect))
-                    continue;
-                AddDefensive(PassiveCatalog.Get(i).Mods);
+                // 消费门：普通节点读 EffectTruth；专精只消费显式选中且可兑现的那一条（WO-03）。
+                AddDefensive(EffectivePassiveMods(i));
             }
 
             for (int s = 0; s < Equipped.Length; s++)
@@ -855,10 +993,7 @@ namespace Game.Runtime.Core
             {
                 if (!Allocated[i])
                     continue;
-                // 消费门（§16）：与 RecalcPlayer 同一判据（同一 EffectTruth），技能侧也不得半消费。
-                if (!PassiveSupport.YieldsModifiers(PassiveSupport.EvaluateTruth(i).Effect))
-                    continue;
-                bag.AddAll(PassiveCatalog.Get(i).Mods, tags, ConditionId.Always);
+                bag.AddAll(EffectivePassiveMods(i), tags, ConditionId.Always);
             }
 
             for (int s = 0; s < Equipped.Length; s++)
@@ -1502,8 +1637,12 @@ namespace Game.Runtime.Core
             for (int i = 0; i < links.Length; i++)
             {
                 int n = links[i];
-                if (n >= 0 && n < Allocated.Length && Allocated[n])
-                    return true;
+                if (n < 0 || n >= Allocated.Length || !Allocated[n])
+                    continue;
+                // EA-2：已选择的专精不得成为后续节点的 transit vertex。
+                if (PoeTree.Get(n).Kind == PoeNodeKind.Mastery)
+                    continue;
+                return true;
             }
 
             return false;
@@ -1533,6 +1672,9 @@ namespace Game.Runtime.Core
                     if (!Allocated[i])
                         continue;
                     h = (h ^ (uint)i) * prime;
+                    int choice = MasteryChoice[i];
+                    if (choice >= 0)
+                        h = (h ^ (uint)(choice + 1)) * prime;
                 }
                 s.PassiveHash = (long)h;
             }
@@ -1693,8 +1835,9 @@ namespace Game.Runtime.Core
         }
 
         /// <summary>
-        /// 已分配集合里"当前不可通行"的节点数：正常会话恒为 0；
-        /// 非 0 说明状态被损坏/注入过（消费门会照样让它们贡献 0 modifier）。
+        /// 已分配集合里"没有合法分配权威却被点亮"的节点数：正常会话恒为 0。
+        /// EA-3：带有效显式选择的专精是合法 allocation，不算 corruption；
+        /// 裸注入的 Mastery / Jewel / Timeless 仍计入。不得给 Jewel/Timeless 开例外。
         /// </summary>
         public int BlockedAllocatedCount
         {
@@ -1705,11 +1848,25 @@ namespace Game.Runtime.Core
                 {
                     if (!Allocated[i])
                         continue;
-                    if (!PassiveSupport.IsTraversable(PassiveSupport.EvaluateTruth(i).Traversal))
-                        n++;
+                    if (HasLegalAllocationAuthority(i))
+                        continue;
+                    n++;
                 }
                 return n;
             }
+        }
+
+        bool HasLegalAllocationAuthority(int node)
+        {
+            if (PoeTree.Get(node).Kind == PoeNodeKind.Mastery)
+            {
+                int ord = MasteryChoice[node];
+                if (ord < 0)
+                    return false;
+                string line = PassiveSupport.ChoiceAt(node, ord);
+                return PassiveSupport.IsChoiceSelectable(line);
+            }
+            return PassiveSupport.IsTraversable(PassiveSupport.EvaluateTruth(node).Traversal);
         }
 
         public NodeUiState NodeState(int node)
@@ -1718,7 +1875,7 @@ namespace Game.Runtime.Core
                 return NodeUiState.Locked;
             if (Allocated[node])
                 return NodeUiState.Allocated;
-            if (CanAllocate(node))
+            if (CanEnterMasterySelection(node) || CanAllocate(node))
                 return NodeUiState.Available;
             return NodeUiState.Locked;
         }

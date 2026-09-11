@@ -154,16 +154,93 @@ namespace Game.Tests.PlayMode
             float lifeBefore = s.PlayerStats.Get(StatId.Life);
             int unspent = s.Unspent;
             string err;
-            Assert.IsFalse(s.TryAllocate(MasteryNode, out err), "专精在 WO-03 前必须不可分配");
+            Assert.IsFalse(s.TryAllocate(MasteryNode, out err), "专精不得走普通 TryAllocate");
             Assert.AreEqual(PassiveSupport.ReasonMasteryPending, err);
-            Assert.AreEqual(unspent, s.Unspent, "专精拒绝必须零消耗");
+            Assert.AreEqual(unspent, s.Unspent, "普通门拒绝必须零消耗");
             Assert.IsFalse(s.Allocated[MasteryNode]);
 
-            // 即便损坏状态里分配了专精，也不得有任何效果
+            // 损坏注入（无显式选择）仍不得有任何效果
             s.Allocated[MasteryNode] = true;
             s.RecalcPlayer(false);
-            Assert.AreEqual(lifeBefore, s.PlayerStats.Get(StatId.Life), 0.0001f, "专精不得产生任何效果");
+            Assert.AreEqual(lifeBefore, s.PlayerStats.Get(StatId.Life), 0.0001f, "未选择的专精不得产生任何效果");
             Assert.AreEqual(0, PassiveCatalog.Get(MasteryNode).Mods.Length, "专精不得烘焙隐式 modifier");
+        }
+
+        [UnityTest]
+        public IEnumerator Mastery_ExplicitSelection_AppliesLifeOnce()
+        {
+            var sim = NewSim();
+            yield return null;
+            var s = sim.Session;
+
+            int notable = -1;
+            int g = PoeTree.Get(MasteryNode).group;
+            for (int i = 0; i < PoeTree.Count; i++)
+            {
+                if (PoeTree.Get(i).group == g && PoeTree.Get(i).Kind == PoeNodeKind.Notable)
+                {
+                    notable = i;
+                    break;
+                }
+            }
+            Assert.GreaterOrEqual(notable, 0);
+
+            bool[] reach = PassiveSupport.ReachableSet();
+            Assert.IsTrue(reach[notable], "冻结 fixture 的显著点必须在起点连通域内");
+            int n = PoeTree.Count;
+            var parent = new int[n];
+            for (int i = 0; i < n; i++)
+                parent[i] = -2;
+            var q = new int[n];
+            int head = 0, tail = 0;
+            int start = SliceSession.StartNode;
+            parent[start] = -1;
+            q[tail++] = start;
+            while (head < tail)
+            {
+                int[] links = PoeTree.Get(q[head++]).links;
+                if (links == null)
+                    continue;
+                for (int i = 0; i < links.Length; i++)
+                {
+                    int nb = links[i];
+                    if (nb < 0 || nb >= n || parent[nb] != -2)
+                        continue;
+                    if (!PassiveSupport.IsTraversable(PassiveSupport.EvaluateTruth(nb).Traversal))
+                        continue;
+                    parent[nb] = q[head - 1];
+                    q[tail++] = nb;
+                }
+            }
+            Assert.AreNotEqual(-2, parent[notable]);
+            var path = new System.Collections.Generic.List<int>();
+            for (int x = notable; x != start; x = parent[x])
+                path.Add(x);
+            path.Reverse();
+            string err;
+            for (int i = 0; i < path.Count; i++)
+            {
+                if (s.Allocated[path[i]])
+                    continue;
+                Assert.IsTrue(s.TryAllocate(path[i], out err), err);
+            }
+
+            int ord = -1;
+            int choices = PassiveSupport.ChoiceCount(MasteryNode);
+            for (int i = 0; i < choices; i++)
+                if (PassiveSupport.IsChoiceSelectable(PassiveSupport.ChoiceAt(MasteryNode, i)))
+                {
+                    ord = i;
+                    break;
+                }
+            Assert.GreaterOrEqual(ord, 0);
+            float lifeBefore = s.PlayerStats.Get(StatId.Life);
+            int unspent = s.Unspent;
+            Assert.IsTrue(s.TryAllocateMastery(MasteryNode, ord, out err), err);
+            Assert.AreEqual(unspent - 1, s.Unspent);
+            Assert.AreEqual(lifeBefore + 30f, s.PlayerStats.Get(StatId.Life), 0.0001f);
+            Assert.AreEqual(ord, s.MasterySelectedOrdinal(MasteryNode));
+            Assert.AreEqual(0, s.BlockedAllocatedCount);
         }
 
         static int CountAllocated(SliceSession s)

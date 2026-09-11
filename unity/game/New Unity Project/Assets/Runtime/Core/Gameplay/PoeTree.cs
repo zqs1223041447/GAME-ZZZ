@@ -35,7 +35,7 @@ namespace Game.Runtime.Core
         public string icon;
         /// <summary>PoE 原始词条文本，换行分隔（tooltip 真值）。</summary>
         public string stats;
-        /// <summary>专精节点（kind=3）的可选效果列表，换行分隔；首条=默认生效。空串=非专精。</summary>
+        /// <summary>专精节点（kind=3）的可选效果列表，换行分隔。空串=非专精。生效必须经显式选择，禁止默认首条。</summary>
         public string choices;
         /// <summary>相邻节点索引（无向，已去重升序）。</summary>
         public int[] links;

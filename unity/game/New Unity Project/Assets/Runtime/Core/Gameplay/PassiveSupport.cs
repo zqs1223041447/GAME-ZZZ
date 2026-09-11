@@ -42,7 +42,7 @@ namespace Game.Runtime.Core
             BlockedCurrently = 1,
             /// <summary>需要当前不存在的 bespoke handler（珠宝孔 / 时光珠宝类节点）⇒ 不可分配（§12）。</summary>
             BlockedSpecialInteraction = 2,
-            /// <summary>专精：WO-03 建立显式选择前一律不可分配（§17）。</summary>
+            /// <summary>专精：静态诊断仍为 pending（WO-03 的选择能力是状态层，不改 04A2 NodeTruth）。</summary>
             SpecialPendingMastery = 3,
             /// <summary>不在上树节点索引域内（403 未上树节点根本不在 PoeTree.Nodes 里）。</summary>
             OutOfDomain = 4
@@ -85,7 +85,13 @@ namespace Game.Runtime.Core
         // 稳定的拒绝/展示原因（UI 与 TryAllocate 共用同一份文本，禁止各自维护一套）。
         public const string ReasonBlockedCurrently = "该节点含当前引擎无法完整兑现的效果";
         public const string ReasonBlockedSpecial = "该节点需要当前尚未实现的特殊交互";
-        public const string ReasonMasteryPending = "专精暂未开放显式选择";
+        public const string ReasonMasteryPending = "专精需显式选择一项效果";
+        public const string ReasonMasteryNeedsSelector = "专精需显式选择一项效果";
+        public const string ReasonMasteryPrerequisite = "需同簇已点亮显著点";
+        public const string ReasonMasteryChoiceBlocked = "该选项当前无法完整兑现";
+        public const string ReasonMasteryChoiceMissing = "未选择效果";
+        public const string ReasonMasteryChoiceRange = "选项序号无效";
+        public const string ReasonNotMastery = "不是专精节点";
         public const string ReasonOutOfDomain = "无此节点";
 
         /// <summary>
@@ -222,6 +228,186 @@ namespace Game.Runtime.Core
                 case NodeStatus.OutOfDomain: return ReasonOutOfDomain;
                 default: return ReasonBlockedCurrently;
             }
+        }
+
+        // ================= S6P-WO-03 Mastery choice / prerequisite（单一 owner） =================
+        // 选择是否可提交：只调用 ClassifyLine（04A 行分类），禁止第二套 Mastery parser / keyword 表。
+        // 前置是否满足：只看官方 PoeNode.group + 同簇已分配 Notable，禁止 GUI 几何 / 名称 / 序。
+
+        static readonly Modifier[] NoMods = new Modifier[0];
+
+        /// <summary>官方 choice 条数（按源文本换行、跳过空行；ordinal 就是这条序）。</summary>
+        public static int ChoiceCount(int nodeId)
+        {
+            if (nodeId < 0 || nodeId >= PoeTree.Count)
+                return 0;
+            return ChoiceCount(PoeTree.Get(nodeId));
+        }
+
+        public static int ChoiceCount(PoeNode n)
+        {
+            return WalkChoices(n.choices, -1, null);
+        }
+
+        /// <summary>权威 source ordinal 对应的官方 choice 文本；越界返回 null。</summary>
+        public static string ChoiceAt(int nodeId, int ordinal)
+        {
+            if (nodeId < 0 || nodeId >= PoeTree.Count || ordinal < 0)
+                return null;
+            return ChoiceAt(PoeTree.Get(nodeId), ordinal);
+        }
+
+        public static string ChoiceAt(PoeNode n, int ordinal)
+        {
+            if (ordinal < 0)
+                return null;
+            string found = null;
+            WalkChoices(n.choices, ordinal, delegate(int i, string line)
+            {
+                if (i == ordinal)
+                    found = line;
+            });
+            return found;
+        }
+
+        /// <summary>choice 可提交 ⇔ 该行被 04A 判为 CONSUMED（整行 fail-closed）。</summary>
+        public static bool IsChoiceSelectable(string line)
+        {
+            string domain;
+            return ClassifyLine(line, out domain) == LineBucket.Consumed;
+        }
+
+        public static int CountSupportedChoices(int nodeId)
+        {
+            if (nodeId < 0 || nodeId >= PoeTree.Count)
+                return 0;
+            return CountSupportedChoices(PoeTree.Get(nodeId));
+        }
+
+        public static int CountSupportedChoices(PoeNode n)
+        {
+            int nOk = 0;
+            WalkChoices(n.choices, -1, delegate(int i, string line)
+            {
+                if (IsChoiceSelectable(line))
+                    nOk++;
+            });
+            return nOk;
+        }
+
+        public static bool HasSupportedChoice(int nodeId)
+        {
+            return CountSupportedChoices(nodeId) > 0;
+        }
+
+        public static bool HasSupportedChoice(PoeNode n)
+        {
+            return CountSupportedChoices(n) > 0;
+        }
+
+        /// <summary>把可提交 choice 交给既有 parser；不可提交返回空数组（不得半消费）。</summary>
+        public static Modifier[] ParseSelectableChoice(string line)
+        {
+            if (!IsChoiceSelectable(line))
+                return NoMods;
+            Modifier[] mods = PoeStatParser.Parse(line);
+            return mods ?? NoMods;
+        }
+
+        /// <summary>专精属于官方簇：自身是 Mastery，且树上至少还有一个同 group 的节点。</summary>
+        public static bool MasteryInOfficialCluster(int nodeId)
+        {
+            if (nodeId < 0 || nodeId >= PoeTree.Count)
+                return false;
+            PoeNode n = PoeTree.Get(nodeId);
+            if (n.Kind != PoeNodeKind.Mastery)
+                return false;
+            PoeNode[] nodes = PoeTree.Nodes;
+            if (nodes == null)
+                return false;
+            int g = n.group;
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                if (i == nodeId)
+                    continue;
+                if (nodes[i].group == g)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 进入 selection 的状态级前置：官方簇 + 同簇至少 1 个已分配的 non-Mastery Notable。
+        /// 不看 GUI / 最近节点 / 名称 / 本地化 / UI 顺序。
+        /// </summary>
+        public static bool MasteryPrerequisiteMet(int masteryId, bool[] allocated)
+        {
+            return FirstAllocatedClusterNotable(masteryId, allocated) >= 0;
+        }
+
+        /// <summary>同簇已分配 Notable 的最小 nodeId；不满足返回 -1。</summary>
+        public static int FirstAllocatedClusterNotable(int masteryId, bool[] allocated)
+        {
+            if (allocated == null || !MasteryInOfficialCluster(masteryId))
+                return -1;
+            int g = PoeTree.Get(masteryId).group;
+            PoeNode[] nodes = PoeTree.Nodes;
+            int found = -1;
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                if (nodes[i].group != g)
+                    continue;
+                if (nodes[i].Kind != PoeNodeKind.Notable)
+                    continue;
+                if (i >= allocated.Length || !allocated[i])
+                    continue;
+                if (found < 0 || i < found)
+                    found = i;
+            }
+            return found;
+        }
+
+        /// <summary>
+        /// Choice identity（EA-1）：官方 payload 的 <c>choices</c> 只有换行文本、没有 per-choice stable ID，
+        /// 因此 fallback = MasteryNodeId + 权威 source ordinal。禁止 GUI 下标 / 本地化文本 / GetHashCode。
+        /// </summary>
+        public const string ChoiceIdentityScheme = "fallback:MasteryNodeId+sourceOrdinal (source choice IDs=NONE)";
+
+        public static bool SourceChoiceHasStableId
+        {
+            get { return false; }
+        }
+
+        public static string MasteryChoiceKey(int masteryId, int ordinal)
+        {
+            return masteryId.ToString() + ":" + ordinal.ToString();
+        }
+
+        delegate void ChoiceVisitor(int ordinal, string line);
+
+        static int WalkChoices(string text, int stopAt, ChoiceVisitor visit)
+        {
+            if (string.IsNullOrEmpty(text))
+                return 0;
+            int count = 0;
+            int start = 0;
+            while (start < text.Length)
+            {
+                int nl = text.IndexOf('\n', start);
+                string line;
+                if (nl < 0) { line = text.Substring(start); start = text.Length; }
+                else { line = text.Substring(start, nl - start); start = nl + 1; }
+                if (line.Length > 0 && line[line.Length - 1] == '\r')
+                    line = line.Substring(0, line.Length - 1);
+                if (line.Length == 0)
+                    continue;
+                if (visit != null)
+                    visit(count, line);
+                count++;
+                if (stopAt >= 0 && count > stopAt)
+                    break;
+            }
+            return count;
         }
 
         /// <summary>

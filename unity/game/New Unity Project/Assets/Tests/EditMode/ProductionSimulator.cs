@@ -24,8 +24,8 @@ namespace Game.Tests.EditMode
     /// </summary>
     internal static class ProductionSimulator
     {
-        internal const string SchemaName = "PRODUCTION_SIMULATION_REPORT_V2";
-        internal const int SchemaVersion = 2;
+        internal const string SchemaName = "PRODUCTION_SIMULATION_REPORT_V3";
+        internal const int SchemaVersion = 3;
         internal const string GeneratedBy = "Game.Tests.EditMode.ProductionSimulatorTests（EditMode 测试再生；真实 Drop/Craft/Equip + canonical Passive allocation 路径驱动，禁止手填）";
         /// <summary>本单建立新 canonical hash 前的 predecessor（仅参照，不是期望值）。</summary>
         internal const string PredecessorHash = "FNV1A64:9a4c9524d0b3e214";
@@ -385,7 +385,7 @@ namespace Game.Tests.EditMode
             sb.Append("{\n");
             sb.Append("  \"schema\": "); AppendStr(sb, SchemaName); sb.Append(",\n");
             sb.Append("  \"schemaVersion\": ").Append(SchemaVersion).Append(",\n");
-            sb.Append("  \"simulationContractVersion\": "); AppendStr(sb, PassiveAwareProductionSimulation.ContractVersion); sb.Append(",\n");
+            sb.Append("  \"simulationContractVersion\": "); AppendStr(sb, PassiveAwareProductionSimulation.SimulationContractVersion); sb.Append(",\n");
             sb.Append("  \"generatedBy\": "); AppendStr(sb, GeneratedBy); sb.Append(",\n");
             sb.Append("  \"verdict\": "); AppendStr(sb, r.VerdictPass ? "PASS" : "FAIL"); sb.Append(",\n");
             sb.Append("  \"seed\": ").Append(seed).Append(",\n");
@@ -428,6 +428,7 @@ namespace Game.Tests.EditMode
             sb.Append("  \"repeatHash\": "); AppendStr(sb, r.RepeatHash); sb.Append(",\n");
 
             sb.Append("  \"passiveSimulation\": {\n");
+            sb.Append("    \"payloadContract\": "); AppendStr(sb, PassiveAwareProductionSimulation.ContractVersion); sb.Append(",\n");
             sb.Append("    \"scenarioVersion\": "); AppendStr(sb, r.PassiveScenarioVersion ?? ""); sb.Append(",\n");
             sb.Append("    \"allocatedPassiveNodeCount\": ").Append(r.AllocatedPassiveNodeCount).Append(",\n");
             sb.Append("    \"allocatedPassiveNodeIds\": "); AppendStr(sb, r.AllocatedPassiveNodeIds ?? ""); sb.Append(",\n");

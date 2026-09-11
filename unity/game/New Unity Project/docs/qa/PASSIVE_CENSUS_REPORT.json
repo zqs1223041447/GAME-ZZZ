@@ -36,9 +36,9 @@
     "hashPayloadMentionsPassive": true,
     "readsAllocatedState": true,
     "hashDependsOnPassiveResult": true,
-    "masterySensitive": false,
+    "masterySensitive": true,
     "forbiddenTokensFound": [],
-    "verdict": "PASSIVE_SENSITIVE"
+    "verdict": "PASSIVE_AND_MASTERY_SENSITIVE"
   },
   "allocationInvariants": [
     { "name": "ValidStart", "covered": true },

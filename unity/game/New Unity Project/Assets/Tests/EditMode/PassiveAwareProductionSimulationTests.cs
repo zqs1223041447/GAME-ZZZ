@@ -175,13 +175,13 @@ namespace Game.Tests.EditMode
             Assert.IsNotEmpty(pm, "canonical 场景必须产出 modifier 语义元组");
             List<string> tuples = PassiveAwareProductionSimulation.ModifierTuples(s);
             Assert.Greater(tuples.Count, 0);
-            StringAssert.StartsWith("559:3:Dexterity:1:Flat:5", tuples[0],
-                "负载必须含节点归属 + StatId + ModOp + Value：" + tuples[0]);
+            StringAssert.StartsWith("559:3:1:5", tuples[0],
+                "V3 负载只含稳定数值 token（nodeId:statId:opId:value）：" + tuples[0]);
 
             // 单段扰动必须改变同一 FNV 负载哈希（证明 modifier 段真的参与，不是摆设）
             ulong whole = Fnv(payload);
             ulong identityOnly = Fnv(payload.Replace(Section(payload, "ps|"), Section(payload, "ps|") + ",99999"));
-            ulong modifierOnly = Fnv(payload.Replace(pm, pm + "|99999:0:Life:1:Flat:1:0:0"));
+            ulong modifierOnly = Fnv(payload.Replace(pm, pm + "|99999:0:1:1:0:0"));
             Assert.AreNotEqual(whole, identityOnly);
             Assert.AreNotEqual(whole, modifierOnly);
         }
@@ -416,6 +416,7 @@ namespace Game.Tests.EditMode
 
             Assert.IsTrue(System.IO.File.Exists(ProductionSimulator.ArtifactPath));
             string json = System.IO.File.ReadAllText(ProductionSimulator.ArtifactPath);
+            StringAssert.Contains(PassiveAwareProductionSimulation.SimulationContractVersion, json);
             StringAssert.Contains(PassiveAwareProductionSimulation.ContractVersion, json);
             StringAssert.Contains("\"passiveSensitive\": true", json);
             StringAssert.Contains("\"allocatedPassiveNodeCount\": 4", json);

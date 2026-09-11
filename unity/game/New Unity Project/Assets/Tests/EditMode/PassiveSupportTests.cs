@@ -350,7 +350,7 @@ namespace Game.Tests.EditMode
             Assert.IsFalse(s.CanAllocate(MasteryNodeId));
             int unspent = s.Unspent;
             string err;
-            Assert.IsFalse(s.TryAllocate(MasteryNodeId, out err), "专精在 WO-03 前不得可分配");
+            Assert.IsFalse(s.TryAllocate(MasteryNodeId, out err), "专精不得走普通 TryAllocate（须显式选择）");
             Assert.AreEqual(PassiveSupport.ReasonMasteryPending, err, "必须有稳定原因（UI 与门共用一个真值）");
             Assert.AreEqual(unspent, s.Unspent, "MasteryTemporaryRejectCostsZero");
             Assert.IsFalse(s.Allocated[MasteryNodeId]);
@@ -466,9 +466,13 @@ namespace Game.Tests.EditMode
                 if (s.CanAllocate(i))
                     Assert.IsTrue(PassiveSupport.IsTraversable(t.Traversal), "UI 可点必须蕴含 domain truth 可通行：" + i);
                 if (s.NodeState(i) == NodeUiState.Available)
-                    Assert.IsTrue(PassiveSupport.IsTraversable(t.Traversal), "UI Available 必须蕴含 domain truth 可通行：" + i);
-                if (!PassiveSupport.IsTraversable(t.Traversal))
-                    Assert.AreNotEqual(NodeUiState.Available, s.NodeState(i), "不可通行节点不得显示为可点：" + i);
+                {
+                    bool masterySel = PoeTree.Get(i).Kind == PoeNodeKind.Mastery && s.CanEnterMasterySelection(i);
+                    Assert.IsTrue(masterySel || PassiveSupport.IsTraversable(t.Traversal),
+                        "UI Available 必须是可通行普通节点或可进入选择器的专精：" + i);
+                }
+                if (!PassiveSupport.IsTraversable(t.Traversal) && PoeTree.Get(i).Kind != PoeNodeKind.Mastery)
+                    Assert.AreNotEqual(NodeUiState.Available, s.NodeState(i), "不可通行非专精节点不得显示为可点：" + i);
             }
             Assert.AreEqual(ExpectedSupported + ExpectedBlocked, traversable,
                 "可通行 = 全部普通上树节点（367 可兑现 + 1660 route-only）");

@@ -364,7 +364,11 @@ Boots  0S → 只吃词缀
 
 ### 天赋
 
-16 节点。Start 免费。2 Notable：Brutal Strikes、Pyre。1 机制：Cinder Heart（40% 物转火）。死亡出图 `TryRespec`。
+真实 PoE 树（`PoeTree`，2429 上树节点）。起点免费。普通节点分配走 `SliceSession.TryAllocate`（只读 `TraversalTruth`）；效果兑现走 `RecalcPlayer` / `CollectSkillMods`（只读 `EffectTruth`）。route-only 节点可扣点作路径、贡献 0 modifier。
+
+专精（S6P-WO-03）：静态 `TraversalTruth` 仍为 `SPECIAL_BLOCKED`，不得走普通 `TryAllocate`，也不得作为后续节点的 transit。进入选择器的前置 = 官方 `group` 簇 + 同簇 >=1 已分配 Notable。提交走 `TryAllocateMastery(node, sourceOrdinal)`：显式 choice identity、扣恰好 1 点、所选可兑现 choice 经既有 `PoeStatParser` 生效恰好一次。打开/取消选择器零 gameplay 增量。`R`/`TryRespec` 同时清除分配与选择。禁止 `FirstChoice` / `choices[0]` 默认生效。官方 payload 无 per-choice stable ID，identity fallback = `MasteryNodeId + source ordinal`。
+
+死亡出图 `TryRespec`。
 
 ### 地图
 

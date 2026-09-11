@@ -179,3 +179,10 @@ S1 技术已放行。输入、对象池、SeededRng、点地移动、Q/W/E 施�
 - **S5U-WO-03-F1 — Director Visual Cohesion Pass 正式放行（NOW，阻塞优先于 WO-04）**：V-01 底栏统一 action assembly（Life|tray|QWE|Mana 一体框，tray 不再像外挂按钮群）；V-02 金色=强调色专用+三层框系（Outer/Section/Cell，禁每框同强度金边=Excel 观感）；V-03 页面打开时世界压暗（cached scrim，禁每帧 new Texture）；V-04 单一主导页面层级；V-05 顶部导航降权；V-06 左上状态降权（compact strip，信息不删）；V-07 字号层级（页面题 20-22/节题 15-17/正文 13-15/次级 12-13/微标 ≥11/关键 HUD ≥12）；V-08 技能槽图标第一（连接徽章不得比技能身份显眼）；V-09 双球实体感（bezel/内圈/暗缘/高光/深度/可读数值）；V-10 角色/背包壳=页面感（网格不得满屏黄线小矩形）。**Scroll 悬停回归测试**（scroll≠0 + 指针→N 的映射，坐标永不再漂移）。
 - **F1 冻结**：EditMode 344/PlayMode 11/Affix 21/组 2/ProdSim hash=FNV1A64:9a4c9524d0b3e214；零 gameplay/content/balance delta；禁 UI Toolkit/uGUI/场景美术替换/每帧纹理。**视觉终审语：若截图仍像「多个黑色 IMGUI 窗+黄色细线」= F1 不通过。**
 - **WO-04 排队合同（F1 ACCEPT 后自动执行）**：Bootstrap 轻量 entry panel（GAME-ZZZ 标题+校验状态+「进入竞技场」按钮+次级状态行）；仅在既有校验合法态启用；点击走既有合法路径（→TryEnterMap）；双击/重复 OnGUI 不产生多次转换；失败留 Bootstrap+原因可见；测试六项（invalid 禁用/valid 启用/单击恰一次/失败可见/无输入不转换/-arenaPerf 不变）。**WO-04 之后序列：WO-05 Build&Passive → WO-06 Craft&Map → WO-07 全局一致性 polish → WO-08 收口（canonical 批门+锁硬件性能+before/after sheet+S5U Final Addendum → 重送 S5+S5U Director Final Gate）。**
+
+## S6P-WO-03（2026-09-11）
+
+- 专精显式选择是**状态层交易**，不是普通树路径分配。静态 `TraversalTruth` 对 Mastery 保持 `SPECIAL_BLOCKED`；已选择的专精不得作为后续节点的 transit vertex。
+- Choice identity：官方 payload 无 per-choice stable ID 时，fallback = `MasteryNodeId + authoritative source ordinal`。禁止 GUI 下标 / 本地化文本 / `GetHashCode()`。
+- 禁止恢复 `FirstChoice` / `choices[0]`。效果只走既有 `PoeStatParser` + `RecalcPlayer` / `CollectSkillMods`。
+- 04A 诊断 census 367/315 不是实施目标值；本令保持不变（EA-4）。可达 1985 / `|D|=325` / 42 start-disconnected supported 是 topology invariant。

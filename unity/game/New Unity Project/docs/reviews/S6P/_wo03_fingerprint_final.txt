@@ -1,0 +1,36 @@
+```text
+Working-Tree Fingerprint (content-addressed, SHA-256)
+branch                : main
+HEAD                  : c16d1298060f1be9912f80da326a6412310f2122
+tracked+untracked files: 2820
+total bytes           : 322982430
+WORKING-TREE HASH     : 4f826d08e7bd544b8aa1e815d463d7abb15d9efc6799ffb43e653b33fb77c45c
+dirty                 : YES
+--- changed-file inventory (git status --porcelain, by area) ---
+[Assets/Runtime] 4
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/PassiveSupport.cs
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/PoeTree.cs
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceHud.cs
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceSession.cs
+[Assets/Tests] 10
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/S6PWo03MasteryTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/S6PWo03MasteryTests.cs.meta
+    M unity/game/New Unity Project/Assets/Tests/EditMode/PassiveAwareProductionSimulation.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/PassiveAwareProductionSimulationTests.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/PassiveCensus.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/PassiveCensusTests.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/PassiveSupportTests.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/ProductionSimulator.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/S3R2FireConversionTests.cs
+    M unity/game/New Unity Project/Assets/Tests/PlayMode/S6PPassiveSupportPlayModeTests.cs
+[docs] 9
+    ?? unity/game/New Unity Project/docs/reviews/S6P/_wo03_cold_exit.txt
+    ?? unity/game/New Unity Project/docs/reviews/S6P/S6P_WO_03_EVIDENCE_PACK.md
+    ?? unity/game/New Unity Project/docs/reviews/S6P/S6P_WO_03_PLANNER_AMENDMENT.md
+    ?? unity/game/New Unity Project/docs/reviews/S6P/S6P_WO_03.md
+    M unity/game/New Unity Project/docs/DECISIONS.md
+    M unity/game/New Unity Project/docs/qa/PASSIVE_CENSUS_REPORT.json
+    M unity/game/New Unity Project/docs/qa/PRODUCTION_SIMULATION_REPORT.json
+    M unity/game/New Unity Project/docs/reviews/S4R/S4R_CAPABILITY_LEDGER.md
+    M unity/game/New Unity Project/docs/RUNTIME.md
+```

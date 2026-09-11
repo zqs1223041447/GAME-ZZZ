@@ -144,12 +144,12 @@ namespace Game.Tests.EditMode
             // S6P-WO-01 的结论是 NOT_PASSIVE_SENSITIVE（历史）。WO-02 把 canonical 被动状态喂进哈希后，
             // 本断言翻转——翻转是刻意的：不翻转就说明 WO-02 没做到。
             var d = Census();
-            Assert.AreEqual("PASSIVE_SENSITIVE", d.ProdSimVerdict,
-                "审计结论：ProdSim 的确定性哈希必须能看到被动构筑真相（S6P-WO-02）");
+            Assert.AreEqual("PASSIVE_AND_MASTERY_SENSITIVE", d.ProdSimVerdict,
+                "审计结论：ProdSim 的确定性哈希必须能看到被动 + 专精选择真相（S6P-WO-03）");
             Assert.IsTrue(d.ProdSimHashPayloadMentionsPassive, "哈希喂点必须出现 passive/allocated/stat/modifier 输入");
             Assert.IsTrue(d.ProdSimReadsAllocatedState, "ProductionSimulator 必须经被动负载读到已分配节点身份");
             Assert.IsTrue(d.ProdSimHashDependsOnPassiveResult, "哈希必须依赖 canonical 被动状态负载");
-            Assert.IsFalse(d.ProdSimMasterySensitive, "专精本单明确排除（WO-03 才纳入）");
+            Assert.IsTrue(d.ProdSimMasterySensitive, "WO-03 起专精选择 identity 必须进入哈希（px|）");
             Assert.AreEqual(0, d.ProdSimForbiddenTokensFound.Count,
                 "哈希喂点不得含坐标/图标/贴图/tooltip/zoom/时间戳等非游戏真相：" + string.Join(",", d.ProdSimForbiddenTokensFound.ToArray()));
             Assert.Greater(d.ProdSimHashInputSites.Count, 0, "必须抓到哈希喂点作为证据");
