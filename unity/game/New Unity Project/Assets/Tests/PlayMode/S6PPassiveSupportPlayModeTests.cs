@@ -290,6 +290,27 @@ namespace Game.Tests.PlayMode
             Assert.IsFalse(s.Allocated[MasteryNode]);
         }
 
+        [UnityTest]
+        public IEnumerator BuildLock_SnapshotIdentity_AndUnlock()
+        {
+            var sim = NewSim();
+            yield return null;
+            var s = sim.Session;
+            string err;
+            Assert.IsTrue(s.TryAllocate(SupportedDefensiveNode, out err), err);
+            string ids = s.CanonicalAllocatedIds();
+            long hash = s.ComputePassiveHash();
+            Assert.IsTrue(s.TryEnterMap(sim, out err), err);
+            Assert.AreEqual(hash, s.Snapshot.PassiveHash);
+            Assert.AreEqual(ids, s.CanonicalAllocatedIds());
+            Assert.IsFalse(s.TryAllocate(SupportedOffensiveNode, out err));
+            Assert.AreEqual(SliceCopy.LockFail, err);
+            Assert.AreEqual(ids, s.CanonicalAllocatedIds());
+            s.ExitMap(sim, false);
+            Assert.IsFalse(s.BuildLocked);
+            Assert.IsTrue(s.TryAllocate(SupportedOffensiveNode, out err), err);
+        }
+
         static int CountAllocated(SliceSession s)
         {
             int n = 0;

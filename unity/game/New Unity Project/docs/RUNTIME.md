@@ -372,7 +372,7 @@ Boots  0S → 只吃词缀
 
 ### 地图
 
-1 张 Ash Court。3 词缀 Hearty / Savage / Ash Veil。`Reward = 1 + Σ RewardAdd`，`Stability = 100 - Σ Cost`。进图 `BuildSnapshot.Locked=true`。同 `SessionSeed` + 同词缀 → 同布局。3 普通（Brute/Stinger/Ashling）+ Elite Warden。
+1 张 Ash Court。3 词缀 Hearty / Savage / Ash Veil。`Reward = 1 + Σ RewardAdd`，`Stability = 100 - Σ Cost`。进图 `TryEnterMap` → `Snapshot = Capture()`（装备 6 槽索引 + Q/W/E 辅助 + `PassiveHash` FNV1A64 指纹 + Unspent）且 `State=InMap`（`BuildLocked`）。`PassiveHash` 是派生指纹，不是可还原 allocation 的容器。**没有** 32 位 `PassiveMask`（S5U 已迁到 `PassiveHash`）。**没有** clone/存档 seam。同 `SessionSeed` + 同词缀 → 同布局。3 普通（Brute/Stinger/Ashling）+ Elite Warden。
 
 ### 输入增量（ArenaDirector）
 

@@ -1,0 +1,11 @@
+```text
+Working-Tree Fingerprint (content-addressed, SHA-256)
+branch                : main
+HEAD                  : 88e8202ede56b27dcbff735187e0a97ec1372645
+tracked+untracked files: 2824
+total bytes           : 322997038
+WORKING-TREE HASH     : f9a798382c26efcff0978d5fd1499c9b950184ccfc093bdabfd494d8d2f0ff9c
+dirty                 : NO
+--- changed-file inventory (git status --porcelain, by area) ---
+(clean)
+```

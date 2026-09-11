@@ -1,0 +1,10 @@
+```text
+Cold-process ProdSim baseline verification  (runs=3, filter=ProductionSimulatorTests)
+project : G:\GAME-ZZZ\unity\game\New Unity Project
+editor closed at start : YES
+Run1 | 2026-09-11 15:38:31 | 15.6s | exit=0 | contract=V3 | invalid=0 | FNV1A64:99f1bfd3f81c4fe6
+Run2 | 2026-09-11 15:38:45 | 14.3s | exit=0 | contract=V3 | invalid=0 | FNV1A64:99f1bfd3f81c4fe6
+Run3 | 2026-09-11 15:39:00 | 14.4s | exit=0 | contract=V3 | invalid=0 | FNV1A64:99f1bfd3f81c4fe6
+Distinct hashes : 1  [FNV1A64:99f1bfd3f81c4fe6]
+EXACT MATCH     : YES
+```

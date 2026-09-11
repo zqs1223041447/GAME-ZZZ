@@ -58,7 +58,7 @@
 | 项 | 值 |
 |---|---|
 | 令号 | **S6P-WO-04B — Passive Build Identity / Snapshot / Lock Parity** |
-| 状态 | **RELEASED / EXECUTE NOW**（WO-03 = CLOSED / ACCEPT，37/37） |
+| 状态 | **READY_FOR_GATE_REVIEW**（successor 等 Channel A；不得自行开 04C/WO-05） |
 | 授权来源 | Channel A 于 WO-04A2 Gate Review ACCEPT 时 **RELEASED / EXECUTE NOW**；合同 = `S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md` §4–§19（叠加原 `S6P_WO_02_GATE_REVIEW_AND_WO_03_CONTRACT.md` 37 AC） |
 | 前置 | `S6P_WO_03_PREFLIGHT.md` = PASS（22 个专精有可兑现 choice ≠ 0，不触发 STOP）；04A2 约束全部继承 |
 | 入口指纹（生产树） | 干净 HEAD `a91e391` dirty=NO = `fd90468eb7b9ebdc95cb247c5c14d51c02a0c99092154ac0d5516ebaad88fb0a`（2814 files）。治理文档落盘后 working-tree = `bf400b251f2f1c33f37d46a2e633d562138d647f0085556ef2bc82e41298523a`（dirty=YES，仅 Markdown）。明细 `_wo03_fingerprint_entry.txt`。历史 preflight `a85a5e2e…`（HEAD `64b614f`）仅作 04A 收口态档案，**不得**再当本轮 mutation 入口 |
@@ -345,3 +345,4 @@ unity command capture_game_view --source screen --width 2560 --height 1440 --sav
 | 2026-09-11 | **S6P-WO-03 产品实现完毕，Ready for Gate Review**。Channel A 开工裁定 = EXECUTE NOW + EA-1..EA-4。实现：prerequisite / 显式选择 / `TryAllocateMastery` 原子提交 / 选择器 UI / ProdSim V3。EA-2 专精不是 transit；EA-3 合法选择不算 corruption；EA-4 census 367/315 未动；拓扑 1985/325/42 未动。门：EditMode **489/489**、PlayMode **19/19**、Content Audit PASS、冷进程 ×3 `FNV1A64:99f1bfd3f81c4fe6` EXACT（contract=V3）。hash 归因：B=serializer cleanup（默认场景）；A=node 10 未选 vs +30 Life。证据：`S6P_WO_03.md` + `S6P_WO_03_EVIDENCE_PACK.md` + `_wo03_cold_exit.txt`。下一步=把 Evidence Pack 发回 Channel A |
 | 2026-09-11 | **WO-03 Gate = REJECT-REWORK（36 PASS / AC-22 FAIL）**。AC-22：测试恒真自比较 + 22px Clip 未证明长文本包含 + helper 与 renderer 不是同一权威。AC-28 新 hash 暂不晋升。已修：`BuildMasterySelectorLayout` 单一权威、换行高度纯函数、open/cancel 零 mutation、PlayMode integration。返工后门：EditMode **490/490**、PlayMode **20/20**。Evidence Delta：`S6P_WO_03_REWORK_AC22.md` |
 | 2026-09-11 | **S6P-WO-03 = CLOSED / ACCEPT（37/37）**。AC-22 PASS。ProdSim V3 baseline 正式晋升 `FNV1A64:99f1bfd3f81c4fe6`。**S6P-WO-04B = RELEASED / EXECUTE NOW**。队列 `WO-04B → [WO-04C] → WO-05`。原文 `S6P_WO_03_REWORK_GATE.md` |
+| 2026-09-11 | **S6P-WO-04B 执行完毕，READY_FOR_GATE_REVIEW**。合同 50 AC。扫描 UNRESOLVED=0；PassiveMask=MIGRATED；snapshot 未加 NodeId 列表；lock 全 mutator 拒绝；ProdSim 不读 snapshot。门：EditMode **506/506**、PlayMode **21/21**、冷进程 ×3 `FNV1A64:99f1bfd3f81c4fe6` EXACT。F2 Notable=1006 / ordinal=2。successor 等 Channel A。 |

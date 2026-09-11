@@ -33,7 +33,7 @@ namespace Game.Runtime.Core
         public SupportId Q0, Q1;
         public SupportId W0, W1;
         public SupportId E0;
-        /// <summary>已点亮天赋集的稳定指纹（2429 节点远超 32 位掩码，故用 FNV1A64 摘要）。</summary>
+        /// <summary>已点亮天赋集的稳定指纹（FNV1A64 摘要，不是 32 位 mask，也不是可还原 allocation 的容器）。</summary>
         public long PassiveHash;
         public int Unspent;
     }
@@ -1648,20 +1648,46 @@ namespace Game.Runtime.Core
             return false;
         }
 
-        BuildSnapshot Capture()
+        /// <summary>live 构筑的 canonical 已分配 NodeId（升序、逗号分隔）。不依赖 HashSet/字典枚举。</summary>
+        public string CanonicalAllocatedIds()
         {
-            BuildSnapshot s = default;
-            s.WeaponId = Equipped[0];
-            s.BodyId = Equipped[1];
-            s.HelmetId = Equipped[2];
-            s.BootsId = Equipped[3];
-            s.GlovesId = Equipped[4];
-            s.BeltId = Equipped[5];
-            s.Q0 = QSupports[0];
-            s.Q1 = QSupports[1];
-            s.W0 = WSupports[0];
-            s.W1 = WSupports[1];
-            s.E0 = ESupports[0];
+            var sb = new System.Text.StringBuilder();
+            bool first = true;
+            for (int i = 0; i < Allocated.Length; i++)
+            {
+                if (!Allocated[i])
+                    continue;
+                if (!first)
+                    sb.Append(',');
+                first = false;
+                sb.Append(i.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>live 专精选择 identity（nodeId:ordinal 按 nodeId 升序）。</summary>
+        public string CanonicalMasterySelections()
+        {
+            var sb = new System.Text.StringBuilder();
+            bool first = true;
+            int n = MasteryChoice == null ? 0 : MasteryChoice.Length;
+            for (int i = 0; i < n; i++)
+            {
+                if (MasteryChoice[i] < 0)
+                    continue;
+                if (!Allocated[i])
+                    continue;
+                if (!first)
+                    sb.Append(',');
+                first = false;
+                sb.Append(PassiveSupport.MasteryChoiceKey(i, MasteryChoice[i]));
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>与 Capture().PassiveHash 同一算法（FNV1A64，升序扫描 Allocated[]）。</summary>
+        public long ComputePassiveHash()
+        {
             unchecked
             {
                 const ulong basis = 14695981039346656037UL;
@@ -1676,8 +1702,25 @@ namespace Game.Runtime.Core
                     if (choice >= 0)
                         h = (h ^ (uint)(choice + 1)) * prime;
                 }
-                s.PassiveHash = (long)h;
+                return (long)h;
             }
+        }
+
+        BuildSnapshot Capture()
+        {
+            BuildSnapshot s = default;
+            s.WeaponId = Equipped[0];
+            s.BodyId = Equipped[1];
+            s.HelmetId = Equipped[2];
+            s.BootsId = Equipped[3];
+            s.GlovesId = Equipped[4];
+            s.BeltId = Equipped[5];
+            s.Q0 = QSupports[0];
+            s.Q1 = QSupports[1];
+            s.W0 = WSupports[0];
+            s.W1 = WSupports[1];
+            s.E0 = ESupports[0];
+            s.PassiveHash = ComputePassiveHash();
             s.Unspent = Unspent;
             return s;
         }
