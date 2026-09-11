@@ -1116,23 +1116,125 @@ namespace Game.Runtime.Core
             _masterySelectorScroll = Vector2.zero;
         }
 
+        public const float MasterySelectorWidth = 560f;
+        public const float MasterySelectorChoiceFont = 14f;
+        public const float MasterySelectorMetaFont = 13f;
+        public const float MasterySelectorMinRow = 52f;
+        public const float MasterySelectorMetaH = 18f;
+
+        public struct MasterySelectorLayout
+        {
+            public Rect Panel;
+            public Rect Cancel;
+            public Rect View;
+            public Rect Content;
+            public Rect[] Rows;
+            public Rect[] TextRects;
+            public string[] Lines;
+        }
+
+        /// <summary>专精选择器**唯一**几何权威：测试与 DrawMasterySelector 必须调用它，禁止第二套 48/22 常量。</summary>
+        public static MasterySelectorLayout BuildMasterySelectorLayout(float dw, float dh, int nodeId)
+        {
+            MasterySelectorLayout L = default;
+            float h = Mathf.Min(560f, dh - 80f);
+            L.Panel = new Rect((dw - MasterySelectorWidth) * 0.5f, (dh - h) * 0.5f, MasterySelectorWidth, h);
+            L.Cancel = new Rect(L.Panel.xMax - 100f, L.Panel.y + 10f, 84f, 28f);
+            L.View = new Rect(L.Panel.x + 8f, L.Panel.y + 48f, L.Panel.width - 16f, L.Panel.height - 64f);
+            int count = PassiveSupport.ChoiceCount(nodeId);
+            L.Lines = new string[count];
+            L.Rows = new Rect[count];
+            L.TextRects = new Rect[count];
+            float innerW = Mathf.Max(80f, L.View.width - 18f);
+            float y = 4f;
+            for (int i = 0; i < count; i++)
+            {
+                string line = PassiveSupport.ChoiceAt(nodeId, i) ?? "";
+                L.Lines[i] = line;
+                float textW = innerW - 28f;
+                float textH = ChoiceTextHeight(line, textW);
+                float rowH = Mathf.Max(MasterySelectorMinRow, textH + MasterySelectorMetaH + 10f);
+                L.Rows[i] = new Rect(4f, y, innerW - 8f, rowH);
+                L.TextRects[i] = new Rect(L.Rows[i].x + 12f, L.Rows[i].y + 4f, textW, textH);
+                y += rowH + 4f;
+            }
+            L.Content = new Rect(0f, 0f, innerW, Mathf.Max(y + 4f, L.View.height));
+            return L;
+        }
+
+        public static float ChoiceTextHeight(string line, float width)
+        {
+            return EstimateWrappedHeight(line, width, MasterySelectorChoiceFont);
+        }
+
+        /// <summary>纯函数换行高度（不碰 GUI.skin，EditMode 测试与 OnGUI 绘制共用）。</summary>
+        public static float EstimateWrappedHeight(string text, float width, float fontSize)
+        {
+            if (string.IsNullOrEmpty(text))
+                return fontSize + 4f;
+            float glyph = fontSize * 0.6f;
+            int cols = Mathf.Max(1, Mathf.FloorToInt(Mathf.Max(8f, width) / glyph));
+            int lines = 1;
+            int col = 0;
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '\n')
+                {
+                    lines++;
+                    col = 0;
+                    continue;
+                }
+                col++;
+                if (col >= cols)
+                {
+                    lines++;
+                    col = 0;
+                }
+            }
+            return lines * (fontSize + 4f);
+        }
+
+        public static GUIStyle MasteryChoiceTextStyle()
+        {
+            var st = new GUIStyle();
+            st.fontSize = (int)MasterySelectorChoiceFont;
+            st.wordWrap = true;
+            st.clipping = TextClipping.Overflow;
+            st.richText = false;
+            return st;
+        }
+
         /// <summary>专精选择器面板（设计空间；1920 与 2560 共用 1920×1080 布局）。</summary>
         public static Rect MasterySelectorPanel(float dw, float dh)
         {
-            float w = 560f;
-            float h = Mathf.Min(560f, dh - 80f);
-            return new Rect((dw - w) * 0.5f, (dh - h) * 0.5f, w, h);
+            return BuildMasterySelectorLayout(dw, dh, 10).Panel;
         }
 
         public static Rect MasterySelectorChoiceRow(Rect panel, int index)
         {
-            const float rowH = 48f;
-            return new Rect(panel.x + 16f, panel.y + 56f + index * rowH, panel.width - 32f, rowH - 6f);
+            MasterySelectorLayout L = BuildMasterySelectorLayout(1920f, 1080f, 10);
+            if (index < 0 || index >= L.Rows.Length)
+                return default;
+            return L.Rows[index];
         }
 
         public static Rect MasterySelectorCancelRect(Rect panel)
         {
             return new Rect(panel.xMax - 100f, panel.y + 10f, 84f, 28f);
+        }
+
+        public int MasterySelectorNode { get { return _masterySelector; } }
+
+        /// <summary>测试/验证通道：打开选择器。不得改 session。</summary>
+        public void OpenMasterySelector(int node)
+        {
+            _masterySelector = node;
+            _masterySelectorScroll = Vector2.zero;
+        }
+
+        public void CancelMasterySelector()
+        {
+            CloseMasterySelector();
         }
 
         void DrawMasterySelector(SliceSession s, float dw, float dh)
@@ -1144,40 +1246,38 @@ namespace Game.Runtime.Core
                 return;
             }
             PoeNode n = PoeTree.Get(node);
-            int count = PassiveSupport.ChoiceCount(n);
-            Rect panel = MasterySelectorPanel(dw, dh);
+            MasterySelectorLayout L = BuildMasterySelectorLayout(dw, dh, node);
             Fill(new Rect(0f, 0f, dw, dh), new Color(0.02f, 0.02f, 0.015f, 0.55f));
-            Fill(panel, new Color(0.07f, 0.065f, 0.055f, 0.98f));
-            Fill(new Rect(panel.x, panel.y, 4f, panel.height), SliceSkin.Gold);
-            Label(new Rect(panel.x + 16f, panel.y + 8f, panel.width - 130f, 28f),
+            Fill(L.Panel, new Color(0.07f, 0.065f, 0.055f, 0.98f));
+            Fill(new Rect(L.Panel.x, L.Panel.y, 4f, L.Panel.height), SliceSkin.Gold);
+            Label(new Rect(L.Panel.x + 16f, L.Panel.y + 8f, L.Panel.width - 130f, 28f),
                 n.name + "　·　显式选择", _title);
-            if (NavBtnSmall(MasterySelectorCancelRect(panel), "取消", false))
+            if (NavBtnSmall(L.Cancel, "取消", false))
             {
                 CloseMasterySelector();
                 return;
             }
 
-            float rowsH = Mathf.Max(1, count) * 48f + 8f;
-            Rect view = new Rect(panel.x + 8f, panel.y + 48f, panel.width - 16f, panel.height - 64f);
-            Rect content = new Rect(0f, 0f, view.width - 18f, rowsH);
-            _masterySelectorScroll = GUI.BeginScrollView(view, _masterySelectorScroll, content);
-            if (count == 0)
-                Label(new Rect(8f, 8f, content.width - 16f, 40f), "（无官方选项）", _small);
-            for (int i = 0; i < count; i++)
+            _masterySelectorScroll = GUI.BeginScrollView(L.View, _masterySelectorScroll, L.Content);
+            GUIStyle textStyle = MasteryChoiceTextStyle();
+            if (L.Rows.Length == 0)
+                Label(new Rect(8f, 8f, L.Content.width - 16f, 40f), "（无官方选项）", _small);
+            for (int i = 0; i < L.Rows.Length; i++)
             {
-                string line = PassiveSupport.ChoiceAt(n, i);
+                string line = L.Lines[i];
                 bool ok = PassiveSupport.IsChoiceSelectable(line);
                 bool selected = s.Allocated[node] && s.MasterySelectedOrdinal(node) == i;
-                Rect row = new Rect(4f, i * 48f + 4f, content.width - 8f, 42f);
+                Rect row = L.Rows[i];
                 Fill(row, selected ? new Color(0.28f, 0.22f, 0.10f, 0.95f)
                     : ok ? new Color(0.14f, 0.13f, 0.11f, 0.95f)
                     : new Color(0.10f, 0.09f, 0.09f, 0.95f));
                 Fill(new Rect(row.x, row.y, 3f, row.height),
                     selected ? SliceSkin.Gold : (ok ? SlicePalette.NodeAvail : SlicePalette.NodeLock));
                 GUI.color = ok ? SlicePalette.Text : SlicePalette.Dim;
-                Label(new Rect(row.x + 12f, row.y + 2f, row.width - 20f, 22f), line ?? "", _small);
+                GUI.Label(L.TextRects[i], line ?? "", textStyle);
                 GUI.color = SlicePalette.Dim;
-                Label(new Rect(row.x + 12f, row.y + 22f, row.width - 20f, 18f),
+                Rect meta = new Rect(L.TextRects[i].x, L.TextRects[i].yMax, L.TextRects[i].width, MasterySelectorMetaH);
+                Label(meta,
                     selected ? "已选择" : (ok ? "可提交　·　消耗 1 天赋点" : PassiveSupport.ReasonMasteryChoiceBlocked),
                     _caption);
                 GUI.color = Color.white;

@@ -243,6 +243,53 @@ namespace Game.Tests.PlayMode
             Assert.AreEqual(0, s.BlockedAllocatedCount);
         }
 
+        [UnityTest]
+        public IEnumerator Mastery_SelectorOpenCancelCommitReset_Integration()
+        {
+            var sim = NewSim();
+            yield return null;
+            var s = sim.Session;
+            var hud = new SliceHud();
+
+            float life0 = s.PlayerStats.Get(StatId.Life);
+            int unspent0 = s.Unspent;
+            hud.OpenMasterySelector(MasteryNode);
+            Assert.AreEqual(MasteryNode, hud.MasterySelectorNode);
+            Assert.AreEqual(life0, s.PlayerStats.Get(StatId.Life), 0.0001f);
+            Assert.AreEqual(unspent0, s.Unspent);
+            hud.CancelMasterySelector();
+            Assert.AreEqual(-1, hud.MasterySelectorNode);
+            Assert.AreEqual(life0, s.PlayerStats.Get(StatId.Life), 0.0001f);
+
+            // commit uses domain API（与 EditMode 同一路径）；reset 清选择
+            int notable = -1;
+            int g = PoeTree.Get(MasteryNode).group;
+            for (int i = 0; i < PoeTree.Count; i++)
+                if (PoeTree.Get(i).group == g && PoeTree.Get(i).Kind == PoeNodeKind.Notable)
+                {
+                    notable = i;
+                    break;
+                }
+            s.Allocated[notable] = true;
+            s.RecalcPlayer(false);
+            int ord = -1;
+            int n = PassiveSupport.ChoiceCount(MasteryNode);
+            for (int i = 0; i < n; i++)
+                if (PassiveSupport.IsChoiceSelectable(PassiveSupport.ChoiceAt(MasteryNode, i)))
+                {
+                    ord = i;
+                    break;
+                }
+            string err;
+            hud.OpenMasterySelector(MasteryNode);
+            Assert.IsTrue(s.TryAllocateMastery(MasteryNode, ord, out err), err);
+            hud.CancelMasterySelector();
+            Assert.AreEqual(ord, s.MasterySelectedOrdinal(MasteryNode));
+            Assert.IsTrue(s.TryRespec(out err), err);
+            Assert.AreEqual(-1, s.MasterySelectedOrdinal(MasteryNode));
+            Assert.IsFalse(s.Allocated[MasteryNode]);
+        }
+
         static int CountAllocated(SliceSession s)
         {
             int n = 0;

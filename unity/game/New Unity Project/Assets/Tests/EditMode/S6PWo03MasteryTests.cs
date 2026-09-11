@@ -402,30 +402,91 @@ namespace Game.Tests.EditMode
         [Test]
         public void SelectorLayout_FitsDesignSpace()
         {
-            Rect p1080 = SliceHud.MasterySelectorPanel(1920f, 1080f);
-            Assert.GreaterOrEqual(p1080.x, 0f);
-            Assert.GreaterOrEqual(p1080.y, 0f);
-            Assert.LessOrEqual(p1080.xMax, 1920f + 0.01f);
-            Assert.LessOrEqual(p1080.yMax, 1080f + 0.01f);
+            int sourceCount = PassiveSupport.ChoiceCount(MasteryNode);
+            Assert.Greater(sourceCount, 0);
+
+            SliceHud.MasterySelectorLayout a = SliceHud.BuildMasterySelectorLayout(1920f, 1080f, MasteryNode);
+            Assert.AreEqual(sourceCount, a.Rows.Length, "entry count == source count");
+            Assert.AreEqual(sourceCount, a.Lines.Length);
+            Assert.GreaterOrEqual(a.Panel.x, 0f);
+            Assert.GreaterOrEqual(a.Panel.y, 0f);
+            Assert.LessOrEqual(a.Panel.xMax, 1920f + 0.01f);
+            Assert.LessOrEqual(a.Panel.yMax, 1080f + 0.01f);
+            AssertContains(a.Panel, a.Cancel);
+            AssertContains(a.Panel, a.View);
 
             float scale = SliceHud.DesignScale(2560f, 1440f);
             float dw = 2560f / scale, dh = 1440f / scale;
-            Rect p1440 = SliceHud.MasterySelectorPanel(dw, dh);
-            Assert.GreaterOrEqual(p1440.x, 0f);
-            Assert.GreaterOrEqual(p1440.y, 0f);
-            Assert.LessOrEqual(p1440.xMax, dw + 0.01f);
-            Assert.LessOrEqual(p1440.yMax, dh + 0.01f);
+            SliceHud.MasterySelectorLayout b = SliceHud.BuildMasterySelectorLayout(dw, dh, MasteryNode);
+            Assert.AreEqual(sourceCount, b.Rows.Length);
+            Assert.GreaterOrEqual(b.Panel.x, 0f);
+            Assert.LessOrEqual(b.Panel.xMax, dw + 0.01f);
+            Assert.LessOrEqual(b.Panel.yMax, dh + 0.01f);
 
-            int n = PassiveSupport.ChoiceCount(MasteryNode);
-            Assert.AreEqual(n, n, "entry count == source count");
-            for (int i = 0; i < n; i++)
+            GUIStyle st = SliceHud.MasteryChoiceTextStyle();
+            Assert.IsTrue(st.wordWrap, "长文本必须换行，不得靠 Clip 裁掉");
+            Assert.AreEqual(TextClipping.Overflow, st.clipping);
+
+            string longest = "";
+            for (int i = 0; i < sourceCount; i++)
             {
-                Rect row = SliceHud.MasterySelectorChoiceRow(p1080, i);
-                Assert.GreaterOrEqual(row.x, p1080.x);
-                Assert.LessOrEqual(row.xMax, p1080.xMax + 0.01f);
+                if ((a.Lines[i] ?? "").Length > longest.Length)
+                    longest = a.Lines[i];
+                Assert.AreEqual(PassiveSupport.ChoiceAt(MasteryNode, i), a.Lines[i], "行 identity 必须是 source ordinal");
+                Assert.Greater(a.Rows[i].height, 0f);
+                Assert.LessOrEqual(a.Rows[i].xMax, a.Content.width + 0.01f);
+                Assert.LessOrEqual(a.TextRects[i].yMax, a.Rows[i].yMax + 0.01f);
+                Assert.GreaterOrEqual(a.TextRects[i].x, a.Rows[i].x);
+                float need = SliceHud.ChoiceTextHeight(a.Lines[i], a.TextRects[i].width);
+                Assert.GreaterOrEqual(a.TextRects[i].height, need - 0.5f, "choice 文本高度必须被行矩形包含：" + a.Lines[i]);
             }
+
+            string synthetic = longest + " / extra wrapped clause to force a second line of contained text";
+            float synW = a.TextRects[0].width;
+            float synH = SliceHud.ChoiceTextHeight(synthetic, synW);
+            Assert.Greater(synH, SliceHud.MasterySelectorChoiceFont, "换行高度必须随文本变长");
+            float synRow = Mathf.Max(SliceHud.MasterySelectorMinRow, synH + SliceHud.MasterySelectorMetaH + 10f);
+            Assert.GreaterOrEqual(synRow, synH + SliceHud.MasterySelectorMetaH, "行高必须装得下换行文本+状态行");
+
             Assert.AreEqual(PassiveSupport.MasteryChoiceKey(MasteryNode, 0),
-                PassiveSupport.MasteryChoiceKey(MasteryNode, 0));
+                MasteryNode.ToString(CultureInfo.InvariantCulture) + ":0");
+        }
+
+        [Test]
+        public void SelectorOpenCancel_DoesNotMutateSession()
+        {
+            var s = NewSession();
+            string err;
+            Assert.IsTrue(PrepareMasteryEligible(s, MasteryNode, out err), err);
+            int unspent, allocated, ord;
+            float life;
+            Snapshot(s, out unspent, out allocated, out life, out ord);
+
+            var hud = new SliceHud();
+            hud.OpenMasterySelector(MasteryNode);
+            Assert.AreEqual(MasteryNode, hud.MasterySelectorNode);
+            int u2, a2, o2;
+            float l2;
+            Snapshot(s, out u2, out a2, out l2, out o2);
+            Assert.AreEqual(unspent, u2);
+            Assert.AreEqual(allocated, a2);
+            Assert.AreEqual(life, l2, 0.0001f);
+            Assert.AreEqual(ord, o2);
+
+            hud.CancelMasterySelector();
+            Assert.AreEqual(-1, hud.MasterySelectorNode);
+            Snapshot(s, out u2, out a2, out l2, out o2);
+            Assert.AreEqual(unspent, u2);
+            Assert.AreEqual(allocated, a2);
+            Assert.AreEqual(life, l2, 0.0001f);
+        }
+
+        static void AssertContains(Rect outer, Rect inner)
+        {
+            Assert.GreaterOrEqual(inner.x, outer.x - 0.01f);
+            Assert.GreaterOrEqual(inner.y, outer.y - 0.01f);
+            Assert.LessOrEqual(inner.xMax, outer.xMax + 0.01f);
+            Assert.LessOrEqual(inner.yMax, outer.yMax + 0.01f);
         }
 
         [Test]

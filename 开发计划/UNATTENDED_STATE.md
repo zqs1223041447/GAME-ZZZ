@@ -58,7 +58,7 @@
 | 项 | 值 |
 |---|---|
 | 令号 | **S6P-WO-03 — Mastery Explicit Selection & Allocation Correctness** |
-| 状态 | **READY FOR GATE REVIEW**（产品实现 + 全门 + 冷进程 ×3 已完成；待 Channel A 审 Evidence Pack） |
+| 状态 | **REWORK / AC-22 已修，待最小 Gate Review** |
 | 授权来源 | Channel A 于 WO-04A2 Gate Review ACCEPT 时 **RELEASED / EXECUTE NOW**；合同 = `S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md` §4–§19（叠加原 `S6P_WO_02_GATE_REVIEW_AND_WO_03_CONTRACT.md` 37 AC） |
 | 前置 | `S6P_WO_03_PREFLIGHT.md` = PASS（22 个专精有可兑现 choice ≠ 0，不触发 STOP）；04A2 约束全部继承 |
 | 入口指纹（生产树） | 干净 HEAD `a91e391` dirty=NO = `fd90468eb7b9ebdc95cb247c5c14d51c02a0c99092154ac0d5516ebaad88fb0a`（2814 files）。治理文档落盘后 working-tree = `bf400b251f2f1c33f37d46a2e633d562138d647f0085556ef2bc82e41298523a`（dirty=YES，仅 Markdown）。明细 `_wo03_fingerprint_entry.txt`。历史 preflight `a85a5e2e…`（HEAD `64b614f`）仅作 04A 收口态档案，**不得**再当本轮 mutation 入口 |
@@ -343,3 +343,4 @@ unity command capture_game_view --source screen --width 2560 --height 1440 --sav
 | 2026-09-11 | **S6P-WO-03 维持 BLOCKED**：未实现任何 Mastery 显式选择功能（22 个可兑现 choice 一个未动），未碰 Jewel/Timeless/升华/药剂/新技能/新 Stat 轴。Evidence Pack 待发回 Channel A 做 Gate Review（`--topic game-zzz-planning-2`） |
 | 2026-09-11 | 导演指令「继续」。进程曾在 push-then-planner 步骤遇到 429；醒来后核对：远端已与 `a91e391` 同步、WO-04A2 已 CLOSED/ACCEPT、WO-03 已 RELEASED。入口指纹按当前 HEAD `a91e391` 重取（`fd90468e…`，dirty=NO）；旧 preflight 指纹 `a85a5e2e…`（HEAD `64b614f`）降为档案。按「先 push 再让规划 AI 读仓库」把治理文档推远端后，向 Channel A `game-zzz-planning-2` 通报开工并开始 WO-03 产品实现 |
 | 2026-09-11 | **S6P-WO-03 产品实现完毕，Ready for Gate Review**。Channel A 开工裁定 = EXECUTE NOW + EA-1..EA-4。实现：prerequisite / 显式选择 / `TryAllocateMastery` 原子提交 / 选择器 UI / ProdSim V3。EA-2 专精不是 transit；EA-3 合法选择不算 corruption；EA-4 census 367/315 未动；拓扑 1985/325/42 未动。门：EditMode **489/489**、PlayMode **19/19**、Content Audit PASS、冷进程 ×3 `FNV1A64:99f1bfd3f81c4fe6` EXACT（contract=V3）。hash 归因：B=serializer cleanup（默认场景）；A=node 10 未选 vs +30 Life。证据：`S6P_WO_03.md` + `S6P_WO_03_EVIDENCE_PACK.md` + `_wo03_cold_exit.txt`。下一步=把 Evidence Pack 发回 Channel A |
+| 2026-09-11 | **WO-03 Gate = REJECT-REWORK（36 PASS / AC-22 FAIL）**。AC-22：测试恒真自比较 + 22px Clip 未证明长文本包含 + helper 与 renderer 不是同一权威。AC-28 新 hash 暂不晋升。已修：`BuildMasterySelectorLayout` 单一权威、换行高度纯函数、open/cancel 零 mutation、PlayMode integration。返工后门：EditMode **490/490**、PlayMode **20/20**。Evidence Delta：`S6P_WO_03_REWORK_AC22.md` |
