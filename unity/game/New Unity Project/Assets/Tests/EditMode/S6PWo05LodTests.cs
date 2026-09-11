@@ -76,5 +76,76 @@ namespace Game.Tests.EditMode
             float big = PassiveTreeLod.HitRadiusPx((int)PoeNodeKind.Keystone, 1f, 1f);
             Assert.Greater(big, 6f);
         }
+
+        [Test]
+        public void Lod0_PlanRequestsNoIndividualIconsOrChrome()
+        {
+            float ds = SliceHud.DesignScale(1920f, 1080f);
+            float z = PassiveTreeLod.ZoomForProjectedPx(6f, ds);
+            var view = new Rect(0f, 0f, 1920f, 1080f);
+            Vector2 pan = PassiveTreeLod.FocusPan(view, z, 2172);
+            var plan = PassiveTreeRenderPlan.Build(view, pan, z, ds);
+            Assert.AreEqual(PassiveTreeLod.Level.Overview, plan.Lod);
+            Assert.AreEqual(0, plan.RequiredIconCount);
+            Assert.IsFalse(plan.NeedFrameAtlas);
+            Assert.IsFalse(plan.NeedGroupAtlas);
+            Assert.Greater(plan.VisibleNodeCount, 0);
+        }
+
+        [Test]
+        public void HitNodeId_Fixtures_MatchAcrossThreeLods()
+        {
+            int keystone = FirstKind(PoeNodeKind.Keystone);
+            int jewel = FirstKind(PoeNodeKind.Jewel);
+            Assert.GreaterOrEqual(keystone, 0);
+            Assert.GreaterOrEqual(jewel, 0);
+            int[] ids = { 2172, 71, 183, 10, 1006, keystone, jewel };
+            float ds = SliceHud.DesignScale(1920f, 1080f);
+            float[] px = { 6f, 12f, 24f };
+            var view = new Rect(0f, 0f, 1920f, 1080f);
+            for (int f = 0; f < ids.Length; f++)
+            {
+                int id = ids[f];
+                for (int L = 0; L < px.Length; L++)
+                {
+                    float z = PassiveTreeLod.ZoomForProjectedPx(px[L], ds);
+                    Vector2 pan = PassiveTreeLod.FocusPan(view, z, id);
+                    Vector2 c = PoeTreeView.ScreenOf(new Vector2(PoeTree.Get(id).x, PoeTree.Get(id).y), pan, z);
+                    Assert.AreEqual(id, PassiveTreeLod.HitNodeId(c, pan, z, ds), "centre lodPx=" + px[L] + " node=" + id);
+                    float hr = PassiveTreeLod.HitRadiusPx(PoeTree.Get(id).kind, z, ds) / ds;
+                    float o = 0.4f * hr;
+                    Assert.AreEqual(id, PassiveTreeLod.HitNodeId(c + new Vector2(o, 0f), pan, z, ds));
+                    Assert.AreEqual(id, PassiveTreeLod.HitNodeId(c + new Vector2(-o, 0f), pan, z, ds));
+                    Assert.AreEqual(id, PassiveTreeLod.HitNodeId(c + new Vector2(0f, o), pan, z, ds));
+                    Assert.AreEqual(id, PassiveTreeLod.HitNodeId(c + new Vector2(0f, -o), pan, z, ds));
+                }
+            }
+        }
+
+        [Test]
+        public void VisibleSet_DoesNotDependOnLodFunction()
+        {
+            float ds = 1f;
+            float z = PassiveTreeLod.ZoomForProjectedPx(12f, ds);
+            var view = new Rect(0f, 0f, 1920f, 1080f);
+            Vector2 pan = PassiveTreeLod.FocusPan(view, z, 2172);
+            var plan = PassiveTreeRenderPlan.Build(view, pan, z, ds);
+            int vis = 0;
+            for (int i = 0; i < PoeTree.Count; i++)
+            {
+                bool v = PoeTreeView.Visible(PoeTree.Get(i), pan, z, view, PassiveTreeRenderPlan.NodeVisiblePad);
+                if (plan.VisibleNodes[i]) vis++;
+                Assert.AreEqual(v, plan.VisibleNodes[i], "visible 不得吃 LOD：" + i);
+            }
+            Assert.AreEqual(vis, plan.VisibleNodeCount);
+        }
+
+        static int FirstKind(PoeNodeKind k)
+        {
+            for (int i = 0; i < PoeTree.Count; i++)
+                if (PoeTree.Get(i).Kind == k)
+                    return i;
+            return -1;
+        }
     }
 }

@@ -72,5 +72,48 @@ namespace Game.Runtime.Core
                 return groupProjectedDiameterPx >= 160f;
             return true;
         }
+
+        public static float GroupProjectedDiameterPx(int groupIndex, float treeZoom, float designScale)
+        {
+            return 2f * PoeTreeView.GroupRadius(groupIndex) * treeZoom * designScale;
+        }
+
+        /// <summary>
+        /// 命中 NodeId。probe 与 pan 同为设计空间（GUI 组内）。LOD 不是输入。
+        /// 物理半径 = max(NodeSize*zoom*designScale*0.5*1.2, 6px)；平局取较小 NodeId。
+        /// </summary>
+        public static int HitNodeId(Vector2 probeDesign, Vector2 pan, float zoom, float designScale)
+        {
+            if (designScale <= 0f)
+                designScale = 1f;
+            PoeNode[] nodes = PoeTree.Nodes;
+            if (nodes == null)
+                return -1;
+            int best = -1;
+            float bestD2 = float.MaxValue;
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                Vector2 c = PoeTreeView.ScreenOf(new Vector2(nodes[i].x, nodes[i].y), pan, zoom);
+                float hrDesign = HitRadiusPx(nodes[i].kind, zoom, designScale) / designScale;
+                float dx = probeDesign.x - c.x;
+                float dy = probeDesign.y - c.y;
+                float d2 = dx * dx + dy * dy;
+                if (d2 > hrDesign * hrDesign)
+                    continue;
+                if (best < 0 || d2 < bestD2 - 1e-10f || (d2 <= bestD2 + 1e-10f && i < best))
+                {
+                    best = i;
+                    bestD2 = d2;
+                }
+            }
+            return best;
+        }
+
+        public static Vector2 FocusPan(Rect viewport, float zoom, int nodeId)
+        {
+            PoeNode n = PoeTree.Get(nodeId);
+            return new Vector2(viewport.x + viewport.width * 0.5f - n.x * zoom,
+                viewport.y + viewport.height * 0.5f - n.y * zoom);
+        }
     }
 }

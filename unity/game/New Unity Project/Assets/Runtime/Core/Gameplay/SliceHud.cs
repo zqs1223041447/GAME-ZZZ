@@ -1339,28 +1339,28 @@ namespace Game.Runtime.Core
                 HandleTreeInput(local);
             }
 
+            PassiveTreeRenderPlan plan = PassiveTreeRenderPlan.Build(local, _treePan, _treeZoom, _scale);
+            PassiveTreeTextures.Sync(plan);
             var frameAtlas = PoeTree.Data.chrome == null ? null : PoeTree.Data.chrome.frame;
-            Texture2D frameTex = frameAtlas == null ? null : PoeTree.Chrome(frameAtlas.file);
-
-            // 1) 簇底衬
+            Texture2D frameTex = plan.NeedFrameAtlas ? PassiveTreeTextures.FrameAtlas : null;
             var groupAtlas = PoeTree.Data.chrome == null ? null : PoeTree.Data.chrome.group;
-            Texture2D groupTex = groupAtlas == null ? null : PoeTree.Chrome(groupAtlas.file);
-            if (groupTex != null)
+            Texture2D groupTex = plan.NeedGroupAtlas ? PassiveTreeTextures.GroupAtlas : null;
+
+            // 1) 簇底衬（LOD0 不请求；LOD1 按投影直径）
+            if (groupTex != null && groupAtlas != null && groups != null)
             {
                 for (int i = 0; i < groups.Length; i++)
                 {
+                    float diam = PassiveTreeLod.GroupProjectedDiameterPx(i, _treeZoom, _scale);
+                    if (!PassiveTreeLod.AllowsGroupDecoration(plan.Lod, diam))
+                        continue;
                     PoeGroup g = groups[i];
                     string sprite = g.bg == 1 ? "PSGroupBackground1" : (g.bg == 3 ? "PSGroupBackground3" : "PSGroupBackground2");
                     Rect uv;
                     if (!groupAtlas.TryRect(sprite, out uv))
                         continue;
                     float sw = groupAtlas.PixelW(sprite), sh = groupAtlas.PixelH(sprite);
-                    float radiusPx = g.radius * _treeZoom;
-                    Vector2 gc = PoeTreeView.ScreenOf(new Vector2(g.x, g.y), _treePan, _treeZoom);
-                    if (gc.x + radiusPx < local.x || gc.x - radiusPx > local.xMax ||
-                        gc.y + radiusPx < local.y || gc.y - radiusPx > local.yMax)
-                        continue;
-                    Rect dr = PoeTreeView.GroupRect(g, sw, sh, _treePan, _treeZoom);
+                    Rect dr = PoeTreeView.GroupRect(i, sw, sh, _treePan, _treeZoom);
                     GUI.color = new Color(1f, 1f, 1f, 0.5f);
                     GUI.DrawTextureWithTexCoords(dr, groupTex, uv);
                     GUI.color = Color.white;
@@ -1403,17 +1403,17 @@ namespace Game.Runtime.Core
                 }
             }
 
-            // 3) 节点（图标 = PoE 原图；框 = 官方 frame 图集三态）
-            int hovered = -1;
+            // 3) 节点。LOD0 不请求完整图标；命中身份走 HitNodeId（与 LOD 无关）。
+            int hovered = PassiveTreeLod.HitNodeId(TreePointer, _treePan, _treeZoom, _scale);
             for (int i = 0; i < nodes.Length; i++)
             {
-                PoeNode n = nodes[i];
-                if (!PoeTreeView.Visible(n, _treePan, _treeZoom, local, 20f))
+                if (plan.VisibleNodes != null && i < plan.VisibleNodes.Length && !plan.VisibleNodes[i])
                     continue;
+                PoeNode n = nodes[i];
                 Rect nr = PoeTreeView.NodeRect(n, _treePan, _treeZoom);
                 NodeUiState st = LockedState(n, s.NodeState(i));
                 bool yields = PassiveSupport.YieldsModifiers(s.NodeTruth(i).Effect);
-                if (frameTex != null)
+                if (PassiveTreeLod.AllowsFullIcon(plan.Lod, n.Kind) && frameTex != null && frameAtlas != null)
                 {
                     Rect uv;
                     if (frameAtlas.TryRect(FrameSprite(n.Kind, st), out uv))
@@ -1422,29 +1422,21 @@ namespace Game.Runtime.Core
                         GUI.DrawTextureWithTexCoords(nr, frameTex, uv);
                         GUI.color = Color.white;
                     }
+                    var icon = PassiveTreeTextures.Icon(n.icon);
+                    if (icon != null)
+                    {
+                        float s2 = nr.width * 0.66f;
+                        GUI.color = IconTint(st, yields);
+                        GUI.DrawTexture(new Rect(nr.x + (nr.width - s2) * 0.5f, nr.y + (nr.height - s2) * 0.5f, s2, s2), icon);
+                        GUI.color = Color.white;
+                    }
                 }
-                var icon = PoeTree.Icon(n.icon);
-                if (icon != null)
-                {
-                    float s2 = nr.width * 0.66f;
-                    GUI.color = IconTint(st, yields);
-                    GUI.DrawTexture(new Rect(nr.x + (nr.width - s2) * 0.5f, nr.y + (nr.height - s2) * 0.5f, s2, s2), icon);
-                    GUI.color = Color.white;
-                }
-                else if (frameTex == null)
-                {
-                    // 数据/图集双双缺失时的兜底：至少让结构可读（永不空白）
-                    Color cc = st == NodeUiState.Allocated ? SlicePalette.NodeOn
-                        : st == NodeUiState.Available ? SlicePalette.NodeAvail : SlicePalette.NodeLock;
-                    Fill(nr, new Color(cc.r * 0.3f, cc.g * 0.3f, cc.b * 0.3f, 0.9f));
-                }
-
-                if (nr.Contains(TreePointer))
-                    hovered = i;
+                else
+                    DrawLodSymbol(nr, n.Kind, st, yields);
             }
 
-            // 名称：缩放到能看清时给 notable/keystone/mastery 打名字（PoE 同款行为）
-            if (_treeZoom > 0.28f)
+            // 名称：仅 Detail（LOD2）
+            if (plan.Lod == PassiveTreeLod.Level.Detail)
             {
                 for (int i = 0; i < nodes.Length; i++)
                 {
@@ -1464,7 +1456,9 @@ namespace Game.Runtime.Core
             {
                 PoeNode n = nodes[hovered];
                 RequestTip(NodeCard(s, hovered, n), TipPriPanel);
-                if (_masterySelector < 0 && ClickLocal(NodeClickRect(n)))
+                Vector2 hc = PoeTreeView.ScreenOf(new Vector2(n.x, n.y), _treePan, _treeZoom);
+                float hr = PassiveTreeLod.HitRadiusPx(n.kind, _treeZoom, _scale) / (_scale <= 0f ? 1f : _scale);
+                if (_masterySelector < 0 && ClickLocal(new Rect(hc.x - hr, hc.y - hr, hr * 2f, hr * 2f)))
                 {
                     if (n.Kind == PoeNodeKind.Mastery)
                     {
@@ -1700,12 +1694,23 @@ namespace Game.Runtime.Core
             return true;
         }
 
-        /// <summary>节点命中区（略放宽，便于密集视图下点击；组内局部坐标）。</summary>
-        Rect NodeClickRect(PoeNode n)
+        void DrawLodSymbol(Rect nr, PoeNodeKind kind, NodeUiState st, bool yields)
         {
-            Rect r = PoeTreeView.NodeRect(n, _treePan, _treeZoom);
-            float pad = Mathf.Max(2f, r.width * 0.1f);
-            return new Rect(r.x - pad, r.y - pad, r.width + 2f * pad, r.height + 2f * pad);
+            float t = 0.34f;
+            if (kind == PoeNodeKind.Notable) t = 0.52f;
+            else if (kind == PoeNodeKind.Keystone) t = 0.72f;
+            else if (kind == PoeNodeKind.Mastery) t = 0.58f;
+            else if (kind == PoeNodeKind.Jewel) t = 0.48f;
+            else if (kind == PoeNodeKind.Start) t = 0.80f;
+            float s = Mathf.Max(3f, nr.width * t);
+            Rect d = new Rect(nr.x + (nr.width - s) * 0.5f, nr.y + (nr.height - s) * 0.5f, s, s);
+            Color cc = st == NodeUiState.Allocated ? SlicePalette.NodeOn
+                : st == NodeUiState.Available
+                    ? (yields ? SlicePalette.NodeAvail : new Color(0.55f, 0.55f, 0.40f, 1f))
+                    : SlicePalette.NodeLock;
+            Fill(d, cc);
+            if (kind == PoeNodeKind.Mastery)
+                Fill(new Rect(d.x + s * 0.28f, d.y + s * 0.28f, s * 0.44f, s * 0.44f), new Color(0.08f, 0.08f, 0.10f, 0.9f));
         }
 
         bool SegmentVisible(PoeNode a, PoeNode b, Rect local, float pad)
