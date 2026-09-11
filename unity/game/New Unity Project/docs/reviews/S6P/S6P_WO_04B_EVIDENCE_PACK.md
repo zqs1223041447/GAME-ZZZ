@@ -2,7 +2,8 @@
 
 **Work Order:** S6P-WO-04B  
 **Base commit:** `88e8202`  
-**Status:** READY_FOR_GATE_REVIEW（successor BLOCKED pending Channel A）
+**Implementation commit:** `22fd6d3`  
+**Gate:** ACCEPT WITH FOLLOW-UP（Channel A，无产品返工）
 
 ## EP-A Entry
 

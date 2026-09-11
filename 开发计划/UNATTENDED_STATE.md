@@ -57,8 +57,8 @@
 
 | 项 | 值 |
 |---|---|
-| 令号 | **S6P-WO-04B — Passive Build Identity / Snapshot / Lock Parity** |
-| 状态 | **READY_FOR_GATE_REVIEW**（successor 等 Channel A；不得自行开 04C/WO-05） |
+| 令号 | **S6P-WO-04C — Existing-Consumer Semantic Closure** |
+| 状态 | **RELEASED / EXECUTE NOW**（WO-04B = CLOSED / ACCEPT WITH FOLLOW-UP） |
 | 授权来源 | Channel A 于 WO-04A2 Gate Review ACCEPT 时 **RELEASED / EXECUTE NOW**；合同 = `S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md` §4–§19（叠加原 `S6P_WO_02_GATE_REVIEW_AND_WO_03_CONTRACT.md` 37 AC） |
 | 前置 | `S6P_WO_03_PREFLIGHT.md` = PASS（22 个专精有可兑现 choice ≠ 0，不触发 STOP）；04A2 约束全部继承 |
 | 入口指纹（生产树） | 干净 HEAD `a91e391` dirty=NO = `fd90468eb7b9ebdc95cb247c5c14d51c02a0c99092154ac0d5516ebaad88fb0a`（2814 files）。治理文档落盘后 working-tree = `bf400b251f2f1c33f37d46a2e633d562138d647f0085556ef2bc82e41298523a`（dirty=YES，仅 Markdown）。明细 `_wo03_fingerprint_entry.txt`。历史 preflight `a85a5e2e…`（HEAD `64b614f`）仅作 04A 收口态档案，**不得**再当本轮 mutation 入口 |
@@ -346,3 +346,4 @@ unity command capture_game_view --source screen --width 2560 --height 1440 --sav
 | 2026-09-11 | **WO-03 Gate = REJECT-REWORK（36 PASS / AC-22 FAIL）**。AC-22：测试恒真自比较 + 22px Clip 未证明长文本包含 + helper 与 renderer 不是同一权威。AC-28 新 hash 暂不晋升。已修：`BuildMasterySelectorLayout` 单一权威、换行高度纯函数、open/cancel 零 mutation、PlayMode integration。返工后门：EditMode **490/490**、PlayMode **20/20**。Evidence Delta：`S6P_WO_03_REWORK_AC22.md` |
 | 2026-09-11 | **S6P-WO-03 = CLOSED / ACCEPT（37/37）**。AC-22 PASS。ProdSim V3 baseline 正式晋升 `FNV1A64:99f1bfd3f81c4fe6`。**S6P-WO-04B = RELEASED / EXECUTE NOW**。队列 `WO-04B → [WO-04C] → WO-05`。原文 `S6P_WO_03_REWORK_GATE.md` |
 | 2026-09-11 | **S6P-WO-04B 执行完毕，READY_FOR_GATE_REVIEW**。合同 50 AC。扫描 UNRESOLVED=0；PassiveMask=MIGRATED；snapshot 未加 NodeId 列表；lock 全 mutator 拒绝；ProdSim 不读 snapshot。门：EditMode **506/506**、PlayMode **21/21**、冷进程 ×3 `FNV1A64:99f1bfd3f81c4fe6` EXACT。F2 Notable=1006 / ordinal=2。successor 等 Channel A。 |
+| 2026-09-11 | **S6P-WO-04B Gate = ACCEPT WITH FOLLOW-UP**（无产品返工）。Follow-up=Evidence 回填 Implementation commit `22fd6d3`。**S6P-WO-04C = RELEASED / EXECUTE NOW**（条件桶已触发，不跳过）。队列 `WO-04C → WO-05`。原文 `S6P_WO_04B_GATE_REVIEW.md` |
