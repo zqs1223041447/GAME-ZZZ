@@ -1,0 +1,9 @@
+```text
+Working-Tree Fingerprint (content-addressed, SHA-256)
+branch                : main
+HEAD                  : ef11caedee147ac7435f6e83789741df6615fe9a
+tracked+untracked files: 2853
+total bytes           : 323238709
+WORKING-TREE HASH     : e57c832684260096fe804812e3af2909c800a0a6faa4dce59f06d8aa79e6f11e
+dirty                 : YES (this fingerprint file only)
+```
