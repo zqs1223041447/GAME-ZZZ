@@ -153,6 +153,15 @@ namespace Game.Runtime.Core
                 R("^\\+?" + N + " to Intelligence$", StatId.Intelligence, ModOp.Flat, 1f),
                 R("^\\+?" + N + " to maximum Life$", StatId.Life, ModOp.Flat, 1f),
                 R("^\\+?" + N + " to maximum Mana$", StatId.Mana, ModOp.Flat, 1f),
+                // S6P-WO-04C：无条件句式接到已有 consumer（Get() 已消费 Increased/Flat）
+                R("^\\+?" + N + "% increased maximum Life$", StatId.Life, ModOp.Increased, 0.01f),
+                R("^\\+?" + N + "% increased maximum Mana$", StatId.Mana, ModOp.Increased, 0.01f),
+                R("^\\+?" + N + "% increased Strength$", StatId.Strength, ModOp.Increased, 0.01f),
+                R("^\\+?" + N + "% increased Dexterity$", StatId.Dexterity, ModOp.Increased, 0.01f),
+                R("^\\+?" + N + "% increased Intelligence$", StatId.Intelligence, ModOp.Increased, 0.01f),
+                R("^\\+?" + N + " to Armour$", StatId.Armour, ModOp.Flat, 1f),
+                R("^\\+?" + N + " to Evasion Rating$", StatId.Evasion, ModOp.Flat, 1f),
+                R("^\\+?" + N + " to Accuracy Rating$", StatId.Accuracy, ModOp.Flat, 1f),
 
                 // 防御 increased
                 R("^\\+?" + N + "% increased Armour$", StatId.Armour, ModOp.Increased, 0.01f),
@@ -162,6 +171,7 @@ namespace Game.Runtime.Core
                 // 抗性（引擎无冰冷/闪电轴：全元素抗性只记火焰，不虚构）
                 R("^\\+?" + N + "% to Fire Resistance$", StatId.FireResistance, ModOp.Flat, 0.01f),
                 R("^\\+?" + N + "% to all Elemental Resistances$", StatId.FireResistance, ModOp.Flat, 0.01f),
+                R("^\\+?" + N + "% to maximum Fire Resistance$", StatId.MaxFireResistance, ModOp.Flat, 0.01f),
 
                 // 攻击速度
                 R("^\\+?" + N + "% increased Attack Speed$", StatId.AttackSpeed, ModOp.Increased, 0.01f),
@@ -177,7 +187,7 @@ namespace Game.Runtime.Core
                 R("^\\+?" + N + "% increased Critical Strike Chance$", StatId.CritChanceIncreased, ModOp.Increased, 0.01f),
                 R("^\\+?" + N + "% to Critical Strike Multiplier$", StatId.CritMultiAdded, ModOp.Flat, 0.01f),
 
-                // 范围
+                // 范围半径（AreaDamageMore 只走 RawMore：禁止把 "increased Area Damage" 接到 Increased，那是静默空转）
                 R("^\\+?" + N + "% increased Area of Effect$", StatId.AreaRadiusMore, ModOp.Increased, 0.01f),
 
                 // 点燃

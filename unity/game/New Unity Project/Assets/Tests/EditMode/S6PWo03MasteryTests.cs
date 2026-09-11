@@ -14,12 +14,12 @@ namespace Game.Tests.EditMode
     public sealed class S6PWo03MasteryTests
     {
         const int MasteryNode = 10;
-        const int ExpectedSupported = 367;
-        const int ExpectedBlocked = 1660;
+        const int ExpectedSupported = 453;   // WO-04C before=367 after=453 delta=+86
+        const int ExpectedBlocked = 1574;    // WO-04C before=1660 after=1574 delta=-86
         const int ExpectedSpecial = 87;
         const int ExpectedMasteryPending = 315;
         const int ExpectedReachable = 1985;
-        const int ExpectedStartConnectedSupported = 325;
+        const int ExpectedStartConnectedSupported = 411; // WO-04C before=325 after=411 delta=+86
         const int ExpectedStartDisconnectedSupported = 42;
 
         static SliceSession NewSession()
@@ -182,7 +182,7 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void LegacyCensus_Unchanged_367_315()
+        public void LegacyCensus_UpdatedByWo04C_453_315()
         {
             int supported = 0, blocked = 0, special = 0, mastery = 0;
             for (int i = 0; i < PoeTree.Count; i++)
@@ -201,7 +201,7 @@ namespace Game.Tests.EditMode
                     Assert.AreEqual(PassiveSupport.TraversalTruth.SpecialBlocked, t.Traversal, "EA-2 静态 Traversal 不得改：" + i);
                 }
             }
-            Assert.AreEqual(ExpectedSupported, supported, "before=367 after=367 delta=0 reason=EA-4 NodeTruth 不因选择能力移动");
+            Assert.AreEqual(ExpectedSupported, supported, "before=367 after=453 delta=+86 reason=WO-04C exact-uncond existing-consumer parser");
             Assert.AreEqual(ExpectedBlocked, blocked);
             Assert.AreEqual(ExpectedSpecial, special);
             Assert.AreEqual(ExpectedMasteryPending, mastery, "before=315 after=315 delta=0 reason=选择能力是状态层");
@@ -297,6 +297,7 @@ namespace Game.Tests.EditMode
             Assert.IsTrue(PrepareMasteryEligible(s, MasteryNode, out err), err);
             int ord = SupportedOrdinal(MasteryNode);
             float lifeBefore = s.PlayerStats.Get(StatId.Life);
+            float flatBefore = s.PlayerStats.RawFlat(StatId.Life);
             int unspent = s.Unspent;
             int allocated = CountAllocated(s);
 
@@ -306,7 +307,9 @@ namespace Game.Tests.EditMode
             Assert.AreEqual(ord, s.MasterySelectedOrdinal(MasteryNode));
             Assert.AreEqual(unspent - 1, s.Unspent);
             Assert.AreEqual(allocated + 1, CountAllocated(s));
-            Assert.AreEqual(lifeBefore + 30f, s.PlayerStats.Get(StatId.Life), 0.0001f);
+            Assert.AreEqual(flatBefore + 30f, s.PlayerStats.RawFlat(StatId.Life), 0.0001f,
+                "mastery +30 必须进 Flat 轴恰好一次（Get 会再乘路径上的 Life Increased）");
+            Assert.Greater(s.PlayerStats.Get(StatId.Life), lifeBefore);
             Assert.AreEqual(0, s.BlockedAllocatedCount, "合法显式选择不得算 corruption");
 
             Modifier[] mods = s.EffectivePassiveMods(MasteryNode);

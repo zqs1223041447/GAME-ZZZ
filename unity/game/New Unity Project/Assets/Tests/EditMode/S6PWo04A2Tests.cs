@@ -22,17 +22,17 @@ namespace Game.Tests.EditMode
     public sealed class S6PWo04A2Tests
     {
         // ---- 04A 冻结 census（本令不得改动任何一个数字） ----
-        const int ExpectedFullySupported = 367;
-        const int ExpectedUnfulfilled = 1660;
+        const int ExpectedFullySupported = 453;  // before=367 after=453 delta=+86 reason=WO-04C
+        const int ExpectedUnfulfilled = 1574;    // before=1660 after=1574 delta=-86
         const int ExpectedSpecialBlocked = 402;      // 87 无 handler 特殊 + 315 专精过渡
-        const int ExpectedLegacyReachable = 14;      // 旧行为参考可达数
+        const int ExpectedLegacyReachable = 367;     // before=14 after=367 reason=WO-04C 新增 FULLY_SUPPORTED 扩大 effective-only transit；runtime 可达仍 1985 > 367
 
         // ---- §8.3 确定性发现后冻结的恢复 fixture（数据未变则逐字不变） ----
         // 2026-09-11 发现：从 2172 出发，最短(距离 2)的「legacy 到不了、新规则到得了、
         // 且路径上真的经过 route-only 节点」的真实 supported 节点 = 183，
         // canonical 路径 [2172, 71, 183]，其中 71 是唯一 route-only 节点（必须先点它才能到 183）。
-        const int FrozenSupportedDenominator = 325;
-        const int FrozenCandidateCount = 311;
+        const int FrozenSupportedDenominator = 411; // before=325 after=411 delta=+86 reason=WO-04C；1985/42 未动
+        const int FrozenCandidateCount = 44; // before=311 after=44 delta=-267 reason=WO-04C 新增 86 个 FULLY_SUPPORTED 使「仅 effective 可 transit」的 legacy 可达扩大，候选集缩小
         const int FrozenTarget = 183;
         const int FrozenDistance = 2;
         const int FrozenFirstRouteOnly = 71;
@@ -192,7 +192,7 @@ namespace Game.Tests.EditMode
                 Assert.AreEqual(reference[i], runtime[i],
                     "生产可达集与参考遍历必须逐节点一致（互为 oracle）：" + i);
             }
-            Assert.AreEqual(ExpectedLegacyReachable, l, "旧行为参考可达数必须是 14（gate 非平凡性凭据）");
+            Assert.AreEqual(ExpectedLegacyReachable, l, "effective-only 可达 before=14 after=367 reason=WO-04C；runtime 可达仍须更大");
             Assert.Greater(p, l, "可达规模必须实质提升，否则 gate 是空转");
             Assert.IsTrue(runtime[PassiveTraversal04A2.StartNodeId], "seed 本身必须可达");
         }
@@ -359,7 +359,7 @@ namespace Game.Tests.EditMode
         }
 
         /// <summary>
-        /// 诚实取证：367 个 supported 节点里有 42 个连参考图都到不了（被不可通行的特殊节点围住）。
+        /// 诚实取证：453 个 supported 节点里有 42 个连参考图都到不了（被不可通行的特殊节点围住）。
         /// 合同 §7.2 的 D 明确不含它们，所以它们不参与「100% 可达」验收 ——
         /// 但必须被显式钉死并登记，不得因为落在分母之外就当它们不存在。
         /// </summary>

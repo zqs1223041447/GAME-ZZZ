@@ -28,13 +28,13 @@ namespace Game.Tests.EditMode
         static readonly int[] SupportedStartNeighbours = { 559, 1795, 2034 };
 
         // 04A 产品真相快照（与 census 报告同源；变红=可分配性被改动）
-        const int ExpectedSupported = 367;
-        const int ExpectedBlocked = 1660;
+        const int ExpectedSupported = 453;   // before=367 after=453 delta=+86 reason=WO-04C
+        const int ExpectedBlocked = 1574;    // before=1660 after=1574 delta=-86
         const int ExpectedSpecial = 87;
         const int ExpectedMasteryPending = 315;
         // 排除专精/珠宝孔/时光珠宝类（它们由更高优先级的特殊状态接管）
-        const int ExpectedRealMixedNodes = 211;
-        const int ExpectedConsumedLines = 607;
+        const int ExpectedRealMixedNodes = 259; // before=211 after=259 delta=+48 reason=WO-04C：原先全 blocked 的节点现含 CONSUMED 子行，变成 mixed
+        const int ExpectedConsumedLines = 798;  // before=607 after=798 delta=+191 reason=WO-04C
 
         // ---------------- 1. 全树确定性 ----------------
 
@@ -83,7 +83,7 @@ namespace Game.Tests.EditMode
                 consumed += CountBucket(nodes[i].choices, PassiveSupport.LineBucket.Consumed);
             }
             Assert.AreEqual(0, unknown, "UNKNOWN 行分类必须为 0（门禁）");
-            Assert.AreEqual(ExpectedConsumedLines, consumed, "CONSUMED 行数（04A 严格化后不变）");
+            Assert.AreEqual(ExpectedConsumedLines, consumed, "CONSUMED 行数 before=607 after=798 delta=+191 reason=WO-04C");
         }
 
         // ---------------- 2. STRUCTURAL 单独不阻止分配 ----------------
@@ -475,7 +475,7 @@ namespace Game.Tests.EditMode
                     Assert.AreNotEqual(NodeUiState.Available, s.NodeState(i), "不可通行非专精节点不得显示为可点：" + i);
             }
             Assert.AreEqual(ExpectedSupported + ExpectedBlocked, traversable,
-                "可通行 = 全部普通上树节点（367 可兑现 + 1660 route-only）");
+                "可通行 = 全部普通上树节点（453 可兑现 + 1574 route-only）");
             Assert.AreEqual(ExpectedSpecial + ExpectedMasteryPending, blocked,
                 "不可通行 = 无 handler 特殊交互 87 + 专精过渡 315");
         }

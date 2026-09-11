@@ -185,4 +185,5 @@ S1 技术已放行。输入、对象池、SeededRng、点地移动、Q/W/E 施�
 - 专精显式选择是**状态层交易**，不是普通树路径分配。静态 `TraversalTruth` 对 Mastery 保持 `SPECIAL_BLOCKED`；已选择的专精不得作为后续节点的 transit vertex。
 - Choice identity：官方 payload 无 per-choice stable ID 时，fallback = `MasteryNodeId + authoritative source ordinal`。禁止 GUI 下标 / 本地化文本 / `GetHashCode()`。
 - 禁止恢复 `FirstChoice` / `choices[0]`。效果只走既有 `PoeStatParser` + `RecalcPlayer` / `CollectSkillMods`。
-- 04A 诊断 census 367/315 不是实施目标值；本令保持不变（EA-4）。可达 1985 / `|D|=325` / 42 start-disconnected supported 是 topology invariant。
+- 04A 诊断 census 367/315 不是实施目标值；WO-03 保持不变（EA-4）。可达 1985 / `|D|=325` / 42 start-disconnected supported 是 04A2 topology 基线。
+- **S6P-WO-04C（2026-09-11）**：只把已有 runtime consumer 的无条件句式接到 parser。不新增 StatId / 不新增玩法域。`increased Area Damage` 故意不接（RawMore-only）。census before/after：supported 367→453（+86）；blocked 1660→1574（-86）；consumed lines 607→798（+191）；`|D|` 325→411（+86）；reachable 1985 与 disconnected 42 未动；mixed 211→259（+48，原先全 blocked 的节点现含 CONSUMED 子行但仍 UNFULFILLED）；04A2 候选集 311→44（legacy effective-only 可达扩大）。ProdSim 预期保持 `FNV1A64:99f1bfd3f81c4fe6`（canonical fixture 原已 FULLY_SUPPORTED）；变化则 STOP，禁止自行 rebaseline。

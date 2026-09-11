@@ -58,24 +58,24 @@
 | 项 | 值 |
 |---|---|
 | 令号 | **S6P-WO-04C — Existing-Consumer Semantic Closure** |
-| 状态 | **RELEASED / EXECUTE NOW**（WO-04B = CLOSED / ACCEPT WITH FOLLOW-UP） |
-| 授权来源 | Channel A 于 WO-04A2 Gate Review ACCEPT 时 **RELEASED / EXECUTE NOW**；合同 = `S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md` §4–§19（叠加原 `S6P_WO_02_GATE_REVIEW_AND_WO_03_CONTRACT.md` 37 AC） |
-| 前置 | `S6P_WO_03_PREFLIGHT.md` = PASS（22 个专精有可兑现 choice ≠ 0，不触发 STOP）；04A2 约束全部继承 |
-| 入口指纹（生产树） | 干净 HEAD `a91e391` dirty=NO = `fd90468eb7b9ebdc95cb247c5c14d51c02a0c99092154ac0d5516ebaad88fb0a`（2814 files）。治理文档落盘后 working-tree = `bf400b251f2f1c33f37d46a2e633d562138d647f0085556ef2bc82e41298523a`（dirty=YES，仅 Markdown）。明细 `_wo03_fingerprint_entry.txt`。历史 preflight `a85a5e2e…`（HEAD `64b614f`）仅作 04A 收口态档案，**不得**再当本轮 mutation 入口 |
-| 入口基线 | EditMode **475/475**、PlayMode **18/18**、ProdSim `FNV1A64:ec1d3ed67d3035d0`（04A2 出口冷进程 ×3 EXACT） |
-| 冻结 fixture | **node 10 = Life Mastery**（group 741 / 1 Notable / 唯一可兑现 choice `+30 to maximum Life` ⇒ `Life:Flat=30`）；§13 fallback = 未选择 vs 显式选择必须改 gameplay/hash（全树无 >=2 可兑现 choice 的专精） |
-| 实现顺序 | ① prerequisite owner（官方簇 + 同簇 >=1 已分配 Notable）→ ② choice support 只调 04A truth → ③ selection identity = MasteryNodeId + 权威 ordinal → ④ 原子提交/取消零增量 + 恰好 1 点 + 恰好生效一次 → ⑤ UI selector → ⑥ ProdSim V3（`pv\|passive-v2`）→ ⑦ 新 baseline 三独立冷进程 → ⑧ Evidence Pack |
-| 硬约束 | TraversalTruth/EffectTruth 分离不可回退；route-only 不得改回“分配被拒”；Mastery 在正式选择提交前仍 SPECIAL_BLOCKED；Jewel/Timeless 不属本令；04A 367/315 若移动必须 before/after/delta/reason；禁 FirstChoice/choices[0]；禁第二套 Mastery oracle；禁 refund/存档/新玩法域；禁静默更新 14→1985 / `\|D\|`=325 / 42 个 start-disconnected supported nodes |
+| 状态 | **RELEASED / EXECUTE NOW（实现中）**（WO-04B = CLOSED / ACCEPT WITH FOLLOW-UP） |
+| 授权来源 | Channel A 于 WO-04B Gate Review **RELEASED / EXECUTE NOW**（条件桶非 0，不跳过）。完整 AC 合同仍待 Channel A 补发；实现按原 WO-04「只接已有 runtime consumer」+ 04A/04A2 硬约束开工，不等人。 |
+| 入口指纹（生产树） | 干净 HEAD `8959a60` dirty=NO = `7310214b9657450a81281496048d22949e4b64a232b17bcdb3782621c097e95e`（2834 files）。明细 `_wo04c_fingerprint_entry.txt` |
+| 入口基线 | EditMode **506/506**、PlayMode **21/21**、ProdSim `FNV1A64:99f1bfd3f81c4fe6`（V3，04B 出口冷进程 ×3 EXACT） |
+| 入口 census | 松散关键词桶 **48** 行（`docs/qa/WO_04C_EXISTING_CONSUMER_GAP.json`）。含必须排除的 Minion / Iron Reflexes 样本 |
+| 接线范围 | 无条件 `increased maximum Life/Mana`、`increased Str/Dex/Int`、`+N to Armour/Evasion Rating/Accuracy Rating`、`+N% to maximum Fire Resistance`。不新增 StatId |
+| 故意不接 | `increased Area Damage`（AreaDamageMore 只走 RawMore，接到 Increased = 静默空转）；Minion 前缀；Converts 转换句；Fork/Adds 无简单无条件句式 |
+| 硬约束 | TraversalTruth/EffectTruth 分离不可回退；route-only 不得改回“分配被拒”；Jewel/Timeless/Mastery 静态资格不属本令；367/1660/`\|D\|`/42 若移动必须 before/after/delta/reason；禁新玩法域；禁静默 rebaseline `99f1bfd3f81c4fe6` |
 | 规划渠道 | Channel A = `game-zzz-planning-2` / `6aa368c5-7478-83ea-a2d3-95003ee4e6ab`（旧 `game-zzz-planning` 已停用） |
 
-## 队列（WO-03 进行中）
+## 队列（WO-04C 进行中）
 
 | 项 | 值 |
 |---|---|
-| 队列 | **S6P-WO-03（进行中） → WO-04B → [WO-04C 条件] → WO-05** |
-| 上一令 | **S6P-WO-04A2 = CLOSED / ACCEPT**（含 Post-Gate UI Addendum ACCEPT）；记录见 `S6P_WO_04A2.md` / `_GATE_REVIEW.md` |
-| WO-03 必须继承的 04A2 事实 | ① `TraversalTruth` / `EffectTruth` 分离**不可回退**；② route-only 不得被重新当成"分配被拒"；③ Mastery 在 WO-03 正式选择提交之前仍为 `SPECIAL_PENDING + SPECIAL_BLOCKED`；④ Jewel / Timeless **不属于 WO-03 职权**；⑤ 04A 的 367 / 315 冻结数字若因 WO-03 合法移动，必须给出 before / after / delta / reason，禁静默更新 |
-| WO-03 新约束（由 04A2 产生） | ① 04A2 的 14→1985 与 `\|D\|`=325 是新的基线事实，WO-03 若使其移动必须显式更新并说明；② **42 个 start-disconnected supported nodes**（不是 `OUT_OF_DOMAIN`）是后续 special-interaction topology 工作的输入，不得在本轮偷偷解，也不得预承诺"实现 Jewel 就全部解开"；③ `BlockedAllocatedCount` 语义已改为「不可通行却被点亮」，WO-03 不得再把它当「不可兑现」用；④ `TraversalTruth`/`EffectTruth` 分离**不可回退**，route-only 不得被重新当成"分配被拒" |
+| 队列 | **S6P-WO-04C（进行中） → WO-05** |
+| 上一令 | **S6P-WO-04B = CLOSED / ACCEPT WITH FOLLOW-UP**；记录见 `S6P_WO_04B.md` / `S6P_WO_04B_GATE_REVIEW.md` |
+| 04C 必须继承的事实 | ① `TraversalTruth` / `EffectTruth` 分离**不可回退**；② route-only 不得改回"分配被拒"；③ Mastery 静态资格仍 SPECIAL_BLOCKED（本令不改选择语义）；④ Jewel / Timeless **不属于 04C**；⑤ 367 / 1660 / `\|D\|`=325 / 42 若因 parser 接线合法移动，必须 before / after / delta / reason，禁静默更新；⑥ 可达 1985 不应因本令移动 |
+
 
 ## 上一令（S6P-DIR-01 — 已实现、已提交入库 `ce6f85c`、已推送）
 
@@ -347,3 +347,5 @@ unity command capture_game_view --source screen --width 2560 --height 1440 --sav
 | 2026-09-11 | **S6P-WO-03 = CLOSED / ACCEPT（37/37）**。AC-22 PASS。ProdSim V3 baseline 正式晋升 `FNV1A64:99f1bfd3f81c4fe6`。**S6P-WO-04B = RELEASED / EXECUTE NOW**。队列 `WO-04B → [WO-04C] → WO-05`。原文 `S6P_WO_03_REWORK_GATE.md` |
 | 2026-09-11 | **S6P-WO-04B 执行完毕，READY_FOR_GATE_REVIEW**。合同 50 AC。扫描 UNRESOLVED=0；PassiveMask=MIGRATED；snapshot 未加 NodeId 列表；lock 全 mutator 拒绝；ProdSim 不读 snapshot。门：EditMode **506/506**、PlayMode **21/21**、冷进程 ×3 `FNV1A64:99f1bfd3f81c4fe6` EXACT。F2 Notable=1006 / ordinal=2。successor 等 Channel A。 |
 | 2026-09-11 | **S6P-WO-04B Gate = ACCEPT WITH FOLLOW-UP**（无产品返工）。Follow-up=Evidence 回填 Implementation commit `22fd6d3`。**S6P-WO-04C = RELEASED / EXECUTE NOW**（条件桶已触发，不跳过）。队列 `WO-04C → WO-05`。原文 `S6P_WO_04B_GATE_REVIEW.md` |
+| 2026-09-11 | **S6P-WO-04C 实现完毕（同进程门全绿，冷进程进行中）**。入口指纹 `7310214b…` @ `8959a60` dirty=NO。parser 只接已有 consumer 的无条件句式；故意不接 `increased Area Damage`。census 367→453 / 1660→1574 / consumed 607→798 / \|D\| 325→411 / 可达 1985 与 42 未动。remaining 桶 = AreaDamageMore×2。门：EditMode **512/512**、PlayMode **21/21**、Content Audit PASS、同进程 ProdSim `FNV1A64:99f1bfd3f81c4fe6` UNCHANGED。Channel A `ask` 两次登录失效，未停工。记录 `S6P_WO_04C.md` + `S6P_WO_04C_EVIDENCE_PACK.md`。WO-05 等 Gate ACCEPT。 |
+| 2026-09-11 | **S6P-WO-04C 入库 `8b2f875`**。冷进程 ×3 EXACT `FNV1A64:99f1bfd3f81c4fe6`（23:41:14 / 23:41:28 / 23:41:42）。READY_FOR_GATE_REVIEW。WO-05 禁止开工直到 Channel A ACCEPT。 |

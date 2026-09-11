@@ -1,0 +1,10 @@
+﻿{
+  "total": 2,
+  "families": {
+    "AreaDamageMore": 2
+  },
+  "samples": [
+    {"family":"AreaDamageMore","node":583,"line":"20% increased Area Damage"},
+    {"family":"AreaDamageMore","node":750,"line":"10% increased Area Damage"}
+  ]
+}

@@ -1,0 +1,6 @@
+﻿{
+  "before": {"supported":367,"blocked":1660,"special":87,"mastery":315,"consumedLines":607,"reachable":1985,"D":325,"disconnectedSupported":42},
+  "after": {"supported":453,"blocked":1574,"special":87,"mastery":315,"consumedLines":798,"reachable":1985,"D":411,"disconnectedSupported":42},
+  "delta": {"supported":86,"blocked":-86,"consumedLines":191,"D":86,"disconnectedSupported":0},
+  "reason": "WO-04C exact-uncond parser rules for existing consumers; mixed nodes stay UNFULFILLED"
+}

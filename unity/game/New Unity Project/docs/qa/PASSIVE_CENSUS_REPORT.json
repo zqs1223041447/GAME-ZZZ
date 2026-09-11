@@ -17,18 +17,18 @@
   },
   "effectLines": {
     "total": 5676,
-    "consumed": 607,
-    "blockedByDomain": 4475,
+    "consumed": 798,
+    "blockedByDomain": 4284,
     "specialInteraction": 12,
     "structural": 582,
     "unknown": 0,
-    "domains": {"Accuracy": 52, "Ailment": 425, "AreaOfEffect": 7, "Armour": 44, "AttackSpeed": 11, "Attribute": 28, "Aura": 55, "Avoidance": 32, "Banner": 19, "Blind": 23, "Block": 184, "Brand": 30, "Buff": 51, "CastSpeed": 55, "Chaining": 5, "Channelling": 8, "Chaos": 46, "Charge": 73, "Cold": 62, "Conditional": 41, "Cooldown": 37, "Corpse": 15, "Cost": 17, "Critical": 67, "Curse": 52, "DamageModifier": 10, "DamageOverTime": 56, "DamageReduction": 15, "Debuff": 12, "Duration": 20, "Elemental": 39, "EnergyShield": 214, "Evasion": 37, "Exert": 8, "Exposure": 7, "Fire": 71, "Flask": 109, "Fortify": 23, "GemLevel": 14, "Ground": 7, "GuardSkill": 3, "Impale": 74, "Leech": 91, "Life": 186, "Lightning": 54, "Link": 15, "Maim": 7, "Mana": 102, "Mark": 3, "Melee": 151, "Mine": 71, "Minion": 192, "Movement": 42, "Offering": 8, "Offhand": 32, "Physical": 28, "Projectile": 72, "Radius": 1, "Rage": 53, "Recovery": 190, "Reflected": 27, "Reservation": 44, "Retaliation": 58, "Seal": 8, "Spell": 83, "Stance": 53, "Stun": 93, "Support": 8, "Suppression": 56, "Tincture": 39, "Totem": 70, "Trap": 58, "Vaal": 10, "Valour": 19, "Warcry": 80, "WeaponType": 313},
+    "domains": {"Accuracy": 39, "Ailment": 425, "AreaOfEffect": 7, "Armour": 40, "AttackSpeed": 11, "Attribute": 24, "Aura": 55, "Avoidance": 32, "Banner": 19, "Blind": 23, "Block": 184, "Brand": 30, "Buff": 51, "CastSpeed": 55, "Chaining": 5, "Channelling": 8, "Chaos": 46, "Charge": 73, "Cold": 62, "Conditional": 41, "Cooldown": 37, "Corpse": 15, "Cost": 17, "Critical": 67, "Curse": 52, "DamageModifier": 10, "DamageOverTime": 56, "DamageReduction": 15, "Debuff": 12, "Duration": 20, "Elemental": 39, "EnergyShield": 214, "Evasion": 33, "Exert": 8, "Exposure": 7, "Fire": 68, "Flask": 109, "Fortify": 23, "GemLevel": 14, "Ground": 7, "GuardSkill": 3, "Impale": 74, "Leech": 91, "Life": 88, "Lightning": 54, "Link": 15, "Maim": 7, "Mana": 37, "Mark": 3, "Melee": 151, "Mine": 71, "Minion": 192, "Movement": 42, "Offering": 8, "Offhand": 32, "Physical": 28, "Projectile": 72, "Radius": 1, "Rage": 53, "Recovery": 190, "Reflected": 27, "Reservation": 44, "Retaliation": 58, "Seal": 8, "Spell": 83, "Stance": 53, "Stun": 93, "Support": 8, "Suppression": 56, "Tincture": 39, "Totem": 70, "Trap": 58, "Vaal": 10, "Valour": 19, "Warcry": 80, "WeaponType": 313},
     "unknownSamples": []
   },
   "nodeEligibility": {
-    "supported": 367,
+    "supported": 453,
     "special": 87,
-    "unsupportedCurrently": 1660,
+    "unsupportedCurrently": 1574,
     "masteryPending": 315
   },
   "prodSimSurface": {

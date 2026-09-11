@@ -1,0 +1,53 @@
+跟进 Channel A（game-zzz-planning-2 / 6aa368c5-7478-83ea-a2d3-95003ee4e6ab）。无人值守，不要等人。
+
+仓库：https://github.com/zqs1223041447/GAME-ZZZ  branch main
+上一令：S6P-WO-04B Gate = ACCEPT WITH FOLLOW-UP（审 22fd6d3）。你已 RELEASED S6P-WO-04C = EXECUTE NOW（条件桶非 0，不跳过）。队列 WO-04C → WO-05。
+
+本消息目的：
+1) 请立刻补发 S6P-WO-04C 完整合同（AC 清单 + Evidence 字段 + STOP 条件）。04B Gate Review 只放行了令号，没有像 04A2/03/04B 那样的 AC 正文。
+2) 请确认或否决下面已经开工的接线范围（导演指令：无人值守，工作 AI 不得停在「等合同」）。若否决，指出必须停的那一条。
+
+## 仓库现状（实现中，尚未 Gate）
+
+入口指纹（生产树，干净 HEAD 8959a60 dirty=NO）：
+WORKING-TREE HASH 7310214b9657450a81281496048d22949e4b64a232b17bcdb3782621c097e95e
+ProdSim 现行 canonical：FNV1A64:99f1bfd3f81c4fe6（V3 / pv|passive-v2），禁止静默 rebaseline。
+
+入口 census（parser 接线前，docs/qa/WO_04C_EXISTING_CONSUMER_GAP.json）：
+48 行松散关键词桶：LifeIncreased 14 / ManaIncreased 12 / EvasionFlat 6 / AccuracyFlat 5 / ArmourFlat 4 / IntelligenceIncreased 2 / AreaDamageMore 2 / DexterityIncreased 1 / StrengthIncreased 1 / MaxFireResistance 1。
+其中混进了必须排除的样本：Minions have N% increased maximum Life；Iron Reflexes「Converts all Evasion Rating to Armour…」。
+
+## 已接线（仅 ^...$ 全行锚定，不新增 StatId / 不新增玩法域）
+
+- N% increased maximum Life → Life / Increased / 0.01
+- N% increased maximum Mana → Mana / Increased / 0.01
+- N% increased Strength|Dexterity|Intelligence → 对应属性 / Increased / 0.01
+- +N to Armour → Armour / Flat
+- +N to Evasion Rating → Evasion / Flat
+- +N to Accuracy Rating → Accuracy / Flat
+- +N% to maximum Fire Resistance → MaxFireResistance / Flat / 0.01
+
+消费点已存在：RecalcPlayer 用 Get() 吃 Life/Mana/属性/Armour/Evasion/Accuracy/MaxFireResistance（Get = Base+Flat 后乘 Increased）。
+
+## 故意不接（请裁定）
+
+- 「N% increased Area Damage」：SliceSession 只读 RawMore(AreaDamageMore)。接到 Increased = 静默空转。DomainTable 已把 area damage 标 BLOCKED_BY_DOMAIN。拟保持不接，remaining 桶只留这一家族。
+- Minion 前缀 / Converts 转换句：不是玩家现有 consumer。
+- Fork / AddedPhysical / AddedFire：入口 census 无简单无条件句式，不发明。
+
+## 预期数字移动（会显式 before/after/delta/reason，不静默改）
+
+- 367 / 1660 会动（整节点 fail-closed：只有「原先唯一阻塞行就是本次接线句式」的节点才会 1660→367）。
+- 315 mastery / 87 jewel+timeless / 可达 1985 **不应**动（TraversalTruth 不因 parser 变）。
+- |D|=325 与 42 start-disconnected supported **可能**随新 FULLY_SUPPORTED 节点动。
+- CONSUMED 行 607 会增加。
+- canonical fixture 559/1795/2034/2172 原先已 FULLY_SUPPORTED，预期 ProdSim 仍 99f1bfd3f81c4fe6；若变 → STOP 调查，禁止自行 rebaseline。
+
+## 请你输出
+
+A. WO-04C 合同正文（可执行 AC）。
+B. 对「AreaDamageMore Increased 不接」的 ACCEPT / REJECT。
+C. 对 367/|D| 显式移动的授权口径。
+D. 下一令是否仍是 WO-05（仅在 04C Gate ACCEPT 之后）。
+
+不要回框架选型，不要改队列为采购/换底座。

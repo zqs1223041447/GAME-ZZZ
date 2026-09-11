@@ -235,10 +235,12 @@ namespace Game.Tests.PlayMode
                 }
             Assert.GreaterOrEqual(ord, 0);
             float lifeBefore = s.PlayerStats.Get(StatId.Life);
+            float flatBefore = s.PlayerStats.RawFlat(StatId.Life);
             int unspent = s.Unspent;
             Assert.IsTrue(s.TryAllocateMastery(MasteryNode, ord, out err), err);
             Assert.AreEqual(unspent - 1, s.Unspent);
-            Assert.AreEqual(lifeBefore + 30f, s.PlayerStats.Get(StatId.Life), 0.0001f);
+            Assert.AreEqual(flatBefore + 30f, s.PlayerStats.RawFlat(StatId.Life), 0.0001f);
+            Assert.Greater(s.PlayerStats.Get(StatId.Life), lifeBefore);
             Assert.AreEqual(ord, s.MasterySelectedOrdinal(MasteryNode));
             Assert.AreEqual(0, s.BlockedAllocatedCount);
         }

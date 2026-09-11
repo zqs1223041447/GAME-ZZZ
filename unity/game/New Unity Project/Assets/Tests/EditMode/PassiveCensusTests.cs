@@ -130,8 +130,8 @@ namespace Game.Tests.EditMode
                 d.NodesSupported + d.NodesSpecial + d.NodesUnsupportedCurrently + d.NodesMasteryPending,
                 "节点级资格必须恰好划分全部上树节点（S6P-WO-04A 起含专精过渡态）");
             // S6P-WO-04A 的产品真相快照（支持门 / 消费门生效后的真实分布；变红=被动可分配性被改动）
-            Assert.AreEqual(367, d.NodesSupported, "ALLOCATABLE_SUPPORTED");
-            Assert.AreEqual(1660, d.NodesUnsupportedCurrently, "BLOCKED_CURRENTLY（含真实混合节点）");
+            Assert.AreEqual(453, d.NodesSupported, "ALLOCATABLE_SUPPORTED before=367 after=453 delta=+86 reason=WO-04C exact-uncond existing-consumer parser");
+            Assert.AreEqual(1574, d.NodesUnsupportedCurrently, "BLOCKED_CURRENTLY before=1660 after=1574 delta=-86 reason=WO-04C");
             Assert.AreEqual(87, d.NodesSpecial, "BLOCKED_SPECIAL_INTERACTION（57 珠宝孔 + 30 时光珠宝类无连线节点）");
             Assert.AreEqual(315, d.NodesMasteryPending, "SPECIAL_PENDING_MASTERY（WO-03 前专精一律不可分配）");
         }

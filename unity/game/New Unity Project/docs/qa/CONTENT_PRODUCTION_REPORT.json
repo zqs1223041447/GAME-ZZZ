@@ -14,7 +14,7 @@
     "equipmentSlots": 6
   },
   "runtimeCoverage": {
-    "declaredStats": ["Accuracy", "AddedFire", "AddedPhysical", "AreaDamageMore", "AreaRadiusMore", "Armour", "AttackSpeed", "ConvertPhysToFire", "CritChanceAdded", "CritChanceIncreased", "CritMultiAdded", "Damage", "Dexterity", "Evasion", "FireDamage", "FireResistance", "Fork", "IgniteChance", "Intelligence", "Life", "Mana", "MorePhysical", "PhysicalDamage", "Strength"],
+    "declaredStats": ["Accuracy", "AddedFire", "AddedPhysical", "AreaDamageMore", "AreaRadiusMore", "Armour", "AttackSpeed", "ConvertPhysToFire", "CritChanceAdded", "CritChanceIncreased", "CritMultiAdded", "Damage", "Dexterity", "Evasion", "FireDamage", "FireResistance", "Fork", "IgniteChance", "Intelligence", "Life", "Mana", "MaxFireResistance", "MorePhysical", "PhysicalDamage", "Strength"],
     "consumedStats": ["Life", "Mana", "Strength", "Dexterity", "Intelligence", "Armour", "Evasion", "Accuracy", "FireResistance", "MaxFireResistance", "Damage", "PhysicalDamage", "FireDamage", "MoreDamage", "MorePhysical", "MoreFire", "AddedPhysical", "AddedFire", "ConvertPhysToFire", "CritChanceBase", "CritChanceAdded", "CritChanceIncreased", "CritMultiAdded", "IgniteChance", "AreaRadiusMore", "AreaDamageMore", "AttackSpeed", "Fork"],
     "unconsumedDeclaredStats": [],
     "declaredTags": ["Attack", "Spell", "Melee", "Projectile", "Area", "Hit", "Physical", "Fire", "Duration"],

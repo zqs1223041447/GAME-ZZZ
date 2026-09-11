@@ -163,7 +163,7 @@ namespace Game.Runtime.Core
         /// <summary>
         /// 04A 的四值资格。本令后**降级为 census / 诊断投影**：由 <see cref="EvaluateTruth(int)"/> 唯一派生，
         /// 不再驱动分配门，也不再驱动消费门 —— 那两个门各自只读一个维度。
-        /// 保留它是为了让 04A 冻结 census（367/1660/87/315）继续可机械复核。
+        /// 保留它是为了让诊断 census（WO-04C：453/1574/87/315）继续可机械复核。
         /// </summary>
         public static NodeStatus EvaluateNode(int nodeId)
         {

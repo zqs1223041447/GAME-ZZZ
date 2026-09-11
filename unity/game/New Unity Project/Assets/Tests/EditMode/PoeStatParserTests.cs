@@ -189,5 +189,47 @@ namespace Game.Tests.EditMode
             Assert.AreSame(a, b, "同节点文本必须命中缓存，不重复分配");
             Assert.AreEqual(2, a.Length);
         }
+
+        // ---------- S6P-WO-04C：已有 consumer 的无条件句式 ----------
+
+        [Test]
+        public void Wo04C_ExistingConsumerExactUncond_Maps()
+        {
+            AssertMod("5% increased maximum Life", StatId.Life, ModOp.Increased, 0.05f);
+            AssertMod("10% increased maximum Life", StatId.Life, ModOp.Increased, 0.10f);
+            AssertMod("8% increased maximum Mana", StatId.Mana, ModOp.Increased, 0.08f);
+            AssertMod("12% increased Strength", StatId.Strength, ModOp.Increased, 0.12f);
+            AssertMod("12% increased Dexterity", StatId.Dexterity, ModOp.Increased, 0.12f);
+            AssertMod("12% increased Intelligence", StatId.Intelligence, ModOp.Increased, 0.12f);
+            AssertMod("+50 to Armour", StatId.Armour, ModOp.Flat, 50f);
+            AssertMod("+30 to Evasion Rating", StatId.Evasion, ModOp.Flat, 30f);
+            AssertMod("+150 to Accuracy Rating", StatId.Accuracy, ModOp.Flat, 150f);
+            AssertMod("+1% to maximum Fire Resistance", StatId.MaxFireResistance, ModOp.Flat, 0.01f);
+        }
+
+        [Test]
+        public void Wo04C_MinionConditionalConversionAndAreaIncreased_StayUnmapped()
+        {
+            Assert.AreEqual(0, PoeStatParser.Parse("Minions have 12% increased maximum Life").Length,
+                "召唤物生命不是玩家 Life consumer");
+            Assert.AreEqual(0, PoeStatParser.Parse("Minions have 15% increased maximum Life").Length);
+            Assert.AreEqual(0, PoeStatParser.Parse("5% increased maximum Life while on Low Life").Length,
+                "条件句不得剥掉 while");
+            Assert.AreEqual(0, PoeStatParser.Parse(
+                "Converts all Evasion Rating to Armour. Dexterity provides no bonus to Evasion Rating").Length,
+                "Iron Reflexes 转换不是 +Evasion Flat");
+            Assert.AreEqual(0, PoeStatParser.Parse("20% increased Area Damage").Length,
+                "AreaDamageMore 只走 RawMore；Increased 会静默空转，禁止接入");
+            Assert.AreEqual(0, PoeStatParser.Parse("10% increased Area Damage").Length);
+        }
+
+        static void AssertMod(string line, StatId stat, ModOp op, float value)
+        {
+            var mods = PoeStatParser.Parse(line);
+            Assert.AreEqual(1, mods.Length, line);
+            Assert.AreEqual(stat, mods[0].Stat, line);
+            Assert.AreEqual(op, mods[0].Op, line);
+            Assert.AreEqual(value, mods[0].Value, 0.0001f, line);
+        }
     }
 }

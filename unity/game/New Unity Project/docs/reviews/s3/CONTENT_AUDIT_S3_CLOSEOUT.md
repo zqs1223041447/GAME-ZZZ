@@ -20,7 +20,7 @@
 | 天赋节点 | 2429（含 2 Notable + 1 机制烬心） |
 | 图词缀 | 3 |
 | 怪 | 5（3 普通 + Elite 监守 + 木桩） |
-| Modifier 引用（Support+Passive） | 594 |
+| Modifier 引用（Support+Passive） | 785 |
 
 内容数量护栏（Collect 阶段核入「结构/契约问题」）：Support=7 / StatId=28 / ModOp、Tag、Effect、Event、Condition、Skill、图词缀轴全部 +0；词缀=13 基线 + S4-P3 追加 ≤4（旧 ID 只追加不缩水，S4-P3 前基线冻结）。
 
