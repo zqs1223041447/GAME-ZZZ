@@ -55,9 +55,24 @@ namespace Game.Tests.EditMode
             Assert.IsTrue(sim.Session.Alive);
             Assert.AreEqual(CastPhase.Idle, sim.Caster.Phase);
             Assert.IsFalse(sim.Session.BuildLocked);
-            Assert.IsFalse(sim.Session.Allocated[1]);
-            Assert.IsTrue(sim.Session.TryAllocate(1, out err), err);
+            // 真实天赋域：起点（Scion）恒已点亮，其可兑现的邻居在出图后可加点
+            // （S6P-WO-04A：起点邻居里含 blocked 行的节点不再可点，这里取第一个可兑现邻居）
+            int first = FirstAllocatableNeighbour();
+            Assert.GreaterOrEqual(first, 0, "起点必须至少有一个可兑现邻居");
+            Assert.IsFalse(sim.Session.Allocated[first]);
+            Assert.IsTrue(sim.Session.TryAllocate(first, out err), err);
             Assert.IsTrue(sim.Session.TrySetSupport(SkillId.Projectile, 0, SupportId.Fork, out err), err);
+        }
+
+        static int FirstAllocatableNeighbour()
+        {
+            int[] links = PoeTree.Get(SliceSession.StartNode).links;
+            if (links == null)
+                return -1;
+            for (int i = 0; i < links.Length; i++)
+                if (PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(links[i])))
+                    return links[i];
+            return -1;
         }
 
         [Test]
@@ -236,7 +251,12 @@ namespace Game.Tests.EditMode
         {
             Assert.AreEqual("燃烧", SupportCatalog.Get(SupportId.AddedFire).Name);
             Assert.AreEqual("分裂", SupportCatalog.Get(SupportId.Fork).Name);
-            Assert.AreEqual("烬心", PassiveCatalog.Get(13).Name);
+            // 真实天赋域：目录直接由 PoE 数据驱动，抽查一个基石名字
+            int keystone = -1;
+            for (int i = 0; i < PassiveCatalog.Count; i++)
+                if (PassiveCatalog.Get(i).Mechanic) { keystone = i; break; }
+            Assert.GreaterOrEqual(keystone, 0, "真实天赋域必须含基石节点");
+            Assert.IsNotEmpty(PassiveCatalog.Get(keystone).Name);
             Assert.AreEqual("壮硕", MapAffixCatalog.All[0].Name);
             Assert.AreEqual("普通", SliceSession.RarityWord(Rarity.Ordinary));
             Assert.AreEqual("稀有", SliceSession.RarityWord(Rarity.Rare));

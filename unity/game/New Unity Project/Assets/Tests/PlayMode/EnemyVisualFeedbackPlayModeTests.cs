@@ -133,6 +133,11 @@ namespace Game.Tests.PlayMode
             Assert.LessOrEqual(director.Sim.Dummies.Items[stingerSlot].IgniteRemain, 0f, "Ignite 时长照常到期");
             Assert.AreEqual(EnemyFeedbackState.Normal, presenter.LastFeedbackState, "Ignite 过期必须回 Normal");
             Assert.IsTrue(director.Sim.Dummies.Items[stingerSlot].Alive, "全程存活真相不变");
+
+            // 泄漏修复（2026-09-10）：此前未销毁的 ArenaDirector 会滞留场景持续画 HUD，
+            // 污染同轮后续 PlayMode 测试（双 HUD 叠画/截图拍到旧会话）
+            Object.Destroy(go);
+            yield return null;
         }
     }
 }

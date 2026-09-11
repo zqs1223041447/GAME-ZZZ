@@ -15,7 +15,7 @@ namespace Game.Tests.EditMode
         {
             foreach (var pair in SupportCompatGolden.Matrix)
             {
-                foreach (SkillId skill in new[] { SkillId.Melee, SkillId.Projectile, SkillId.Area })
+                foreach (SkillId skill in SkillTagGolden.All)
                 {
                     bool expected = SupportCompatGolden.Contains(pair.Key, skill);
                     bool actual = SliceSession.IsSupportCompatible(pair.Key, skill);

@@ -5,22 +5,22 @@
   "verdict": "PASS",
   "audit": { "completed": true, "failureCount": 0, "executionError": null },
   "counts": {
-    "skills": 3,
-    "supports": 7,
+    "skills": 5,
+    "supports": 9,
     "affixes": 21,
-    "passives": 16,
+    "passives": 2429,
     "enemyKinds": 5,
     "mapMods": 3,
     "equipmentSlots": 6
   },
   "runtimeCoverage": {
-    "declaredStats": ["Accuracy", "AddedFire", "AddedPhysical", "AreaDamageMore", "AreaRadiusMore", "Armour", "AttackSpeed", "ConvertPhysToFire", "CritChanceAdded", "CritChanceIncreased", "Dexterity", "Evasion", "FireDamage", "FireResistance", "Fork", "IgniteChance", "Intelligence", "Life", "MorePhysical", "PhysicalDamage", "Strength"],
+    "declaredStats": ["Accuracy", "AddedFire", "AddedPhysical", "AreaDamageMore", "AreaRadiusMore", "Armour", "AttackSpeed", "ConvertPhysToFire", "CritChanceAdded", "CritChanceIncreased", "CritMultiAdded", "Damage", "Dexterity", "Evasion", "FireDamage", "FireResistance", "Fork", "IgniteChance", "Intelligence", "Life", "Mana", "MorePhysical", "PhysicalDamage", "Strength"],
     "consumedStats": ["Life", "Mana", "Strength", "Dexterity", "Intelligence", "Armour", "Evasion", "Accuracy", "FireResistance", "MaxFireResistance", "Damage", "PhysicalDamage", "FireDamage", "MoreDamage", "MorePhysical", "MoreFire", "AddedPhysical", "AddedFire", "ConvertPhysToFire", "CritChanceBase", "CritChanceAdded", "CritChanceIncreased", "CritMultiAdded", "IgniteChance", "AreaRadiusMore", "AreaDamageMore", "AttackSpeed", "Fork"],
     "unconsumedDeclaredStats": [],
     "declaredTags": ["Attack", "Spell", "Melee", "Projectile", "Area", "Hit", "Physical", "Fire", "Duration"],
-    "unusedTags": ["Spell", "Projectile", "Fire", "Duration"]
+    "unusedTags": ["Spell", "Melee", "Projectile", "Fire", "Duration"]
   },
-  "supportCompatibility": { "total": 21, "compatible": 16, "incompatible": 5, "oracleParityStatus": "OK" },
+  "supportCompatibility": { "total": 45, "compatible": 33, "incompatible": 12, "oracleParityStatus": "OK" },
   "affixApplicability": { "total": 21, "unrestricted": 16, "restricted": 5, "bySlot": [
       { "slot": "Weapon", "eligibleAffixCount": 17 },
       { "slot": "Body", "eligibleAffixCount": 17 },
@@ -29,7 +29,7 @@
       { "slot": "Gloves", "eligibleAffixCount": 19 },
       { "slot": "Belt", "eligibleAffixCount": 18 }
     ] },
-  "passiveGraph": { "nodeCount": 16, "edgeCount": 20, "disconnectedCount": 0 },
+  "passiveGraph": { "nodeCount": 2429, "edgeCount": 2787, "disconnectedCount": 0 },
   "resources": {
     "requiredPresent": 10,
     "requiredMissing": 0,

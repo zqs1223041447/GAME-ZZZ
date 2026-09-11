@@ -345,6 +345,11 @@ namespace Game.Runtime.Core
                 return Tag.Attack | Tag.Projectile | Tag.Hit | Tag.Physical;
             if (skill == SkillId.Area)
                 return Tag.Spell | Tag.Area | Tag.Hit | Tag.Physical;
+            // S6P-WO-05：冰矛=法术弹道（物理轴，引擎无冰冷轴，见已知限制）；火球术=纯火焰法术弹道 + 命中点范围
+            if (skill == SkillId.IceSpear)
+                return Tag.Spell | Tag.Projectile | Tag.Hit | Tag.Physical;
+            if (skill == SkillId.Fireball)
+                return Tag.Spell | Tag.Projectile | Tag.Area | Tag.Hit | Tag.Fire;
             return Tag.None;
         }
     }

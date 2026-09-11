@@ -6,48 +6,14 @@ using Game.Runtime.Core;
 namespace Game.Tests.EditMode
 {
     /// <summary>
-    /// Phase 3 R2 右侧装备抽屉契约（工作令 S3-P3-UI-R2-EQUIPMENT-DRAWER 第十五节）：
-    /// 抽屉几何（设计空间内/槽位不重叠/槽位在列头区）、内容面板不压底栏关键区、
-    /// 1080p/1440p 缩放换算、ShouldBlockWorld 抽屉内外点、EquipSlot canonical 数值稳定（S4-P2 六槽）。
+    /// 右侧背包面板契约（2026-09-10 导演指令重排：贴右/通顶；原「居中列」几何已由
+    /// SliceBagPanelTests 接管细部断言）。此处保留与呈现格局无关的稳定合同：
+    /// 展示顺序双射、内容面板不压面板/底栏、设计缩放、世界输入阻挡、EquipSlot canonical 数值。
     /// </summary>
     public class SliceDrawerTests
     {
         const float Dw = 1920f;
         const float Dh = 1080f;
-
-        [Test]
-        public void Column_FitsDesignSpace_At1080p()
-        {
-            Rect c = SliceDrawerLayout.Column(Dw);
-            Assert.GreaterOrEqual(c.x, 0f);
-            Assert.LessOrEqual(c.xMax, Dw);
-            Assert.GreaterOrEqual(c.y, 0f);
-            Assert.LessOrEqual(c.yMax, Dh);
-            Assert.AreEqual(SliceDrawerLayout.ColumnW, c.width);
-            Assert.AreEqual(SliceDrawerLayout.ColumnH, c.height);
-        }
-
-        [Test]
-        public void SixSlots_NonOverlapping_AndInsideColumnHeader()
-        {
-            Rect c = SliceDrawerLayout.Column(Dw);
-            Assert.AreEqual(6, SliceDrawerLayout.DisplayOrder.Length, "UI 展示顺序必须覆盖 6 槽");
-            Rect[] slots = new Rect[6];
-            for (int i = 0; i < 6; i++)
-            {
-                slots[i] = SliceDrawerLayout.Slot(i, Dw);
-                Assert.IsTrue(c.Contains(slots[i].center), $"槽 {i} 中心必须在抽屉列内");
-                Assert.LessOrEqual(slots[i].yMax, c.yMax - SliceDrawerLayout.TabH - 6f + 2f,
-                    "槽不得侵入 tab 行");
-            }
-            for (int a = 0; a < 6; a++)
-            {
-                for (int b = a + 1; b < 6; b++)
-                {
-                    Assert.IsFalse(slots[a].Overlaps(slots[b]), $"槽 {a} 与槽 {b} 不得重叠");
-                }
-            }
-        }
 
         [Test]
         public void DisplayOrder_CoversAllSlots_ExactlyOnce()
@@ -61,18 +27,17 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void BuildAndCraftPanels_LeftOfColumn_AndNotCoveringBottomBar()
+        public void BuildAndCraftPanels_LeftOfPanel_AndNotCoveringBottomBar()
         {
-            Rect column = SliceDrawerLayout.Column(Dw);
+            float panelX = SliceDrawerLayout.Shell(Dw, Dh).x;
             Rect build = SliceDrawerLayout.BuildPanel(Dw);
             Rect craft = SliceDrawerLayout.CraftPanel(Dw);
-            Assert.LessOrEqual(build.xMax, column.x, "Build 面板不得覆盖抽屉列");
-            Assert.LessOrEqual(craft.xMax, column.x, "Craft 面板不得覆盖抽屉列");
-            // 底栏关键区（设计空间）：底栏顶=1080-118，双球/技能槽/辅助条都在其中
-            float bottomBarTop = Dh - 118f;
+            Assert.LessOrEqual(build.xMax, panelX, "Build 面板不得覆盖背包面板");
+            Assert.LessOrEqual(craft.xMax, panelX, "Craft 面板不得覆盖背包面板");
+            // 底栏关键区：底栏外框顶 = dh - (orbD+16) - 28
+            float bottomBarTop = Dh - 172f;
             Assert.LessOrEqual(build.yMax, bottomBarTop, "Build 面板不得压底栏关键区");
             Assert.LessOrEqual(craft.yMax, bottomBarTop, "Craft 面板不得压底栏关键区");
-            // 面板尺寸保持既有渲染器原尺寸（move, not duplicate：不改内容布局）
             Assert.AreEqual(760f, build.width);
             Assert.AreEqual(430f, build.height);
             Assert.AreEqual(560f, craft.width);
@@ -89,20 +54,20 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void BlocksWorldInput_DrawerInsideTrue_OutsideFalse()
+        public void BlocksWorldInput_PanelInsideTrue_OutsideFalse()
         {
-            Rect column = SliceDrawerLayout.Column(Dw);
-            Rect topBar = new Rect(12, 10, 560, 84);
-            Rect nav = new Rect(Dw - 296, 10, 284, 44);
-            Rect skillHud = new Rect(394, Dh - 118, 1132, 104);
-            Rect tray = new Rect(skillHud.x + skillHud.width - 364, skillHud.y + 5, 354, 94);
-            Vector2 inside = column.center;
-            Vector2 outside = new Vector2(Dw * 0.5f, Dh * 0.5f); // 战斗区中心
-            Assert.IsTrue(SliceHud.BlocksWorldInput(false, false, topBar, nav, skillHud, tray, column, inside),
-                "抽屉内点必须吞掉世界点击");
-            Assert.IsFalse(SliceHud.BlocksWorldInput(false, false, topBar, nav, skillHud, tray, column, outside),
-                "抽屉外（战斗区中心）不得吞掉世界点击");
-            Assert.IsTrue(SliceHud.BlocksWorldInput(true, false, topBar, nav, skillHud, tray, column, outside),
+            Rect panel = SliceDrawerLayout.Shell(Dw, Dh);
+            Rect topBar = new Rect(12, 10, 620, 84);
+            Rect nav = new Rect(642, 10, 268, 40);
+            Rect skillHud = new Rect(200, Dh - 172, 1028, 172);
+            Rect tray = SliceDrawerLayout.TrayArea(Dw, Dh);
+            Vector2 inside = panel.center;
+            Vector2 outside = new Vector2(Dw * 0.4f, Dh * 0.5f); // 战斗区中心（面板之外）
+            Assert.IsTrue(SliceHud.BlocksWorldInput(false, false, topBar, nav, skillHud, tray, panel, inside),
+                "面板内点必须吞掉世界点击");
+            Assert.IsFalse(SliceHud.BlocksWorldInput(false, false, topBar, nav, skillHud, tray, panel, outside),
+                "面板外（战斗区中心）不得吞掉世界点击");
+            Assert.IsTrue(SliceHud.BlocksWorldInput(true, false, topBar, nav, skillHud, tray, panel, outside),
                 "面板开启时全屏阻挡（既有行为保持）");
         }
 

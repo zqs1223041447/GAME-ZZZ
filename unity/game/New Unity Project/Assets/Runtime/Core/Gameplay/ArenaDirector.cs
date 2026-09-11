@@ -42,7 +42,11 @@ namespace Game.Runtime.Core
         Mesh _meshCube;
         Mesh _meshCylinder;
         Mesh _meshCapsule;
+        Mesh _meshQuad;
         Material _lit;
+        // S6P-WO-05：投射物美术材质（按技能索引；缺失=null → 回退纯色球体程序化视觉）
+        Material[] _projMat;
+        MeshFilter[] _projFilter;
         MaterialPropertyBlock _mpb;
         readonly List<PerfRow> _rows = new List<PerfRow>(4);
         bool _built;
@@ -75,6 +79,25 @@ namespace Game.Runtime.Core
         static readonly Color DeathColor = new Color(0.18f, 0.16f, 0.16f);
         static readonly Color CastColor = new Color(1f, 0.86f, 0.25f);
         static readonly Color ProjColor = new Color(1f, 0.92f, 0.35f);
+        // S6P-WO-05：冰矛/返程投射物的程序化回退色（美术缺失时仍可辨识技能差异）
+        static readonly Color IceProj = new Color(0.62f, 0.88f, 1f);
+        static readonly Color ReturnProj = new Color(0.55f, 1f, 0.78f);
+        // S6P-WO-05：被狙击印记标记的敌人基元 tint（与正式 presenter 的 MarkTint 同族）
+        static readonly Color MarkProj = new Color(0.55f, 0.95f, 1f);
+
+        /// <summary>S6P-WO-05：投射物程序化回退色（仅呈现；美术材质可用时不走此路径）。</summary>
+        static Color ProjColorFor(Projectile p)
+        {
+            if (p.Skill == SkillId.IceSpear)
+                return IceProj;
+            if (p.Skill == SkillId.Fireball)
+                return FireProj;
+            if (p.Returning)
+                return ReturnProj;
+            if (p.HasFire || p.FromFork)
+                return FireProj;
+            return ProjColor;
+        }
 
         void Awake()
         {
@@ -116,8 +139,8 @@ namespace Game.Runtime.Core
             GUI.Label(new Rect(24, 20, w - 24, 128),
                 "S1 Arena\n" +
                 "按住左键跟着走，松开停；单击仍走到点\n" +
-                "按住 Q/W/E 连发，点按一次只放一次\n" +
-                "Q 近战   W 弹道   E 范围   F1/F2/F3 密度   F5 采样\n" +
+                "按住 Q/W/E/R/T 连发，点按一次只放一次\n" +
+                "Q 近战   W 弹道   E 范围   R 冰矛   T 火球术   F1/F2/F3 密度   F5 采样\n" +
                 "Dummy " + Sim.AliveDummyCount + "/" + Sim.SpawnedCount +
                 "  phase " + Sim.Caster.Phase +
                 "  dt " + (Time.unscaledDeltaTime * 1000f).ToString("F1") + "ms");
@@ -158,6 +181,7 @@ namespace Game.Runtime.Core
             _meshSphere = sphere;
             _meshCylinder = PrimitiveMesh(PrimitiveType.Cylinder);
             _meshCapsule = PrimitiveMesh(PrimitiveType.Capsule);
+            _meshQuad = PrimitiveMesh(PrimitiveType.Quad);
             _dummyGo = new GameObject[CombatRules.DummyPoolSize];
             _dummyRenderer = new MeshRenderer[CombatRules.DummyPoolSize];
             _dummyFilter = new MeshFilter[CombatRules.DummyPoolSize];
@@ -182,6 +206,7 @@ namespace Game.Runtime.Core
             _enemyPresenterPath = new string[CombatRules.DummyPoolSize];
 
             _projView = new Transform[CombatRules.ProjectilePoolSize];
+            _projFilter = new MeshFilter[CombatRules.ProjectilePoolSize];
             for (int i = 0; i < _projView.Length; i++)
             {
                 var go = new GameObject("Projectile");
@@ -194,7 +219,10 @@ namespace Game.Runtime.Core
                 go.transform.localScale = new Vector3(0.35f, 0.35f, 0.35f);
                 ApplyColor(mr, ProjColor);
                 _projView[i] = go.transform;
+                _projFilter[i] = mf;
             }
+
+            BuildProjectileArt();
 
             _fbView = new Transform[CombatRules.FeedbackPoolSize];
             _fbRenderer = new MeshRenderer[CombatRules.FeedbackPoolSize];
@@ -281,6 +309,10 @@ namespace Game.Runtime.Core
                 down = SkillId.Projectile;
             else if (Input.GetKeyDown(KeyCode.E))
                 down = SkillId.Area;
+            else if (Input.GetKeyDown(KeyCode.R))
+                down = SkillId.IceSpear;
+            else if (Input.GetKeyDown(KeyCode.T))
+                down = SkillId.Fireball;
 
             if (down != SkillId.None)
             {
@@ -365,7 +397,11 @@ namespace Game.Runtime.Core
                 return KeyCode.Q;
             if (skill == SkillId.Projectile)
                 return KeyCode.W;
-            return KeyCode.E;
+            if (skill == SkillId.Area)
+                return KeyCode.E;
+            if (skill == SkillId.IceSpear)
+                return KeyCode.R;
+            return KeyCode.T;
         }
 
         bool ScreenAim(out float x, out float z)
@@ -383,6 +419,63 @@ namespace Game.Runtime.Core
             x = p.x;
             z = p.z;
             return true;
+        }
+
+        /// <summary>S6P-WO-05：投射物美术材质（导演「技能特效从 POEDB.TW 扒取」）。
+        /// 形态选择：**贴图球体**而非平面广告牌——poedb 的技能图标是「亮美术 + 深色底板」的不透明方图，
+        /// 平面广告牌会把底板画成一块方晕（实测两次失败：不抠图=深色方块；抠图/加色=残余边缘与饱和方片）。
+        /// 球体贴图既保留「用 poedb 真实美术」的诉求，又与既有弹体形态（球）一致、零方晕。
+        /// 任一环节缺失=回退纯色球体程序化视觉。严格只影响呈现：不写任何 gameplay 状态。</summary>
+        void BuildProjectileArt()
+        {
+            _projMat = new Material[(int)SkillId.Count];
+            // 无光照（Unlit）优先：受光球体会被场地绿灰环境光染色（实测冰矛贴图被染成暗绿），
+            // Unlit 才能让 poedb 美术本来颜色（冷蓝白 / 炽橙）如实呈现；不可用时退回 _lit。
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+                shader = Shader.Find("Sprites/Default");
+            if (shader == null)
+                shader = _lit != null ? _lit.shader : null;
+            if (shader == null)
+                return;
+            int baseColorId = Shader.PropertyToID("_BaseColor");
+            for (int i = 1; i < _projMat.Length; i++)
+            {
+                var skill = (SkillId)i;
+                Texture2D tex = SlicePoeArt.ProjectileArt(skill);
+                if (tex == null)
+                    continue;
+                var m = new Material(shader);
+                m.mainTexture = tex;
+                m.enableInstancing = false; // 每技能一张贴图，实例化无收益
+                if (m.HasProperty(baseColorId))
+                    m.SetColor(baseColorId, ProjectileTint(skill));
+                _projMat[i] = m;
+            }
+        }
+
+        /// <summary>投射物底色（冰=冷白、火=炽橙、通用弹道=暖金）。</summary>
+        static Color ProjectileTint(SkillId skill)
+        {
+            if (skill == SkillId.IceSpear)
+                return new Color(0.74f, 0.90f, 1f, 1f);
+            if (skill == SkillId.Fireball)
+                return new Color(1f, 0.72f, 0.34f, 1f);
+            if (skill == SkillId.Area)
+                return new Color(1f, 0.62f, 0.30f, 1f);
+            return new Color(1f, 0.92f, 0.62f, 1f);
+        }
+
+        /// <summary>各技能投射物广告牌尺寸（设计意图：冰矛细长锐利、火球粗大炽热、基础弹道中等）。</summary>
+        static float ProjectileArtScale(SkillId skill, float fallback)
+        {
+            if (skill == SkillId.IceSpear)
+                return 0.85f;
+            if (skill == SkillId.Fireball)
+                return 1.25f;
+            if (skill == SkillId.Area)
+                return 1.05f;
+            return fallback;
         }
 
         void SyncViews()
@@ -452,6 +545,8 @@ namespace Game.Runtime.Core
                 ApplyAnimVisual(go.transform, _dummyRenderer[i], d.Anim, baseColor, d.HitFlash, sx, d.Kind);
                 if (d.IgniteRemain > 0f && d.Alive)
                     ApplyColor(_dummyRenderer[i], Color.Lerp(baseColor, AshColor, 0.55f));
+                else if (d.MarkRemain > 0f && d.Alive && d.HitFlash <= 0.02f)
+                    ApplyColor(_dummyRenderer[i], Color.Lerp(baseColor, MarkProj, 0.45f));
             }
 
             Projectile[] projs = Sim.Projectiles.Items;
@@ -463,10 +558,34 @@ namespace Game.Runtime.Core
                     go.SetActive(on);
                 if (!on)
                     continue;
+                SkillId pskill = projs[i].Skill;
+                Material art = _projMat != null && (int)pskill < _projMat.Length ? _projMat[(int)pskill] : null;
+                bool useArt = art != null && _meshSphere != null;
                 _projView[i].position = new Vector3(projs[i].X, 0.55f, projs[i].Z);
                 MeshRenderer pmr = _projView[i].GetComponent<MeshRenderer>();
+                if (useArt)
+                {
+                    if (_projFilter[i].sharedMesh != _meshSphere)
+                        _projFilter[i].sharedMesh = _meshSphere;
+                    if (pmr != null && pmr.sharedMaterial != art)
+                        pmr.sharedMaterial = art;
+                    float a = ProjectileArtScale(pskill, 0.9f) * (projs[i].Forks > 0 || projs[i].FromFork ? 0.7f : 1f);
+                    // 冰矛细长锐利的观感由非等比缩放承载（美术贴图不变）
+                    if (pskill == SkillId.IceSpear)
+                        _projView[i].localScale = new Vector3(a * 0.45f, a * 0.45f, a * 1.25f);
+                    else
+                        _projView[i].localScale = new Vector3(a, a, a);
+                    continue;
+                }
+
+                if (_projFilter[i].sharedMesh != _meshSphere)
+                    _projFilter[i].sharedMesh = _meshSphere;
                 if (pmr != null)
-                    ApplyColor(pmr, projs[i].HasFire || projs[i].FromFork ? FireProj : ProjColor);
+                {
+                    if (pmr.sharedMaterial != _lit)
+                        pmr.sharedMaterial = _lit;
+                    ApplyColor(pmr, ProjColorFor(projs[i]));
+                }
                 float ps = projs[i].FromFork ? 0.28f : 0.35f;
                 _projView[i].localScale = new Vector3(ps, ps, ps);
             }
@@ -484,8 +603,7 @@ namespace Game.Runtime.Core
             }
         }
 
-        // R3/R4：通用敌人视觉表现层接线（映射表 EnemyVisualCatalog → 按需加载 → Presenter）。
-        // 只读 gameplay 状态（Anim/HitFlash/AttackExecutions），零 gameplay 写入；
+        // R3/R4：通用敌人视觉表现层接线（映射表 EnemyVisualCatalog → 按需加载 → Presenter）。        // 只读 gameplay 状态（Anim/HitFlash/AttackExecutions），零 gameplay 写入；
         // 美术 scale 不作用于 gameplay root（root scale 恒 1），贴地用各预制体自带验证 offset。
         bool TryPresentEnemyVisual(int slot, GameObject go, Dummy d)
         {
@@ -521,8 +639,8 @@ namespace Game.Runtime.Core
             if (_dummyRenderer[slot].enabled)
                 _dummyRenderer[slot].enabled = false; // 隐藏基元 placeholder（slot 换 kind 时恢复）
             presenter.Present(d.Alive, d.Anim, d.HitFlash, d.AttackExecutions, Time.time);
-            // R5：战斗反馈 tint——只读观察既有 canonical truth（HitFlash/IgniteRemain>0），零 gameplay 写入
-            presenter.ApplyFeedback(d.Alive, d.HitFlash, d.IgniteRemain > 0f);
+            // R5：战斗反馈 tint——只读观察既有 canonical truth（HitFlash/IgniteRemain/MarkRemain>0），零 gameplay 写入
+            presenter.ApplyFeedback(d.Alive, d.HitFlash, d.IgniteRemain > 0f, d.MarkRemain > 0f);
             return true;
         }
 

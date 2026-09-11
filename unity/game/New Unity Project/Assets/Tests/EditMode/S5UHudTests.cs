@@ -62,39 +62,68 @@ namespace Game.Tests.EditMode
         {
             new Vector2(1920f, 1080f),  // 2560×1440 与 1920×1080 的共同 no-clamp 设计空间
             new Vector2(2743.2f, 1542.6f), // 4K 缓冲 3840×2160 触发 1.4 上钳的设计空间
-            new Vector2(1280f, 720f)    // 小窗
+            new Vector2(2580f, 1080f),  // 超宽 3440×1440 的设计空间
+            new Vector2(1920f, 1600f)   // 窄高窗口（DesignScale 下界=1920 宽的设计空间）
         };
 
         [Test]
         public void CombatBar_ElementsNeverOverlap_AndStayInViewport([ValueSource(nameof(DesignSpaces))] Vector2 space)
         {
             var L = SliceHud.CombatBarRects(space.x, space.y);
-            Assert.GreaterOrEqual(L.Bar.x, 12f, "底栏不得贴出左缘");
-            Assert.LessOrEqual(L.Bar.xMax, space.x, "底栏不得溢出右缘");
-            Assert.LessOrEqual(L.Bar.yMax, space.y, "底栏不得溢出下缘");
-            Assert.GreaterOrEqual(L.Bar.y, 0f);
+            var bar = L.Bar;
+            var frame = L.Frame;
+            // S5U-F1 V-01：统一外框出界约束
+            Assert.GreaterOrEqual(frame.x, 2f, "外框不得贴出左缘");
+            Assert.LessOrEqual(frame.xMax, space.x - SliceDrawerLayout.PanelW + 0.01f, "外框不得进入背包面板区域");
+            Assert.LessOrEqual(frame.yMax, space.y + 0.01f, "外框不得溢出下缘");
+            Assert.GreaterOrEqual(frame.y, 0f);
+            Assert.GreaterOrEqual(bar.x, 12f, "底栏不得贴出左缘");
+            // 2026-09-10：背包面板常驻贴右，底栏在面板左侧的剩余宽度内居中，不得被面板压住
+            Assert.LessOrEqual(bar.xMax, space.x - SliceDrawerLayout.PanelW + 0.01f, "底栏不得进入背包面板区域");
+            Assert.LessOrEqual(bar.yMax, space.y, "底栏不得溢出下缘");
+            Assert.GreaterOrEqual(bar.y, 0f);
+            // 外框包络全部元素（assembly 一体；2026-09-10：tray 已迁出底栏，改为 5 主动技能槽 + 4 药剂槽）
+            for (int i = 0; i < SliceHud.SkillSlots; i++)
+                Assert.IsTrue(Encloses(frame, L.SkillSlot(i)), "外框必须包络技能槽 " + SliceHud.SlotHotkeys[i]);
+            for (int i = 0; i < SliceHud.FlaskSlots; i++)
+                Assert.IsTrue(Encloses(frame, L.FlaskSlot(i)), "外框必须包络药剂槽 " + SliceHud.FlaskHotkeys[i]);
+            Assert.IsTrue(Encloses(frame, L.LifeOrb) && Encloses(frame, L.ManaOrb),
+                "V-01：外框必须包络双球");
 
-            // 水平排序 + 最小间隙（球|槽|槽|槽|球|tray）
+            // 水平排序（Life | Q | W | E | R | T | 药剂 1-4 | Mana）+ 最小间隙
             Assert.LessOrEqual(L.LifeOrb.xMax + 10f, L.SlotQ.x, "LIFE 球与 Q 槽不得重叠");
-            Assert.LessOrEqual(L.SlotQ.xMax + 10f, L.SlotW.x, "Q/W 槽不得重叠");
-            Assert.LessOrEqual(L.SlotW.xMax + 10f, L.SlotE.x, "W/E 槽不得重叠");
-            Assert.LessOrEqual(L.SlotE.xMax + 10f, L.ManaOrb.x, "E 槽与 MANA 球不得重叠");
-            Assert.LessOrEqual(L.ManaOrb.xMax + 18f, L.Tray.x, "MANA 球与 tray 不得重叠");
+            for (int i = 1; i < SliceHud.SkillSlots; i++)
+                Assert.LessOrEqual(L.SkillSlot(i - 1).xMax + 4f, L.SkillSlot(i).x,
+                    "技能槽 " + SliceHud.SlotHotkeys[i - 1] + "/" + SliceHud.SlotHotkeys[i] + " 不得重叠");
+            Assert.LessOrEqual(L.SlotT.xMax + 10f, L.Flask1.x, "T 槽与药剂槽不得重叠");
+            for (int i = 1; i < SliceHud.FlaskSlots; i++)
+                Assert.LessOrEqual(L.FlaskSlot(i - 1).xMax + 4f, L.FlaskSlot(i).x,
+                    "药剂槽 " + i + "/" + (i + 1) + " 不得重叠");
+            Assert.LessOrEqual(L.FlaskSlot(SliceHud.FlaskSlots - 1).xMax + 10f, L.ManaOrb.x, "药剂槽与 MANA 球不得重叠");
+        }
 
-            // 全部元素不溢出栏（齐边允许；Contains 对 max 边为开区间故用不等式）
-            Assert.LessOrEqual(L.LifeOrb.xMax, L.Bar.xMax + 0.01f, "LIFE 球不得溢出栏");
-            Assert.LessOrEqual(L.LifeOrb.yMax, L.Bar.yMax + 0.01f, "LIFE 球不得溢出栏");
-            Assert.GreaterOrEqual(L.LifeOrb.x, L.Bar.x - 0.01f);
-            Assert.GreaterOrEqual(L.LifeOrb.y, L.Bar.y - 0.01f);
-            Assert.LessOrEqual(L.ManaOrb.xMax, L.Bar.xMax + 0.01f, "MANA 球不得溢出栏");
-            Assert.LessOrEqual(L.ManaOrb.yMax, L.Bar.yMax + 0.01f, "MANA 球不得溢出栏");
-            Assert.LessOrEqual(L.Tray.xMax, L.Bar.xMax + 0.01f, "tray 不得溢出栏（允许齐右缘）");
-            Assert.LessOrEqual(L.Tray.yMax, L.Bar.yMax + 0.01f, "tray 不得溢出栏");
-            foreach (var slot in new[] { L.SlotQ, L.SlotW, L.SlotE })
-            {
-                Assert.LessOrEqual(slot.xMax, L.Bar.xMax + 0.01f, "技能槽不得溢出栏");
-                Assert.LessOrEqual(slot.yMax, L.Bar.yMax + 0.01f, "技能槽不得溢出栏");
-            }
+        [Test]
+        public void CombatBar_Hotkeys_MatchPoelikeSlotRow()
+        {
+            Assert.AreEqual(new[] { "Q", "W", "E", "R", "T" }, SliceHud.SlotHotkeys, "主动技能槽必须为 Q/W/E/R/T 五槽");
+            Assert.AreEqual(5, SliceHud.SkillSlots);
+            Assert.AreEqual(4, SliceHud.FlaskSlots, "为后续药剂预留 4 个槽位");
+            Assert.AreEqual(2, SliceSession.SkillHotkey(SkillId.Area) == "E" ? 2 : -1, "既有 E 绑定不得改变");
+        }
+
+        [Test]
+        public void CombatBar_CarriesNoSupportTray()
+        {
+            // 导演指令：底栏只保留主动技能——辅助宝石托盘已迁至背包面板，底栏不再有 tray 字段
+            var fields = typeof(SliceHud.CombatBarLayout).GetFields();
+            foreach (var f in fields)
+                Assert.AreNotEqual("Tray", f.Name, "底栏不得再持有辅助宝石托盘");
+        }
+
+        static bool Encloses(Rect outer, Rect inner)
+        {
+            return inner.x >= outer.x - 0.01f && inner.y >= outer.y - 0.01f &&
+                   inner.xMax <= outer.xMax + 0.01f && inner.yMax <= outer.yMax + 0.01f;
         }
 
         [Test]
@@ -104,12 +133,20 @@ namespace Game.Tests.EditMode
             Assert.AreEqual(128f, L.LifeOrb.width, "生命球 128²");
             Assert.AreEqual(128f, L.LifeOrb.height, "生命球 128²");
             Assert.AreEqual(128f, L.ManaOrb.width, "法力球 128²");
-            Assert.AreEqual(96f, L.SlotQ.width, "技能槽 96²");
-            Assert.AreEqual(96f, L.SlotE.height, "技能槽 96²");
-            Assert.AreEqual(new Vector2(354f, 94f), new Vector2(L.Tray.width, L.Tray.height), "tray 354×94");
+            Assert.AreEqual(92f, L.SlotQ.width, "技能槽 92²");
+            Assert.AreEqual(92f, L.SlotE.height, "技能槽 92²");
+            Assert.AreEqual(92f, L.SlotR.width, "R 槽 92²");
+            Assert.AreEqual(92f, L.SlotT.width, "T 槽 92²");
+            Assert.AreEqual(new Vector2(54f, 78f), new Vector2(L.Flask1.width, L.Flask1.height), "预留药剂槽 54×78");
+            Assert.AreEqual(0f, L.FlaskRow.height - L.Flask1.height, "药剂槽行高=单槽高");
+            // S5U-F1 V-01：外框=total+20 × barH+28，包络 Bar
+            Assert.AreEqual(new Vector2(L.Bar.width + 20f, L.Bar.height + 28f), new Vector2(L.Frame.width, L.Frame.height),
+                "外框 = 内栏 + 20 × +28");
+            Assert.IsTrue(Encloses(L.Frame, L.Bar), "外框包络内栏");
             // 2560×1440 与 1920×1080 同设计空间 → 布局逐字节一致（no-clamp 通道）
             var L2 = SliceHud.CombatBarRects(1920f, 1080f);
             Assert.AreEqual(L.Bar, L2.Bar);
+            Assert.AreEqual(L.Frame, L2.Frame);
             Assert.AreEqual(L.SlotW, L2.SlotW);
         }
 

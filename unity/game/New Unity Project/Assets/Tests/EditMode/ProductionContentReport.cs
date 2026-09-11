@@ -211,8 +211,11 @@ namespace Game.Tests.EditMode
             }
             int disconnected = 0;
             for (int i = 0; i < seen.Length; i++)
-                if (!seen[i])
+            {
+                // 官方数据里本就无连线的时光珠宝类节点（locked）不计入“图断开”——它们不是断链。
+                if (!seen[i] && PoeTree.Get(i).locked == 0)
                     disconnected++;
+            }
             return disconnected;
         }
 

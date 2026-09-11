@@ -4,9 +4,10 @@ using Game.Runtime.Core;
 namespace Game.Tests.EditMode
 {
     /// <summary>
-    /// Skill Tag golden（S3-P12-AUDIT-CLOSEOUT）：人工钉死当前 3 个 Active Skill 的完整预期 Tag mask。
+    /// Skill Tag golden（S3-P12-AUDIT-CLOSEOUT）：人工钉死当前 Active Skill 的完整预期 Tag mask。
     /// 独立 oracle——不得调用 SkillTags.Of() 生成 expected；parity 测试验证 Runtime 与本表一致，
     /// Runtime Tag 被意外删改（如丢 Physical/Hit）时测试变红。
+    /// S6P-WO-05：冰矛/火球术两条新技能同样逐条钉死（不是由 Runtime 推导出来再比回去）。
     /// </summary>
     public static class SkillTagGolden
     {
@@ -14,7 +15,17 @@ namespace Game.Tests.EditMode
         {
             { SkillId.Melee, Tag.Attack | Tag.Melee | Tag.Hit | Tag.Physical },
             { SkillId.Projectile, Tag.Attack | Tag.Projectile | Tag.Hit | Tag.Physical },
-            { SkillId.Area, Tag.Spell | Tag.Area | Tag.Hit | Tag.Physical }
+            { SkillId.Area, Tag.Spell | Tag.Area | Tag.Hit | Tag.Physical },
+            // 冰矛=法术弹道（引擎无冰冷伤害轴，基础伤害走物理轴——已知限制见 S6P_WO_05）
+            { SkillId.IceSpear, Tag.Spell | Tag.Projectile | Tag.Hit | Tag.Physical },
+            // 火球术=纯火焰法术弹道 + 命中点范围爆炸（不虚构物理分量）
+            { SkillId.Fireball, Tag.Spell | Tag.Projectile | Tag.Area | Tag.Hit | Tag.Fire }
+        };
+
+        /// <summary>当前 Active Skill 全集（审计/parity 遍历用；顺序=SkillId 数值序）。</summary>
+        public static readonly SkillId[] All =
+        {
+            SkillId.Melee, SkillId.Projectile, SkillId.Area, SkillId.IceSpear, SkillId.Fireball
         };
 
         /// <summary>当前已声明 Tag 全集（与 Kernel.Tag 枚举一致）。</summary>

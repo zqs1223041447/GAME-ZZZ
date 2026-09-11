@@ -30,22 +30,11 @@ namespace Game.Tests.EditMode
 
         /// <summary>运行期消费 Stat 白名单（读取点见注释）。内容引用白名单之外的 Stat = 「报告绿但运行期未知 Stat」，必须失败。
         /// internal：Production Content Report（S4-P1）引用同一白名单汇总 runtime coverage，不建第二份 truth。</summary>
-        internal static readonly StatId[] RuntimeConsumedStats = new[]
-        {
-            // 面板/防御：SliceSession.RecalcPlayer -> PlayerStats（BuildEnemyHit 消费）
-            StatId.Life, StatId.Mana, StatId.Strength, StatId.Dexterity, StatId.Intelligence,
-            StatId.Armour, StatId.Evasion, StatId.Accuracy, StatId.FireResistance, StatId.MaxFireResistance,
-            // 攻击结算：SliceSession.BuildPlayerHit -> HitRequest -> CombatMath.ResolveHit
-            StatId.Damage, StatId.PhysicalDamage, StatId.FireDamage,
-            StatId.MoreDamage, StatId.MorePhysical, StatId.MoreFire,
-            StatId.AddedPhysical, StatId.AddedFire, StatId.ConvertPhysToFire,
-            StatId.CritChanceBase, StatId.CritChanceAdded, StatId.CritChanceIncreased, StatId.CritMultiAdded,
-            StatId.IgniteChance,
-            // 技能形态：SliceSession.ResolveSkillDef
-            StatId.AreaRadiusMore, StatId.AreaDamageMore, StatId.AttackSpeed,
-            // 机制：ArenaSim.ResolveProjectile -> SliceSession.ForkCount
-            StatId.Fork
-        };
+        /// <summary>
+        /// runtime consumer 白名单。**单一 owner 已下沉到 runtime**（<see cref="PassiveSupport.RuntimeConsumedStats"/>，
+        /// S6P-WO-04A）：生产规则不能由测试程序集定义。本字段只是别名，禁止在此处再补第二份清单。
+        /// </summary>
+        internal static readonly StatId[] RuntimeConsumedStats = PassiveSupport.RuntimeConsumedStats;
 
         struct TaggedModEntry
         {
@@ -175,15 +164,15 @@ namespace Game.Tests.EditMode
             if ((int)AffixId.Count > S2BaselineAffixCount + 3 + 4 + 4)
                 result.StructuralProblems.Add("S5-WO-04 词缀追加必须 ≤4（总上限 21，BL-002.A1）：当前 " + (int)AffixId.Count);
 
-            // S3-R2 内容数量护栏：仅 Support +1（火焰转化），其余内容轴全部不变（护栏违规入结构/契约问题）
-            PinCount(result, SupportCatalog.Count, S2BaselineSupportCount + 1, "Support（R2 仅允许新增 1 个火焰转化）");
+            // S3-R2 内容数量护栏；S6P-WO-05 再追加 2 条机制型 Support（投射物返回/狙击印记），护栏随之 +3
+            PinCount(result, SupportCatalog.Count, S2BaselineSupportCount + 3, "Support（R2 +1 火焰转化；S6P-WO-05 +2 投射物返回/狙击印记）");
             PinCount(result, (int)StatId.Count, 28, "StatId（不得新增）");
             PinCount(result, (int)ModOp.Override, 4, "ModOp（最大仍为 Override=4）");
             PinCount(result, (int)Tag.Duration, 256, "Tag（最大仍为 Duration=1<<8）");
             PinCount(result, (int)EffectId.ApplyIgnite, 2, "EffectId（最大仍为 ApplyIgnite=2）");
             PinCount(result, (int)EventId.Count, 4, "EventId（不得新增）");
             PinCount(result, (int)ConditionId.IsSpell, 4, "ConditionId（最大仍为 IsSpell=4）");
-            PinCount(result, (int)SkillId.Area, 3, "Active 技能（不得新增）");
+            PinCount(result, (int)SkillId.Fireball, 5, "Active 技能（S6P-WO-05 追加冰矛=4/火球术=5）");
             PinCount(result, MapAffixCatalog.All.Length, 3, "图词缀（不得新增）");
 
             // R2 Support 定义契约（S3-R2-FIRE-CONVERSION）
@@ -218,7 +207,7 @@ namespace Game.Tests.EditMode
                 }
             }
 
-            // Passives（16）+ 链接对称与连通
+            // Passives（真实 PoE 天赋域）+ 链接对称与连通
             if (PassiveCatalog.Count != SliceRules.PassiveCount)
                 result.StructuralProblems.Add("Passive 数量 " + PassiveCatalog.Count + " ≠ SliceRules.PassiveCount " + SliceRules.PassiveCount);
             var linkSet = new HashSet<long>();
@@ -228,7 +217,8 @@ namespace Game.Tests.EditMode
                 if (string.IsNullOrEmpty(n.Name))
                     result.StructuralProblems.Add("Passive " + i + " Name 为空");
                 ScanMods(n.Mods, "Passive." + n.Name);
-                if (n.Links.Length == 0)
+                // 时光珠宝类显著点在官方数据里本就没有连线（locked）：树上可见但不可点，不算缺链。
+                if (n.Links.Length == 0 && PoeTree.Get(i).locked == 0)
                     result.MissingLinks.Add("Passive " + i + " 无链接");
                 foreach (var l in n.Links)
                 {
@@ -258,12 +248,13 @@ namespace Game.Tests.EditMode
                         if (l >= 0 && l < PassiveCatalog.Count && !seen[l]) { seen[l] = true; queue.Enqueue(l); }
                 }
                 for (int i = 0; i < seen.Length; i++)
-                    if (!seen[i])
+                    if (!seen[i] && PoeTree.Get(i).locked == 0)
                         result.StructuralProblems.Add("天赋图不连通：节点 " + i + " 不可达");
             }
 
-            // Skills（3 Active）
-            var activeSkills = new[] { SkillId.Melee, SkillId.Projectile, SkillId.Area };
+            // Skills（S6P-WO-05 起 5 Active：原 3 + 冰矛/火球术）——枚举真值=SkillTagGolden.All，
+            // 但每个技能的定义校验仍是独立的（不因新增而跳过任何一条）
+            SkillId[] activeSkills = SkillTagGolden.All;
             result.ActiveSkillCount = activeSkills.Length;
             foreach (SkillId id in activeSkills)
             {
@@ -561,7 +552,7 @@ namespace Game.Tests.EditMode
             for (int i = 0; i < skills.Length; i++)
             {
                 SkillId skill = skills[i];
-                if (skill != SkillId.Melee && skill != SkillId.Projectile && skill != SkillId.Area)
+                if (SkillTags.Of(skill) == Tag.None)
                 {
                     problems.Add("矩阵含未知技能：" + def.Name + " -> " + skill);
                     continue;

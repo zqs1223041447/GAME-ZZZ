@@ -1,0 +1,52 @@
+{
+  "schema": "PASSIVE_CENSUS_REPORT_V2",
+  "schemaVersion": 2,
+  "generatedBy": "Game.Tests.EditMode.PassiveCensusTests（EditMode 测试再生；source=Resources/UI/PoE/passive_tree.json + PoeStatParser + ProductionSimulator 源码审计）",
+  "nodeSets": {
+    "sourceTotal": 3390,
+    "sourceAscendancy": 558,
+    "sourceUnplottedNonAscendancy": 403,
+    "directorStated": 2832,
+    "plotted": 2429,
+    "groups": 797,
+    "locked": 30,
+    "kinds": { "normal": 1518, "notable": 483, "keystone": 49, "mastery": 315, "jewel": 57, "start": 7 },
+    "nodesWithStatsText": 2008,
+    "nodesWithoutStatsText": 421,
+    "nodesWithChoices": 315
+  },
+  "effectLines": {
+    "total": 5676,
+    "consumed": 607,
+    "blockedByDomain": 4475,
+    "specialInteraction": 12,
+    "structural": 582,
+    "unknown": 0,
+    "domains": {"Accuracy": 52, "Ailment": 425, "AreaOfEffect": 7, "Armour": 44, "AttackSpeed": 11, "Attribute": 28, "Aura": 55, "Avoidance": 32, "Banner": 19, "Blind": 23, "Block": 184, "Brand": 30, "Buff": 51, "CastSpeed": 55, "Chaining": 5, "Channelling": 8, "Chaos": 46, "Charge": 73, "Cold": 62, "Conditional": 41, "Cooldown": 37, "Corpse": 15, "Cost": 17, "Critical": 67, "Curse": 52, "DamageModifier": 10, "DamageOverTime": 56, "DamageReduction": 15, "Debuff": 12, "Duration": 20, "Elemental": 39, "EnergyShield": 214, "Evasion": 37, "Exert": 8, "Exposure": 7, "Fire": 71, "Flask": 109, "Fortify": 23, "GemLevel": 14, "Ground": 7, "GuardSkill": 3, "Impale": 74, "Leech": 91, "Life": 186, "Lightning": 54, "Link": 15, "Maim": 7, "Mana": 102, "Mark": 3, "Melee": 151, "Mine": 71, "Minion": 192, "Movement": 42, "Offering": 8, "Offhand": 32, "Physical": 28, "Projectile": 72, "Radius": 1, "Rage": 53, "Recovery": 190, "Reflected": 27, "Reservation": 44, "Retaliation": 58, "Seal": 8, "Spell": 83, "Stance": 53, "Stun": 93, "Support": 8, "Suppression": 56, "Tincture": 39, "Totem": 70, "Trap": 58, "Vaal": 10, "Valour": 19, "Warcry": 80, "WeaponType": 313},
+    "unknownSamples": []
+  },
+  "nodeEligibility": {
+    "supported": 367,
+    "special": 87,
+    "unsupportedCurrently": 1660,
+    "masteryPending": 315
+  },
+  "prodSimSurface": {
+    "hashInputSites": ["145: hash = HashString(hash, \"|\" + PassiveAwareProductionSimulation.StatePayload(session));", "170: hash = HashString(hash, \"|cy|\" + done.ToString(CultureInfo.InvariantCulture));", "211: hash = HashString(hash, ItemKey(it));", "233: hash = HashString(hash, \"rc|\" + ItemKey(it));", "264: hash = HashString(hash, \"dc|\" + ItemKey(session.Inventory[idx]));", "279: hash = HashString(hash, \"eq|\" + (int)it.Slot + \"|\" + ItemKey(it));"],
+    "hashPayloadMentionsPassive": true,
+    "readsAllocatedState": true,
+    "hashDependsOnPassiveResult": true,
+    "masterySensitive": false,
+    "forbiddenTokensFound": [],
+    "verdict": "PASSIVE_SENSITIVE"
+  },
+  "allocationInvariants": [
+    { "name": "ValidStart", "covered": true },
+    { "name": "ConnectedAllocation", "covered": true },
+    { "name": "NoIllegalJump", "covered": true },
+    { "name": "PointAccounting", "covered": true },
+    { "name": "DuplicateAllocationNoop", "covered": true },
+    { "name": "ResetExact", "covered": true },
+    { "name": "MasteryPrerequisite", "covered": false }
+  ]
+}

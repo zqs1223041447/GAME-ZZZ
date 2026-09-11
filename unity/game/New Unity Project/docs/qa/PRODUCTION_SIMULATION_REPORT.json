@@ -1,7 +1,8 @@
 {
-  "schema": "PRODUCTION_SIMULATION_REPORT_V1",
-  "schemaVersion": 1,
-  "generatedBy": "Game.Tests.EditMode.ProductionSimulatorTests（EditMode 测试再生；真实 Drop/Craft/Equip 路径驱动，禁止手填）",
+  "schema": "PRODUCTION_SIMULATION_REPORT_V2",
+  "schemaVersion": 2,
+  "simulationContractVersion": "pv|passive-v1",
+  "generatedBy": "Game.Tests.EditMode.ProductionSimulatorTests（EditMode 测试再生；真实 Drop/Craft/Equip + canonical Passive allocation 路径驱动，禁止手填）",
   "verdict": "PASS",
   "seed": 20260909,
   "iterations": 10000,
@@ -13,7 +14,31 @@
   "invalidCount": 0,
   "invalidSamples": [  ],
   "rejectedDirectedCraft": 338,
-  "deterministicHash": "FNV1A64:9a4c9524d0b3e214",
+  "deterministicHash": "FNV1A64:ec1d3ed67d3035d0",
   "repeatHashMatch": true,
-  "repeatHash": "FNV1A64:9a4c9524d0b3e214"
+  "repeatHash": "FNV1A64:ec1d3ed67d3035d0",
+  "passiveSimulation": {
+    "scenarioVersion": "s6p-wo02-canonical-v1",
+    "allocatedPassiveNodeCount": 4,
+    "allocatedPassiveNodeIds": "559,1795,2034,2172",
+    "passiveModifierCount": 6,
+    "passiveOffensiveTupleCount": 2,
+    "passiveDefensiveOrAttributeTupleCount": 4,
+    "passiveEffectiveStatSnapshot": "0:Life=10000031/10000031/0/1|1:Mana=50/50/0/1|2:Strength=39.5819969/39.5819969/0/1|3:Dexterity=25/25/0/1|4:Intelligence=20/20/0/1|5:Armour=30.4618053/30.4618053/0/1|6:Evasion=20/20/0/1|7:Accuracy=170/170/0/1|8:FireResistance=0/0/0/1|9:MaxFireResistance=0.75/0.75/0/1|10:Damage=0/0/0/1|11:PhysicalDamage=0/0/0/1|12:FireDamage=0/0/0/1|13:MoreDamage=0/0/0/1|14:MorePhysical=0/0/0/1|15:MoreFire=0/0/0/1|16:AddedPhysical=0/0/0/1|17:AddedFire=0/0/0/1|18:ConvertPhysToFire=0/0/0/1|19:CritChanceBase=0.05/0.05/0/1|20:CritChanceAdded=0/0/0/1|21:CritChanceIncreased=0/0/0/1|22:CritMultiAdded=0/0/0/1|23:IgniteChance=0/0/0/1|24:AreaRadiusMore=0/0/0/1|25:AreaDamageMore=0/0/0/1|26:AttackSpeed=0/0/0/1|27:Fork=0/0/0/1",
+    "passiveEffectiveSkillStatSnapshot": "s1:0=12/12/0/1,1=0/0/0/1,2=10/10/0/1,3=5/5/0/1,4=0/0/0/1,5=0/0/0/1,6=0/0/0/1,7=170/170/0/1,8=0/0/0/1,9=0/0/0/1,10=0/0/0/1,11=0/0/0.3035488/1,12=0/0/0.337889433/1,13=0/0/0/1,14=0/0/0/1,15=0/0/0/1,16=6.490153/6.490153/0/1,17=0/0/0/1,18=0/0/0/1,19=0.05/0.05/0/1,20=0/0/0/1,21=0/0/0.8716676/1,22=0/0/0/1,23=0.107602194/0.107602194/0/1,24=0/0/0/1,25=0/0/0/1,26=0/0/0.04/1,27=0/0/0/1|s2:0=12/12/0/1,1=0/0/0/1,2=10/10/0/1,3=5/5/0/1,4=0/0/0/1,5=0/0/0/1,6=0/0/0/1,7=170/170/0/1,8=0/0/0/1,9=0/0/0/1,10=0/0/0/1,11=0/0/0.3035488/1,12=0/0/0.337889433/1,13=0/0/0/1,14=0/0/0/1,15=0/0/0/1,16=6.490153/6.490153/0/1,17=0/0/0/1,18=0/0/0/1,19=0.05/0.05/0/1,20=0/0/0/1,21=0/0/0.8716676/1,22=0/0/0/1,23=0.107602194/0.107602194/0/1,24=0/0/0/1,25=0/0/0/1,26=0/0/0.04/1,27=0/0/0/1|s3:0=12/12/0/1,1=0/0/0/1,2=10/10/0/1,3=5/5/0/1,4=0/0/0/1,5=0/0/0/1,6=0/0/0/1,7=170/170/0/1,8=0/0/0/1,9=0/0/0/1,10=0/0/0/1,11=0/0/0.3035488/1,12=0/0/0.337889433/1,13=0/0/0/1,14=0/0/0/1,15=0/0/0/1,16=6.490153/6.490153/0/1,17=0/0/0/1,18=0/0/0/1,19=0.05/0.05/0/1,20=0/0/0/1,21=0/0/0.8716676/1,22=0/0/0/1,23=0.107602194/0.107602194/0/1,24=0/0/0/1,25=0/0/0/1,26=0/0/0.04/1,27=0/0/0/1",
+    "allocationEvents": [ "pa|559|ok|122", "pa|1795|ok|121", "pa|2034|ok|120" ],
+    "passiveSensitive": true
+  },
+  "passiveSensitivity": {
+    "predecessorHash": "FNV1A64:9a4c9524d0b3e214",
+    "allocationMutationBaselineHash": "FNV1A64:ec1d3ed67d3035d0",
+    "allocationMutationHash": "FNV1A64:32b23c480e05ec9a",
+    "allocationMutationChangedHash": true,
+    "statMutationBaselineHash": "FNV1A64:ec1d3ed67d3035d0",
+    "statMutationHash": "FNV1A64:4fc17552175c144a",
+    "statMutationChangedHash": true,
+    "restoredHash": "FNV1A64:ec1d3ed67d3035d0",
+    "restoreExactMatch": true,
+    "allocationOrderingInvariant": true
+  }
 }

@@ -46,7 +46,7 @@ namespace Game.Tests.EditMode
         public void Report_Counts_MatchCanonicalCatalogs()
         {
             var data = ProductionContentReport.Build(ContentAuditS2Tests.CollectCurrentRepositoryAudit());
-            Assert.AreEqual(SkillTagGolden.Masks.Count, data.SkillCount, "Active 技能计数必须=SkillTagGolden（canonical 3 Active）");
+            Assert.AreEqual(SkillTagGolden.Masks.Count, data.SkillCount, "Active 技能计数必须=SkillTagGolden（canonical Active 技能全集）");
             Assert.AreEqual(SupportCatalog.Count, data.SupportCount);
             Assert.AreEqual((int)AffixId.Count, data.AffixCount);
             Assert.AreEqual(PassiveCatalog.Count, data.PassiveCount);

@@ -8,7 +8,12 @@ namespace Game.Runtime.Core
         None = 0,
         Melee = 1,
         Projectile = 2,
-        Area = 3
+        Area = 3,
+        // S6P-WO-05（导演 2026-09-11「制作冰矛和火球术」）：追加在既有正式技能后、Count 前；
+        // 既有数值 0-3 不得漂移。两者都挂在弹道连接组（WSupports）——同一连接组共享辅助孔位真值。
+        IceSpear = 4,
+        Fireball = 5,
+        Count = 6
     }
 
     public enum CastPhase : byte
@@ -125,6 +130,12 @@ namespace Game.Runtime.Core
         public float ProjectileRadius;
         public float ProjectileMaxDistance;
         public float AreaRadius;
+        // S6P-WO-05：投射物穿透数（0=命中即消失；N=可再穿 N 个目标，同一目标不重复结算）
+        public int Pierce;
+        // S6P-WO-05：命中点爆炸半径（>0 = 命中时在命中点产生范围结算，火球术用）
+        public float ImpactAreaRadius;
+        // S6P-WO-05：基础伤害元素（false=物理，true=火焰——火球术是纯火焰法术，不虚构物理分量）
+        public bool BaseDamageIsFire;
     }
 
     public struct PlayerMotorState
@@ -184,7 +195,7 @@ namespace Game.Runtime.Core
 
     public static class SkillCatalog
     {
-        static readonly SkillDef[] Defs = new SkillDef[4];
+        static readonly SkillDef[] Defs = new SkillDef[(int)SkillId.Count];
 
         static SkillCatalog()
         {
@@ -221,6 +232,40 @@ namespace Game.Runtime.Core
                 Cooldown = 0.14f,
                 Damage = 2,
                 AreaRadius = 3.2f
+            };
+            // 冰矛（导演 2026-09-11「制作冰矛」）：高速细径穿透弹道法术，穿透 3 个目标。
+            // 引擎无冰冷伤害轴（见 docs/reviews/S6P/S6P_WO_05_*.md 已知限制），基础伤害走物理轴；
+            // 冰的辨识由美术/特效层承载，不虚构数值语义。
+            Defs[(int)SkillId.IceSpear] = new SkillDef
+            {
+                Id = SkillId.IceSpear,
+                Range = 14f,
+                Windup = 0.10f,
+                Active = 0.06f,
+                Recovery = 0.16f,
+                Cooldown = 0.16f,
+                Damage = 2,
+                ProjectileSpeed = 30f,
+                ProjectileRadius = 0.28f,
+                ProjectileMaxDistance = 20f,
+                Pierce = 3
+            };
+            // 火球术（导演 2026-09-11「制作火球术」）：纯火焰弹道法术，命中点半径爆炸 + 可点燃。
+            Defs[(int)SkillId.Fireball] = new SkillDef
+            {
+                Id = SkillId.Fireball,
+                Range = 14f,
+                Windup = 0.12f,
+                Active = 0.08f,
+                Recovery = 0.20f,
+                Cooldown = 0.22f,
+                Damage = 2,
+                ProjectileSpeed = 14f,
+                ProjectileRadius = 0.42f,
+                ProjectileMaxDistance = 14f,
+                AreaRadius = 2.6f,
+                ImpactAreaRadius = 2.6f,
+                BaseDamageIsFire = true
             };
         }
 

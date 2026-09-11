@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using Game.Runtime.Core;
@@ -14,7 +15,8 @@ namespace Game.Tests.EditMode
         [Test]
         public void CatalogDefinition_SingleConversionSupport()
         {
-            Assert.AreEqual(7, SupportCatalog.Count, "本轮仅新增 1 个 Support");
+            // S6P-WO-05 追加 2 条机制型 Support 后总数 9；本测试只锚定火焰转化自身的定义不变
+            Assert.AreEqual(9, SupportCatalog.Count, "S3-R2 新增 1 条 + S6P-WO-05 新增 2 条 = 9");
             SupportDef def = SupportCatalog.Get(SupportId.FireConversion);
             Assert.AreEqual(SupportId.FireConversion, def.Id);
             Assert.AreEqual("火焰转化", def.Name);
@@ -33,13 +35,14 @@ namespace Game.Tests.EditMode
         [Test]
         public void GoldenMatrix_ThreeBySeven_FireConversionPinned()
         {
-            Assert.AreEqual(7, SupportCompatGolden.Matrix.Count, "golden 必须 3×7 全覆盖");
+            // S6P-WO-05 起矩阵为 Active 技能全集 × 真实 Support 全集（5 × 9）
+            Assert.AreEqual(SupportCatalog.Count, SupportCompatGolden.Matrix.Count, "golden 必须覆盖全部真实 Support");
             Assert.IsTrue(SupportCompatGolden.Contains(SupportId.FireConversion, SkillId.Melee));
             Assert.IsTrue(SupportCompatGolden.Contains(SupportId.FireConversion, SkillId.Projectile));
             Assert.IsFalse(SupportCompatGolden.Contains(SupportId.FireConversion, SkillId.Area));
-            // Runtime parity：21 组合（含新列）——沿用统一入口与 golden 对拍
+            // Runtime parity：全组合（含新技能列）——沿用统一入口与 golden 对拍
             foreach (var pair in SupportCompatGolden.Matrix)
-                foreach (SkillId skill in new[] { SkillId.Melee, SkillId.Projectile, SkillId.Area })
+                foreach (SkillId skill in SkillTagGolden.All)
                     Assert.AreEqual(SupportCompatGolden.Contains(pair.Key, skill),
                         SliceSession.IsSupportCompatible(pair.Key, skill),
                         "Runtime 与 golden 不一致：" + pair.Key + " × " + skill);
@@ -82,20 +85,50 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void SupportAndCinderHeart_ComposeNinetyPercent()
+        public void SupportAndPassiveConversion_ComposeOnSameAxis()
         {
             var s = new SliceSession();
             string err;
-            // 烬心（节点 13）需要路径点亮：0 → 3 → 8 → 13
-            Assert.IsTrue(s.TryAllocate(3, out err), err);
-            Assert.IsTrue(s.TryAllocate(8, out err), err);
-            Assert.IsTrue(s.TryAllocate(13, out err), err);
-            Assert.IsTrue(s.TrySetSupport(SkillId.Melee, 0, SupportId.FireConversion, out err), err);
+
+            // S6P-WO-04A（本轮行为更正，非削弱）：真实转火基石（Avatar of Fire）的词条里含
+            // "Deal no Non-Fire Damage" 这类引擎兑现不了的行 ⇒ 按"整节点 fail closed"它必须不可分配。
+            // 旧版本沿路径点亮它，等于把"点亮了但只吃半截"冻结成契约。
+            int avatar = FindByStat("Converted to Fire Damage");
+            Assert.GreaterOrEqual(avatar, 0, "真实数据里必须存在物理转火的天赋点");
+            Assert.AreEqual(PassiveSupport.NodeStatus.BlockedCurrently, PassiveSupport.EvaluateNode(avatar),
+                "转火基石含当前兑现不了的效果行 ⇒ 必须整体不可分配");
+            int unspentBefore = s.Unspent;
+            Assert.IsFalse(s.TryAllocate(avatar, out err), "不可兑现节点必须被拒绝");
+            Assert.AreEqual(PassiveSupport.ReasonBlockedCurrently, s.NodeBlockReason(avatar),
+                "不可兑现的稳定原因来自 domain truth（该节点不与起点相连，分配门先报相连性）");
+            Assert.IsFalse(s.Allocated[avatar], "被拒绝的加点不得写入已分配容器");
+            Assert.AreEqual(unspentBefore, s.Unspent, "被拒绝的加点不得扣点");
+
+            // 同一条转换轴上的聚合仍然成立：取**权威 parser** 对该节点真实文本的产出，
+            // 与 Support 的 modifier 一起走同一个生产 StatBag 聚合路径（不复制任何解释器）。
+            Modifier[] passive = PoeStatParser.ParseCached(PoeTree.Get(avatar).stats);
+            Assert.AreEqual(1, passive.Length, "该文本必须映射出唯一一条转换 modifier");
+            Assert.AreEqual(StatId.ConvertPhysToFire, passive[0].Stat);
+            Assert.AreEqual(0.50f, passive[0].Value, 0.0001f);
 
             var bag = new StatBag();
-            s.CollectSkillMods(SkillId.Melee, bag);
-            // 0.40（烬心）+ 0.50（火焰转化）经同一 StatBag 轴自然聚合，无专属叠加规则
-            Assert.AreEqual(0.90f, bag.Get(StatId.ConvertPhysToFire), 0.0001f);
+            Tag tags = SkillTags.Of(SkillId.Melee);
+            bag.AddAll(passive, tags, ConditionId.Always);
+            bag.AddAll(SupportCatalog.Get(SupportId.FireConversion).Mods, tags, ConditionId.Always);
+            // 0.50（Avatar of Fire）+ 0.50（火焰转化）经同一 StatBag 轴自然聚合，无专属叠加规则
+            Assert.AreEqual(1.00f, bag.Get(StatId.ConvertPhysToFire), 0.0001f);
+        }
+
+        /// <summary>真实天赋域按索引找第一个含指定词条的节点。</summary>
+        static int FindByStat(string needle)
+        {
+            var nodes = PoeTree.Nodes;
+            if (nodes == null)
+                return -1;
+            for (int i = 0; i < nodes.Length; i++)
+                if (nodes[i].locked == 0 && !string.IsNullOrEmpty(nodes[i].stats) && nodes[i].stats.Contains(needle))
+                    return i;
+            return -1;
         }
 
         [Test]

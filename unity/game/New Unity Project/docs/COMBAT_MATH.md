@@ -169,3 +169,36 @@ S2 不实现 3.16+ 玩家 90%/125% 点燃，也不实现 ailment threshold。有
 ## 未做
 
 Energy Shield、Block、Suppression、Leech、Bleed/Poison/Shock、Reflect、Damage Taken As、Gain as Extra、多阶段 Conversion、穿透、抗性上限堆叠以外的 Exposure 系统。
+
+---
+
+## S6P-DIR-01（2026-09-11）战斗结算增补
+
+### `HitRequest` 复用（未新增结构字段）
+
+| 新增输入 | 来源 | 说明 |
+|---|---|---|
+| 狙击印记加成 | 目标 `Dummy.MarkRemain > 0` | 乘进既有的 `MoreDamage`（`*= 1 + 0.35`），**不改 `ResolveHit` 公式** |
+
+结算顺序（与既有 1–9 步完全一致）：`MoreDamage`（含印记加成）→ 物理/火焰分量 → Accuracy/Evasion（法术必中）→ Crit → Armour/Res → RoundToInt(≥1) → Ignite。
+
+### 元素基底
+
+`SkillDef.BaseDamageIsFire` 决定基础伤害落在哪条轴：
+
+- `false`：`PhysFlat = def.Damage + AddedPhysical`；`FireFlat = AddedFire`
+- `true`（火球术）：`FireFlat = def.Damage + AddedFire`；**`PhysFlat = 0`**（不虚构物理分量）
+
+冰矛 `BaseDamageIsFire = false`：引擎**无冰冷伤害轴**（`PoeStatParser` 既有真值），其基础伤害走物理轴，
+冰的辨识由呈现层（美术/颜色）与穿透机制承载 —— 见 `S6P_DIR_01.md` 已知限制 L1。
+
+### 范围缩放
+
+`AreaRadiusMore` 自本令起对**任何带半径的技能**生效（`AreaRadius` 与 `ImpactAreaRadius` 分别缩放），
+不再硬编码 `SkillId.Area`——否则火球术的命中点爆炸会静默忽略范围词条。
+
+### 穿透 / 返回的伤害规则
+
+- 穿透：同一投射物对同一目标**只结算一次**（已命中位图），穿透次数耗尽即按普通命中消失。
+- 返回：返程可再次命中，但**仍受同一位图约束**（同一目标不会吃第二次）。
+- 火球术命中点爆炸：对半径内**除直接命中目标之外**的目标各做一次独立 `ResolveHit`（各自掷命中/暴击/点燃）。

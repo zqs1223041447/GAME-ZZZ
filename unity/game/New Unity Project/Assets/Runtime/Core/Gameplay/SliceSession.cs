@@ -33,7 +33,8 @@ namespace Game.Runtime.Core
         public SupportId Q0, Q1;
         public SupportId W0, W1;
         public SupportId E0;
-        public int PassiveMask;
+        /// <summary>已点亮天赋集的稳定指纹（2429 节点远超 32 位掩码，故用 FNV1A64 摘要）。</summary>
+        public long PassiveHash;
         public int Unspent;
     }
 
@@ -51,6 +52,8 @@ namespace Game.Runtime.Core
         public SupportId[] ESupports = new SupportId[1];
 
         public readonly bool[] Allocated = new bool[SliceRules.PassiveCount];
+        /// <summary>天赋域起点（真实 PoE 树心节点，恒定已点亮；重构不清除）。</summary>
+        public static int StartNode { get { return PoeTree.StartIndex; } }
         public int Unspent = SliceRules.StartPoints;
         public int TotalPoints = SliceRules.StartPoints;
 
@@ -64,6 +67,8 @@ namespace Game.Runtime.Core
         public MapState State;
         public BuildSnapshot Snapshot;
         public SlicePanel Panel;
+        /// <summary>背包面板开关（导演 2026-09-11：改用快捷键开关式，默认开启以保持既有布局语义）。</summary>
+        public bool BagOpen = true;
 
         public float Life;
         public float MaxLife;
@@ -135,7 +140,9 @@ namespace Game.Runtime.Core
             ESupports[0] = SupportId.None;
             for (int i = 0; i < Allocated.Length; i++)
                 Allocated[i] = false;
-            Allocated[0] = true;
+            int start = StartNode;
+            if (start >= 0 && start < Allocated.Length)
+                Allocated[start] = true;
             Unspent = SliceRules.StartPoints;
             TotalPoints = SliceRules.StartPoints;
             Scrap = 2;
@@ -297,12 +304,14 @@ namespace Game.Runtime.Core
         {
             if (support == SupportId.None)
                 return false;
-            if (skill != SkillId.Melee && skill != SkillId.Projectile && skill != SkillId.Area)
+            if (SkillTags.Of(skill) == Tag.None)
                 return false;
             SupportDef def = SupportCatalog.Get(support);
             if (def.Id != support)
                 return false;
-            if (def.MechanicSkill != SkillId.None && def.MechanicSkill != skill)
+            // S6P-WO-05：机制限制由「技能身份相等」泛化为「Tag 蕴含」——MechanicSkill=Projectile 表示
+            // 「只接投射物投送」，故冰矛/火球术（Projectile Tag）同样满足，不再逐个枚举技能。
+            if (!MechanicSkillSatisfied(def.MechanicSkill, skill))
                 return false;
             Tag skillTags = SkillTags.Of(skill);
             if (def.Mods == null)
@@ -314,6 +323,17 @@ namespace Game.Runtime.Core
                     return false;
             }
             return true;
+        }
+
+        /// <summary>S6P-WO-05：机制型 Support 的技能要求判定（None=不限；否则要求技能 Tag 蕴含该机制轴）。
+        /// 当前唯一机制轴=投射物投送（Tag.Projectile）——不新增枚举，把「机制」表达为既有 Tag 真值。</summary>
+        static bool MechanicSkillSatisfied(SkillId requirement, SkillId skill)
+        {
+            if (requirement == SkillId.None)
+                return true;
+            if (requirement == SkillId.Projectile)
+                return (SkillTags.Of(skill) & Tag.Projectile) != 0;
+            return requirement == skill;
         }
 
         public bool TryAllocate(int node, out string error)
@@ -349,6 +369,14 @@ namespace Game.Runtime.Core
                 return false;
             }
 
+            // S6P-WO-04A 支持门：只要有一条效果行当前兑现不了，整节点原子拒绝（点/状态/结果零变化）
+            PassiveSupport.NodeStatus support = PassiveSupport.EvaluateNode(node);
+            if (!PassiveSupport.IsAllocatable(support))
+            {
+                error = PassiveSupport.Reason(support);
+                return false;
+            }
+
             Allocated[node] = true;
             Unspent--;
             RecalcPlayer(false);
@@ -367,8 +395,11 @@ namespace Game.Runtime.Core
             }
 
             int spent = 0;
-            for (int i = 1; i < Allocated.Length; i++)
+            int start = StartNode;
+            for (int i = 0; i < Allocated.Length; i++)
             {
+                if (i == start)
+                    continue;
                 if (Allocated[i])
                 {
                     Allocated[i] = false;
@@ -376,7 +407,8 @@ namespace Game.Runtime.Core
                 }
             }
 
-            Allocated[0] = true;
+            if (start >= 0 && start < Allocated.Length)
+                Allocated[start] = true;
             Unspent += spent;
             RecalcPlayer(false);
             LastMessage = "免费重构完成，退回 " + spent + " 点";
@@ -700,6 +732,10 @@ namespace Game.Runtime.Core
             {
                 if (!Allocated[i])
                     continue;
+                // 消费门（§16）：损坏/注入状态里的不可分配节点必须贡献 0 modifier，
+                // 不得半消费它可识别的那几行 —— 挡在入口之外还不够，聚合路径本身也要 fail closed。
+                if (!PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(i)))
+                    continue;
                 AddDefensive(PassiveCatalog.Get(i).Mods);
             }
 
@@ -780,6 +816,9 @@ namespace Game.Runtime.Core
             AddSupportTriggers(SkillId.Melee, QSupports);
             AddSupportTriggers(SkillId.Projectile, WSupports);
             AddSupportTriggers(SkillId.Area, ESupports);
+            // S6P-WO-05：冰矛/火球术与弹道同组，Trigger 也须按各自技能身份注册（Trigger.Skill 过滤按技能）
+            AddSupportTriggers(SkillId.IceSpear, WSupports);
+            AddSupportTriggers(SkillId.Fireball, WSupports);
         }
 
         void AddSupportTriggers(SkillId skill, SupportId[] arr)
@@ -813,6 +852,9 @@ namespace Game.Runtime.Core
             for (int i = 0; i < Allocated.Length; i++)
             {
                 if (!Allocated[i])
+                    continue;
+                // 消费门（§16）：与 RecalcPlayer 同一判据（同一 support truth），技能侧也不得半消费。
+                if (!PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(i)))
                     continue;
                 bag.AddAll(PassiveCatalog.Get(i).Mods, tags, ConditionId.Always);
             }
@@ -862,8 +904,12 @@ namespace Game.Runtime.Core
             }
 
             float areaMore = _skillBag.RawMore(StatId.AreaRadiusMore);
-            if (id == SkillId.Area && Math.Abs(areaMore - 1f) > 1e-5f)
+            // S6P-WO-05：范围缩放对任何携带范围半径的技能生效（原实现硬编码 SkillId.Area，
+            // 会让火球术的命中点爆炸静默忽略 AreaRadiusMore）。
+            if (def.AreaRadius > 0f && Math.Abs(areaMore - 1f) > 1e-5f)
                 def.AreaRadius *= areaMore;
+            if (def.ImpactAreaRadius > 0f && Math.Abs(areaMore - 1f) > 1e-5f)
+                def.ImpactAreaRadius *= areaMore;
 
             if (State == MapState.InMap || State == MapState.Dead)
             {
@@ -873,6 +919,10 @@ namespace Game.Runtime.Core
                     def.Damage = SliceRules.ProjectileBase;
                 else if (id == SkillId.Area)
                     def.Damage = SliceRules.AreaBase;
+                else if (id == SkillId.IceSpear)
+                    def.Damage = SliceRules.IceSpearBase;
+                else if (id == SkillId.Fireball)
+                    def.Damage = SliceRules.FireballBase;
             }
 
             return def;
@@ -882,14 +932,24 @@ namespace Game.Runtime.Core
         {
             CollectSkillMods(skill, _skillBag);
             SkillDef def = ResolveSkillDef(skill);
+            Tag tags = SkillTags.Of(skill);
             HitRequest req = default;
-            req.PhysFlat = def.Damage + _skillBag.Get(StatId.AddedPhysical);
-            req.FireFlat = _skillBag.Get(StatId.AddedFire);
+            // S6P-WO-05：基础伤害元素由技能定义决定（火球术=纯火焰，不虚构物理分量；
+            // 冰矛基础走物理轴——引擎无冰冷轴，见 S6P_WO_05 已知限制）
+            if (def.BaseDamageIsFire)
+            {
+                req.FireFlat = def.Damage + _skillBag.Get(StatId.AddedFire);
+            }
+            else
+            {
+                req.PhysFlat = def.Damage + _skillBag.Get(StatId.AddedPhysical);
+                req.FireFlat = _skillBag.Get(StatId.AddedFire);
+            }
             req.ConvertPhysToFire = _skillBag.Get(StatId.ConvertPhysToFire);
             req.IncDamage = _skillBag.RawIncreased(StatId.Damage);
             req.IncPhys = _skillBag.RawIncreased(StatId.PhysicalDamage);
             req.IncFire = _skillBag.RawIncreased(StatId.FireDamage);
-            req.MoreDamage = _skillBag.RawMore(StatId.MoreDamage) * (skill == SkillId.Area ? _skillBag.RawMore(StatId.AreaDamageMore) : 1f);
+            req.MoreDamage = _skillBag.RawMore(StatId.MoreDamage) * ((tags & Tag.Area) != 0 ? _skillBag.RawMore(StatId.AreaDamageMore) : 1f);
             req.MorePhys = _skillBag.RawMore(StatId.MorePhysical);
             req.MoreFire = _skillBag.RawMore(StatId.MoreFire);
             req.Accuracy = _skillBag.Get(StatId.Accuracy);
@@ -1056,16 +1116,40 @@ namespace Game.Runtime.Core
         {
             if (skill == SkillId.Melee)
                 return QSupports;
-            if (skill == SkillId.Projectile)
+            // S6P-WO-05：冰矛/火球术与弹道同属「弹道连接组」——共享同一份孔位真值（不新增数组，
+            // 因此 BuildSnapshot/ProdSim canonical hash 不受影响；同组多技能共享辅助是 PoE 连接组的原生语义）。
+            if (skill == SkillId.Projectile || skill == SkillId.IceSpear || skill == SkillId.Fireball)
                 return WSupports;
             if (skill == SkillId.Area)
                 return ESupports;
             return null;
         }
 
-        /// <summary>S5-WO-02：技能→默认连接槽位硬映射（既有契约，不改）。</summary>
+        /// <summary>S6P-WO-05：技能是否装配了指定 Support（装配态读路径；供投射物返回/狙击印记的行为分支使用）。</summary>
+        public bool HasSupport(SkillId skill, SupportId support)
+        {
+            SupportId[] arr = SupportsOf(skill);
+            if (arr == null || support == SupportId.None)
+                return false;
+            for (int i = 0; i < arr.Length; i++)
+                if (arr[i] == support)
+                    return true;
+            return false;
+        }
+
+        /// <summary>S6P-WO-05：连接组代表技能（同组多技能共享孔位真值；查重/容量按组判定，不按技能）。</summary>
+        public static SkillId ConnectionGroupRep(SkillId skill)
+        {
+            if (skill == SkillId.IceSpear || skill == SkillId.Fireball)
+                return SkillId.Projectile;
+            return skill;
+        }
+
+        /// <summary>S5-WO-02：技能→默认连接槽位硬映射（既有契约，不改）。冰矛/火球术随弹道组=胸甲。</summary>
         static EquipSlot MappedSlot(SkillId skill)
         {
+            if (skill == SkillId.IceSpear || skill == SkillId.Fireball)
+                return EquipSlot.Body;
             return skill == SkillId.Melee ? EquipSlot.Weapon
                  : skill == SkillId.Projectile ? EquipSlot.Body
                  : EquipSlot.Helmet;
@@ -1380,11 +1464,14 @@ namespace Game.Runtime.Core
 
         bool IsSupportUsed(SupportId id, SkillId exceptSkill, int exceptIndex)
         {
-            if (CheckUsed(QSupports, SkillId.Melee, id, exceptSkill, exceptIndex))
+            // S6P-WO-05：同连接组多技能共享同一孔位数组 → 查重必须按「组代表」判定（否则同组第二技能
+            // 会把本组自己的孔位判成「已被占用」，产生假拒绝）。
+            SkillId rep = ConnectionGroupRep(exceptSkill);
+            if (CheckUsed(QSupports, SkillId.Melee, id, rep, exceptIndex))
                 return true;
-            if (CheckUsed(WSupports, SkillId.Projectile, id, exceptSkill, exceptIndex))
+            if (CheckUsed(WSupports, SkillId.Projectile, id, rep, exceptIndex))
                 return true;
-            if (CheckUsed(ESupports, SkillId.Area, id, exceptSkill, exceptIndex))
+            if (CheckUsed(ESupports, SkillId.Area, id, rep, exceptIndex))
                 return true;
             return false;
         }
@@ -1404,6 +1491,9 @@ namespace Game.Runtime.Core
 
         bool AdjacentToAllocated(int node)
         {
+            // 时光珠宝类显著点在官方数据里没有连线：树上可见但不可点（与游戏内表现一致）
+            if (PoeTree.Get(node).locked != 0)
+                return false;
             int[] links = PassiveCatalog.Get(node).Links;
             if (links == null)
                 return false;
@@ -1431,14 +1521,19 @@ namespace Game.Runtime.Core
             s.W0 = WSupports[0];
             s.W1 = WSupports[1];
             s.E0 = ESupports[0];
-            int mask = 0;
-            for (int i = 0; i < Allocated.Length; i++)
+            unchecked
             {
-                if (Allocated[i])
-                    mask |= 1 << i;
+                const ulong basis = 14695981039346656037UL;
+                const ulong prime = 1099511628211UL;
+                ulong h = basis;
+                for (int i = 0; i < Allocated.Length; i++)
+                {
+                    if (!Allocated[i])
+                        continue;
+                    h = (h ^ (uint)i) * prime;
+                }
+                s.PassiveHash = (long)h;
             }
-
-            s.PassiveMask = mask;
             s.Unspent = Unspent;
             return s;
         }
@@ -1484,6 +1579,10 @@ namespace Game.Runtime.Core
                 return "弹道";
             if (skill == SkillId.Area)
                 return "范围";
+            if (skill == SkillId.IceSpear)
+                return "冰矛";
+            if (skill == SkillId.Fireball)
+                return "火球术";
             return "-";
         }
 
@@ -1495,6 +1594,10 @@ namespace Game.Runtime.Core
                 return "W";
             if (skill == SkillId.Area)
                 return "E";
+            if (skill == SkillId.IceSpear)
+                return "R";
+            if (skill == SkillId.Fireball)
+                return "T";
             return "";
         }
 
@@ -1565,7 +1668,39 @@ namespace Game.Runtime.Core
                 return false;
             if (Unspent <= 0)
                 return false;
+            if (!PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(node)))
+                return false;
             return AdjacentToAllocated(node);
+        }
+
+        /// <summary>
+        /// 节点当前为何不可分配（可分配返回 null）。UI 与诊断都读这一份 —— 禁止 UI 自己再造一套不可用清单。
+        /// </summary>
+        public string NodeBlockReason(int node)
+        {
+            if (node < 0 || node >= Allocated.Length)
+                return PassiveSupport.Reason(PassiveSupport.NodeStatus.OutOfDomain);
+            return PassiveSupport.Reason(PassiveSupport.EvaluateNode(node));
+        }
+
+        /// <summary>
+        /// 已分配集合里"当前不可分配"的节点数：正常会话恒为 0；
+        /// 非 0 说明状态被损坏/注入过（消费门会照样让它们贡献 0 modifier）。
+        /// </summary>
+        public int BlockedAllocatedCount
+        {
+            get
+            {
+                int n = 0;
+                for (int i = 0; i < Allocated.Length; i++)
+                {
+                    if (!Allocated[i])
+                        continue;
+                    if (!PassiveSupport.IsAllocatable(PassiveSupport.EvaluateNode(i)))
+                        n++;
+                }
+                return n;
+            }
         }
 
         public NodeUiState NodeState(int node)

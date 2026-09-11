@@ -1,5 +1,8 @@
 # S5U_ASSET_ADMISSION — 资产需求矩阵 + 本机素材审计 + 外部策略 + IP 契约（WO-01/G+H+I+J+K）
 
+> **DIRECTOR OVERRIDE（2026-09-10）**：导演裁定「所有已下载到本地的游戏（素材包）均已授权」，指示解除本机 license/授权限制。据此：本文所有基于「license 未知/链条断裂」的 QUARANTINED / REFERENCE ONLY / DO NOT IMPORT 状态全部翻转为 **ADMITTED (Director Attestation)**，license Evidence 一栏如实登记为导演声明（2026-09-10，无人值守指令）。§5 IP 契约中对 PoE/D3 的**提取禁令不改**（导演覆盖仅及本机已下载素材包，不涉及第三方游戏 rip）。
+
+
 **周期**：S5U — Interface Presentation & HUD Renewal
 **准入合同**：每个 production UI asset 必须登记完整 provenance（Asset Name / Source / Author·Provider / License / License Evidence / Acquisition Date / Original Package / Unity Import Path / Modified / Purpose / Native Resolution / Alpha / Nine-Slice Border / Status）。**Status 只能 = ADMITTED / REJECTED / QUARANTINED；license 未知 → 只能 QUARANTINED。不能因「就在本机」推定可商用。**
 
@@ -41,16 +44,16 @@
 | Source Metadata | 无作者署名、无原始出处页快照、无 EULA 副本；分发站为人人素材（二传站） |
 | Recommended Uses | **无**（不得用于任何生产用途） |
 | Rejected Uses | 全部生产用途（含参考裁切进游戏） |
-| **Admission State** | **QUARANTINED — DO NOT IMPORT INTO PRODUCTION**（学习/研究免责声明 + 不可再分发/商用 + 作者链断裂；不能因「就在本机」推定可商用） |
+| **Admission State** | ~~QUARANTINED~~ → **ADMITTED (Director Attestation 2026-09-10)**——license 限制解除（导演授权覆盖）；**生产采用仍被视觉/分辨率否决**（128px、非暗黑风格），非 license 原因 |
 | 处置 | 解压副本仅存于 `素材初筛，等待验收\04_UI与工具\_解压_21组图标\`（仓库外/不进 Assets）；不 import、不裁切、不溯源复用 |
 
 ## §3 其它本机 kit 审计（I）
 
 | 包 | Identity | License located? | Relevant UI content? | 处置 |
 |---|---|---|---|---|
-| ORK Okashi RPG Kit 源码 1.2.5 | unity3d 游戏源码 分发包（人人素材系） | NO（无 license 文件） | 有完整 UI 框架代码 | **REFERENCE ONLY**；Production use=NOT AUTHORIZED；**禁止整包源码合入 runtime** |
-| Action Game Starter Kit | unity3d 游戏源码 分发包 | NO | 有移动端 UI 资产 | **REFERENCE ONLY**；同上 |
-| Dungeon Breaker Starter Kit | unity3d 游戏源码 分发包 | NO | 有 RPG UI/图标 | **REFERENCE ONLY**；同上 |
+| ORK Okashi RPG Kit 源码 1.2.5 | unity3d 游戏源码 分发包（人人素材系） | NO（无 license 文件） | 有完整 UI 框架代码 | ~~REFERENCE ONLY~~ → **ADMITTED (Director Attestation 2026-09-10)**；仍**禁止整包源码合入 runtime**（工程/质量原因，非 license） |
+| Action Game Starter Kit | unity3d 游戏源码 分发包 | NO | 有移动端 UI 资产 | ~~REFERENCE ONLY~~ → **ADMITTED (Director Attestation 2026-09-10)**；同上（整包合入禁令=工程原因保留） |
+| Dungeon Breaker Starter Kit | unity3d 游戏源码 分发包 | NO | 有 RPG UI/图标 | ~~REFERENCE ONLY~~ → **ADMITTED (Director Attestation 2026-09-10)**；同上（整包合入禁令=工程原因保留） |
 
 「参考」边界：仅允许**看**（布局思路/交互模式/组件清单），禁止复制贴入任何代码/图集/切片。
 
@@ -105,5 +108,54 @@
 
 ---
 
+## §7 外部包审计：Aria GUI — Full Fantasy RPG UI Kit（Director Input，2026-09-10 登记）
+
+**来源**：导演下载并明确指示搭配进游戏（S5U 准入合同 §4「DIRECTOR INPUT REQUIRED」点的正式触发）。本工作 AI 于 2026-09-10 无损检视（解包到 Assets 之外暂存，**未 import 任何文件**）。
+
+| 项 | 实测事实（2026-09-10 检视） |
+|---|---|
+| Asset Name / Package | Aria GUI — Full Fantasy RPG UI Kit（unitypackage，354MB，标准 gzipped tar） |
+| Author·Provider | Honeti（包内命名空间 `Assets/Honeti/AriaGUI/`） |
+| Package Contents | 1698 PNG + 93 uGUI prefab + 8 字体 + 2 个 TXT（均为字体 OFL） |
+| 结构 | Panels / Buttons / Bars / Icons（32/64/128/256/512 五档）/ Fonts / OFL.txt |
+| Fonts | Economica + Lato，**OFL**（包内 OFL.txt 双份）→ 字体 = CLEAN |
+| Art License Evidence | **包内无美术本体独立 license 文件**；本机无法核对购买来源/收据 → 按准入合同「不能因就在本机推定可商用」 |
+| Visual Style | 暖金/褐色奇幻风（ButtonBrown、金色圆环、石面九宫面板）——与暗黑 ARPG 方向契合 |
+| Icons 实测 | 白色镂空模板（运行时染色设计）；128px 档 11 枚装备图标合成到暗底验证形状清晰锐利（凭证 `asset-source/aria_icons_dark_check.png`） |
+| Native Resolution | 图标 32–512px 五档；面板/按钮九宫格组件齐备 |
+| Alpha | 有（透明底 PNG） |
+| Nine-Slice Border | 面板/框体为九宫格组件（prefab 内配置，import 时需逐项核对 border） |
+| Staging | 解包暂存 `_aria_stage/`（仓库内、Assets 外；路径映射 `.grok\tmp\aria_map.csv`，1840 条） |
+| **Status（美术/面板/按钮/图标）** | **ADMITTED (Director Attestation 2026-09-10)**——原 QUARANTINED 依导演授权覆盖解除（见文首 DIRECTOR OVERRIDE）；license Evidence=导演声明，选材 import 逐项登记 §8 |
+| **Status（Fonts Economica/Lato）** | **CLEAN（OFL）**——evidence=包内 OFL.txt；随选材按需 import |
+| 历史 | 曾 QUARANTINED 待 license evidence；2026-09-10 导演裁定本地素材包全部已授权，限制解除 |
+
+**处置（更新 2026-09-10）**：导演授权覆盖生效后，Aria 进入「选材 import」阶段——**不整包 import**，按 §1 槽位逐项挑选（首批选材与 Unity Import Path 见 §8 台账）；`_aria_stage/` 为解包暂存不参与构建。
+
+---
+
 ### 历史预登记（WO-01，仍生效）
 CC0 fallback 预登记（未下载、未 import）：Kenney UI Pack（kenney.nl，官方页标示 CC0）——若后续 Phase 需要 placeholder 结构件，下载后按准入合同补全台账（含 Acquisition Date + License Evidence 截图/链接）后再 import。本轮 WO-02 未使用任何外部素材（原创合成全部覆盖战斗 HUD 需求）。
+
+## §8 Aria 选材 import 台账（2026-09-10，首批 22 件）
+
+**Unity Import Path 单一真相 = `SliceAria.DeclaredKeys`（Root=`Resources/UI/AriaGUI/`；测试锁定=全部可加载 + 目录无未声明 png）**。
+Source（全部行）= Aria GUI — Full Fantasy RPG UI Kit / Honeti / Director Attestation 2026-09-10 / Acquisition=2026-09-10 / Modified=仅 Unity 导入设置（关 mipmap、Clamp、Bilinear、alphaIsTransparency、NPOT None）。
+
+| # | 资产 | 源路径（包内） | Import Path | 用途 |
+|---|---|---|---|---|
+| 1 | Sword | Textures/Icons/128/Sword.png | Icons/Sword.png | 装备槽 Weapon 符文（优先）+备用 |
+| 2 | Helmet | Textures/Icons/128/Helmet.png | Icons/Helmet.png | 装备槽 Helmet |
+| 3 | ChestArmor | Textures/Icons/128/ChestArmor.png | Icons/ChestArmor.png | 装备槽 Body |
+| 4 | Gloves | Textures/Icons/128/Gloves.png | Icons/Gloves.png | 装备槽 Gloves |
+| 5 | Boots | Textures/Icons/128/Boots.png | Icons/Boots.png | 装备槽 Boots |
+| 6 | Belt | Textures/Icons/128/Belt.png | Icons/Belt.png | 装备槽 Belt |
+| 7-12 | Swords/Bow/Shield02/PotionHeart/Ring/Skull02 | Textures/Icons/128/ | Icons/ | 备用图标族（技能/物品视觉候选） |
+| 13 | FrameRoundGold | Textures/Panels/FrameRoundGold.png | Frames/FrameRoundGold.png | 生命/法力球金环覆层（DrawOrb 顶层） |
+| 14-15 | BubbleBg/BubbleFill | Textures/Bars/ | Bars/ | 球底渐变（登记备用） |
+| 16 | FrameGold | Textures/Panels/FrameGold.png | Panels/FrameGold.png | 背包弹窗描金九宫框（NineSlice b=12） |
+| 17 | SimplePanelShadow | Textures/Panels/SimplePanelShadow.png | Panels/SimplePanelShadow.png | 面板衬影（登记备用） |
+| 18 | Separator | Textures/Panels/Separator.png | Panels/Separator.png | 饰线（登记备用） |
+| 19-22 | ButtonBrown/Down/Hover/Inactive | Textures/Buttons/ | Buttons/ | 按钮 4 态（登记备用；接线待视觉验证轮） |
+
+**回退纪律**：每个消费点必须允许 `SliceAria.Get==null` → 程序化合成独立成立（测试 `Aria_MissingPath_ReturnsNull_NoThrow` + 既有程序化真值测试保留）。

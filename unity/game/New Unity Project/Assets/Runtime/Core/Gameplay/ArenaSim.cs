@@ -77,6 +77,7 @@ namespace Game.Runtime.Core
             Dummies.Separate(CombatRules.DummyMinSeparation);
             ResolveEnemyAttacks();
             Dummies.TickDots(dt, Feedback);
+            Dummies.TickMarks(dt);
             Dummies.TickDeath(dt);
             Feedback.Tick(dt);
             UpdatePlayerAnim();
@@ -148,10 +149,10 @@ namespace Game.Runtime.Core
 
             if (skill == SkillId.Melee)
                 ResolveMelee(def);
-            else if (skill == SkillId.Projectile)
-                ResolveProjectile(def);
             else if (skill == SkillId.Area)
                 ResolveArea(def);
+            else
+                ResolveProjectile(skill, def);
         }
 
         void SpawnCastFeedback(SkillId skill, SkillDef def)
@@ -203,24 +204,27 @@ namespace Game.Runtime.Core
             }
         }
 
-        void ResolveProjectile(SkillDef def)
+        /// <summary>投射物发射（弹道/冰矛/火球术共用）：基础伤害元素由 SkillDef.BaseDamageIsFire 决定，
+        /// 穿透/返回由 SkillDef.Pierce 与「投射物返回」支持决定。参数化后三种投射物共享同一发射与结算路径。</summary>
+        void ResolveProjectile(SkillId skill, SkillDef def)
         {
             float x = Player.X + Caster.LockedDirX * 0.6f;
             float z = Player.Z + Caster.LockedDirZ * 0.6f;
-            int forks = Session != null ? Session.ForkCount(SkillId.Projectile) : 0;
+            int forks = Session != null ? Session.ForkCount(skill) : 0;
             bool packet = Session != null;
             HitRequest req = default;
-            bool fire = false;
+            bool fire = def.BaseDamageIsFire;
             if (packet)
             {
                 Dummy probe = default;
-                req = Session.BuildPlayerHit(SkillId.Projectile, probe);
-                fire = req.FireFlat + req.ConvertPhysToFire > 0f;
+                req = Session.BuildPlayerHit(skill, probe);
+                fire = def.BaseDamageIsFire || req.FireFlat + req.ConvertPhysToFire > 0f;
             }
 
+            bool canReturn = Session != null && Session.HasSupport(skill, SupportId.ReturningProjectiles);
             Projectiles.Spawn(
                 x, z, Caster.LockedDirX, Caster.LockedDirZ, def,
-                req, packet, forks, false, SkillId.Projectile, fire);
+                req, packet, forks, false, skill, fire, def.Pierce, canReturn);
         }
 
         void ResolveArea(SkillDef def)
@@ -245,10 +249,20 @@ namespace Game.Runtime.Core
             bool log = TryConsumeHitLog();
             int damage = p.Damage;
             HitResult result = default;
+            bool marked = false;
+            bool markSupport = false;
+            float markBonus = SliceRules.SnipersMarkMoreDamage;
             if (p.UsePacket && Session != null)
             {
                 Dummy dummy = Dummies.Items[dummyIndex];
                 HitRequest req = p.Packet;
+                // S6P-WO-05 狙击印记：只对「已被印记」的目标加伤；加成在减伤之前进入同一 HitRequest（不新增结算路径）
+                markSupport = Session.HasSupport(p.Skill, SupportId.SnipersMark);
+                if (markSupport && dummy.MarkRemain > 0f)
+                {
+                    marked = true;
+                    req.MoreDamage *= 1f + markBonus;
+                }
                 req.Evasion = dummy.Evasion;
                 req.Armour = dummy.Armour;
                 req.FireRes = dummy.FireRes;
@@ -308,11 +322,36 @@ namespace Game.Runtime.Core
                 if (died && Session != null)
                     Session.OnKill(this, Dummies.Items[dummyIndex], dummyIndex);
             }
+
+            if (markSupport && result.Hit)
+                Dummies.ApplyMark(dummyIndex, SliceRules.SnipersMarkDuration);
+
+            // S6P-WO-05 火球术：命中点范围爆炸（直接命中目标已结算，排除避免双算）
+            if (p.ImpactAreaRadius > 0f)
+                ResolveImpactArea(p.Skill, p.X, p.Z, p.ImpactAreaRadius, dummyIndex);
+        }
+
+        /// <summary>命中点范围结算（火球术）：与范围技能同一 ApplySkillHit 路径，排除直接命中目标避免重复结算。</summary>
+        void ResolveImpactArea(SkillId skill, float cx, float cz, float radius, int excludeDummy)
+        {
+            Feedback.Spawn(FeedbackKind.Area, cx, cz, 0.22f, radius * 2f, 0f);
+            PlayImpact();
+            float r2 = radius * radius;
+            for (int i = 0; i < Dummies.Items.Length; i++)
+            {
+                if (i == excludeDummy)
+                    continue;
+                if (!Dummies.Items[i].Occupied || !Dummies.Items[i].Alive)
+                    continue;
+                if (CombatMathUtil.DistSq(cx, cz, Dummies.Items[i].X, Dummies.Items[i].Z) > r2)
+                    continue;
+                ApplySkillHit(skill, i, 1);
+            }
         }
 
         void ForkFrom(Projectile p)
         {
-            SkillDef def = Caster.Def(SkillId.Projectile);
+            SkillDef def = Caster.Def(p.Skill);
             def.ProjectileSpeed = p.Speed;
             def.ProjectileRadius = p.Radius;
             float remain = p.MaxDistance - p.Traveled;

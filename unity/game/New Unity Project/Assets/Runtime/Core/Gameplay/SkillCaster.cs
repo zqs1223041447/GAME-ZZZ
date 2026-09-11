@@ -5,7 +5,7 @@ namespace Game.Runtime.Core
         public CastPhase Phase;
         public SkillId Current;
         public float PhaseElapsed;
-        public readonly float[] CooldownRemain = new float[4];
+        public readonly float[] CooldownRemain = new float[(int)SkillId.Count];
         public int LockedTarget;
         public float LockedAimX;
         public float LockedAimZ;

@@ -17,6 +17,7 @@ namespace Game.Runtime.Core
         static Texture2D _glyphMelee, _glyphProjectile, _glyphArea;
         static Texture2D _pipOn, _pipOff, _pipClosed;
         static Texture2D _globeFrame;
+        static Texture2D _globeSheen;
         static Texture2D _slotFrame;
         static Texture2D _separator;
         static Texture2D _eqWeapon, _eqHelmet, _eqBody, _eqGloves, _eqBoots, _eqBelt;
@@ -26,7 +27,7 @@ namespace Game.Runtime.Core
         {
             if (_built && _glyphMelee != null && _glyphProjectile != null && _glyphArea != null &&
                 _pipOn != null && _pipOff != null && _pipClosed != null &&
-                _globeFrame != null && _slotFrame != null && _separator != null &&
+                _globeFrame != null && _globeSheen != null && _slotFrame != null && _separator != null &&
                 _eqWeapon != null && _eqHelmet != null && _eqBody != null &&
                 _eqGloves != null && _eqBoots != null && _eqBelt != null)
                 return;
@@ -37,6 +38,7 @@ namespace Game.Runtime.Core
             _pipOff = BuildPip(false, false);
             _pipClosed = BuildPip(false, true);
             _globeFrame = BuildGlobeFrame();
+            _globeSheen = BuildGlobeSheen();
             _slotFrame = BuildSlotFrame();
             _separator = BuildSeparator();
             _eqWeapon = BuildEqWeapon();
@@ -55,14 +57,16 @@ namespace Game.Runtime.Core
         public static Texture2D PipOff { get { Ensure(); return _pipOff; } }
         public static Texture2D PipClosed { get { Ensure(); return _pipClosed; } }
         public static Texture2D GlobeFrame { get { Ensure(); return _globeFrame; } }
+        /// <summary>S5U-F1 V-09：球内实体感覆层（内圈暗缘+左上高光弧；256²，透明底）。</summary>
+        public static Texture2D GlobeSheen { get { Ensure(); return _globeSheen; } }
         public static Texture2D SlotFrame { get { Ensure(); return _slotFrame; } }
         public static Texture2D Separator { get { Ensure(); return _separator; } }
-        public static Texture2D EqWeapon { get { Ensure(); return _eqWeapon; } }
-        public static Texture2D EqHelmet { get { Ensure(); return _eqHelmet; } }
-        public static Texture2D EqBody { get { Ensure(); return _eqBody; } }
-        public static Texture2D EqGloves { get { Ensure(); return _eqGloves; } }
-        public static Texture2D EqBoots { get { Ensure(); return _eqBoots; } }
-        public static Texture2D EqBelt { get { Ensure(); return _eqBelt; } }
+        public static Texture2D EqWeapon { get { Ensure(); return SliceAria.EqWeapon != null ? SliceAria.EqWeapon : _eqWeapon; } } // Aria 优先，程序化回退
+        public static Texture2D EqHelmet { get { Ensure(); return SliceAria.EqHelmet != null ? SliceAria.EqHelmet : _eqHelmet; } }
+        public static Texture2D EqBody { get { Ensure(); return SliceAria.EqBody != null ? SliceAria.EqBody : _eqBody; } }
+        public static Texture2D EqGloves { get { Ensure(); return SliceAria.EqGloves != null ? SliceAria.EqGloves : _eqGloves; } }
+        public static Texture2D EqBoots { get { Ensure(); return SliceAria.EqBoots != null ? SliceAria.EqBoots : _eqBoots; } }
+        public static Texture2D EqBelt { get { Ensure(); return SliceAria.EqBelt != null ? SliceAria.EqBelt : _eqBelt; } }
 
         /// <summary>S5U-WO-03：装备槽类型符文（generic 槽位图形，不伪装具体物品外观；恒等映射）。</summary>
         public static Texture2D EquipGlyph(EquipSlot slot)
@@ -93,6 +97,35 @@ namespace Game.Runtime.Core
             if (skill == SkillId.Area)
                 return GlyphArea;
             return GlyphMelee;
+        }
+
+        // ================= S6P-WO-05：poedb 真实美术优先于程序化图形 =================
+        // 优先级 poedb（PoE 原始美术）→ Aria（通用图形）→ 程序化合成。任一层缺失都不影响可用性。
+
+        /// <summary>技能槽图标：优先 poedb 技能宝石图，缺失回退程序化符文。</summary>
+        public static Texture2D SkillGlyph(SkillId skill)
+        {
+            Texture2D art = SlicePoeArt.SkillArt(skill);
+            return art != null ? art : GlyphFor(skill);
+        }
+
+        /// <summary>技能槽是否使用真实美术（绘制端据此决定是否染色——宝石图自带配色）。</summary>
+        public static bool SkillGlyphIsArt(SkillId skill)
+        {
+            return SlicePoeArt.SkillArt(skill) != null;
+        }
+
+        /// <summary>物品图标：优先 poedb 物品美术（按槽位 + 稀有度），缺失回退 Aria/程序化槽位符号。</summary>
+        public static Texture2D ItemIcon(EquipSlot slot, Rarity rarity)
+        {
+            Texture2D art = SlicePoeArt.ItemArt(slot, rarity);
+            return art != null ? art : EquipGlyph(slot);
+        }
+
+        /// <summary>辅助宝石图标：优先 poedb 辅助宝石图，缺失回退程序化宝石底。</summary>
+        public static Texture2D SupportGem(SupportId id)
+        {
+            return SlicePoeArt.SupportArt(id);
         }
 
         // ---------------- 共用色板（与 SliceSkin 对齐） ----------------
@@ -311,6 +344,39 @@ namespace Game.Runtime.Core
             else
             {
                 Dot(px, 10, 10, 3.2f, IronLo);
+            }
+            return Make(px, s);
+        }
+
+        /// <summary>S5U-F1 V-09：球内覆层 256²（fill 半径 0.40 映射）——外缘 5px 内阴影 + 左上高光弧（resource vessel 实体感）。</summary>
+        static Texture2D BuildGlobeSheen()
+        {
+            const int s = 256;
+            var px = new Color32[s * s];
+            float c = (s - 1) * 0.5f;
+            float rFill = s * 0.40f;
+            for (int y = 0; y < s; y++)
+            {
+                for (int x = 0; x < s; x++)
+                {
+                    float dx = x - c;
+                    float dy = y - c;
+                    float r = Mathf.Sqrt(dx * dx + dy * dy);
+                    float band = rFill - r;
+                    if (band >= 0f && band < 5f)
+                    {
+                        // 内圈暗缘（fill 外缘内阴影）
+                        px[y * s + x] = new Color32(6, 5, 4, (byte)(255f * 0.62f * (1f - band / 5f)));
+                        continue;
+                    }
+                    if (r < rFill * 0.93f && r > rFill * 0.42f && dx < -rFill * 0.12f && dy < -rFill * 0.12f)
+                    {
+                        // 左上高光弧（玻璃反射）
+                        float arc = 1f - Mathf.Abs(r - rFill * 0.70f) / (rFill * 0.26f);
+                        if (arc > 0f)
+                            px[y * s + x] = new Color32(255, 246, 224, (byte)(255f * 0.22f * arc));
+                    }
+                }
             }
             return Make(px, s);
         }

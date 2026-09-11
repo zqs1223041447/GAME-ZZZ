@@ -391,3 +391,53 @@ S1 键保留（按住走、按住 Q/W/E 连发）。S2 UI：顶栏「角色 / �
 ### 对象池
 
 Dummy / Projectile / Feedback 容量与回收规则不变。Fork 从同一弹道池取子弹。新 FeedbackKind：Loot、Ignite。
+
+---
+
+## S6P-DIR-01（2026-09-11）运行时真值增补
+
+### 主动技能域（5 条，ID 只追加不漂移）
+
+```text
+None=0, Melee=1, Projectile=2, Area=3, IceSpear=4, Fireball=5, Count=6
+```
+
+| 技能 | 键位 | Tag mask | 弹道 | 基础伤害元素 | 特殊 |
+|---|---|---|---|---|---|
+| 近战 | Q | `Attack\|Melee\|Hit\|Physical` | — | 物理 | 锥形 60° |
+| 弹道 | W | `Attack\|Projectile\|Hit\|Physical` | 速 18 / 径 0.35 / 射程 16 | 物理 | 可分裂 |
+| 范围 | E | `Spell\|Area\|Hit\|Physical` | — | 物理 | 半径 3.2 |
+| 冰矛 | R | `Spell\|Projectile\|Hit\|Physical` | 速 30 / 径 0.28 / 射程 20 | 物理（无冰冷轴，见限制） | **穿透 3** |
+| 火球术 | T | `Spell\|Projectile\|Area\|Hit\|Fire` | 速 14 / 径 0.42 / 射程 14 | **纯火焰** | **命中点爆炸 2.6**（排除直接命中目标） |
+
+### 连接组（辅助孔位真值）
+
+`Melee → QSupports`；**`Projectile / IceSpear / Fireball → WSupports`（同一弹道连接组共享孔位）**；`Area → ESupports`。
+查重（同一 Support 不得装两处）按**组代表**判定（`SliceSession.ConnectionGroupRep`）。
+`MappedSlot`：冰矛/火球术随弹道组映射到胸甲。
+
+### 机制型 Support 的限制表达
+
+`SupportDef.MechanicSkill` 由「技能身份相等」改为**Tag 蕴含**：`Projectile` 表示「只接投射物投送」= 要求 `Tag.Projectile`。
+兼容判定唯一入口仍是 `SliceSession.IsSupportCompatible`（golden 矩阵 `5×9` 与 runtime 逐组合对拍）。
+
+### 弹体结算（`ProjectilePool` + `ArenaSim`）
+
+1. 每投射物持有 **已命中位图**（每目标 1 bit）——唯一「同一目标不重复结算」真值，穿透与返程共用。
+2. 命中时：若 `PierceLeft > 0` → 递减并**继续飞行**；否则若装配「投射物返回」→ **掉头**（返程自带距离预算，抵达玩家 ≤0.85 即消失）；否则按原规则消失。
+3. 飞完射程同理：可返回则掉头，否则消失。
+4. `ImpactAreaRadius > 0`（火球术）→ 命中点做一次范围结算（复用 `ApplySkillHit` 路径，排除直接命中目标避免双算）。
+
+### 狙击印记（`SupportId.SnipersMark`）
+
+- 写入唯一入口 `DummyCrowd.ApplyMark`；衰减唯一入口 `DummyCrowd.TickMarks`（`ArenaSim.Tick` 每帧）。
+- 施加时机：装配该辅助的投射物**命中且判定为 Hit** 时，给**命中目标**打标（单体）。
+- 增伤：目标已带印记时，构造 `HitRequest` 阶段 `MoreDamage *= 1 + SliceRules.SnipersMarkMoreDamage(0.35)`——**在护甲/抗性减免之前**进入同一条 `CombatMath.ResolveHit`，无第二条结算路径。
+- 呈现：`EnemyFeedbackState.Mark`（优先级最低：Hit > Ignite > Mark），仅读 `MarkRemain > 0`，零 gameplay 写入。
+
+### 美术来源（呈现层，非 gameplay）
+
+`SlicePoeArt` 从 `Resources/UI/PoE/{Items,Skills,Supports,Vfx}` 载入 poedb 真实美术；
+消费点 `SliceHudIcons.ItemIcon / SkillGlyph / SupportGem`、`ArenaDirector.BuildProjectileArt`（贴图球体 + Unlit）。
+回退链：poedb → Aria → 程序化合成，任一层缺失不影响可用性。
+逐条来源 = `docs/reviews/S6P/S6P_DIR_01_POEDB_SOURCING.md`。

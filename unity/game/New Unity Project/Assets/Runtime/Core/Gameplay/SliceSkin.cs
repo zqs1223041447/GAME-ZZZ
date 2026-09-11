@@ -28,6 +28,8 @@ namespace Game.Runtime.Core
         static Texture2D _slotHover;
         static Texture2D _slotPress;
         static Texture2D _slotSelected;
+        static Texture2D _slotSubtle;
+        static Texture2D _slotSubtleHover;
         static Texture2D _orbRing;
         static Texture2D _orbFill;
         static bool _built;
@@ -36,7 +38,8 @@ namespace Game.Runtime.Core
         {
             // Unity null 语义=被销毁的贴图视为未建：交互式编辑器无域重载时自愈重建（Gate 批处理新域不受影响）
             if (_built && _panel != null && _slot != null && _slotHover != null && _slotPress != null &&
-                _slotSelected != null && _orbRing != null && _orbFill != null)
+                _slotSelected != null && _slotSubtle != null && _slotSubtleHover != null &&
+                _orbRing != null && _orbFill != null)
                 return;
             Texture2D stone = BuildStone();
             _panel = BuildPanel(stone);
@@ -44,6 +47,8 @@ namespace Game.Runtime.Core
             _slotHover = BuildSlot(stone, true, false, false);
             _slotPress = BuildSlot(stone, false, true, false);
             _slotSelected = BuildSlot(stone, false, false, true);
+            _slotSubtle = BuildSubtle(stone, false);
+            _slotSubtleHover = BuildSubtle(stone, true);
             _orbRing = BuildOrbRing();
             _orbFill = BuildOrbFill();
             _built = true;
@@ -54,6 +59,9 @@ namespace Game.Runtime.Core
         public static Texture2D SlotHover { get { Ensure(); return _slotHover; } }
         public static Texture2D SlotPress { get { Ensure(); return _slotPress; } }
         public static Texture2D SlotSelected { get { Ensure(); return _slotSelected; } }
+        /// <summary>S5U-F1 V-02：Cell/Slot 层级=暗铁无金框（金只做强调；网格/托盘/次要槽用此层）。</summary>
+        public static Texture2D SlotSubtle { get { Ensure(); return _slotSubtle; } }
+        public static Texture2D SlotSubtleHover { get { Ensure(); return _slotSubtleHover; } }
         public static Texture2D OrbRing { get { Ensure(); return _orbRing; } }
         public static Texture2D OrbFill { get { Ensure(); return _orbFill; } }
 
@@ -139,6 +147,19 @@ namespace Game.Runtime.Core
             {
                 CornerDot(px, size, t0 + i, Gold);
             }
+            return MakeTex(size, px);
+        }
+
+        /// <summary>S5U-F1 V-02：暗铁 Subtle 层（无金线；hover=微亮铁棱）。金只保留给 Outer/Selected/强调。</summary>
+        static Texture2D BuildSubtle(Texture2D stone, bool hover)
+        {
+            const int size = 96;
+            var px = new Color32[size * size];
+            float mul = hover ? 0.78f : 0.52f;
+            SampleStoneTiled(stone, px, size, mul);
+            Edge(px, size, 0, hover ? Hex(0x453E32) : Hex(0x231F19));
+            EdgeTopLeft(px, size, 1, hover ? Hex(0x554C3E) : Hex(0x332D25));
+            EdgeBottomRight(px, size, 1, Hex(0x050403));
             return MakeTex(size, px);
         }
 

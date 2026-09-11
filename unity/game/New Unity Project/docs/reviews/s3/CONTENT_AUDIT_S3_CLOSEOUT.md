@@ -2,7 +2,7 @@
 
 **当前 Content Audit snapshot（测试再生）**。文件名保留 CLOSEOUT 是因为它源自 S3 Phase 1/2 收口；**BATCH1 / R2 报告才是冻结历史 evidence**。
 
-生成：EditMode 测试 `ContentAuditS2Tests`，failure-safe 顺序 **Collect → Render → Persist → Assert**（S3-M3：报告先于测试断言落盘——测试红 ⇒ 本快照同轮红，不遗留上一轮 PASS）。只覆盖现行切片：3 Active + 7 Support + 21 词缀 + 16 天赋 + 3 图词缀 + 5 怪。
+生成：EditMode 测试 `ContentAuditS2Tests`，failure-safe 顺序 **Collect → Render → Persist → Assert**（S3-M3：报告先于测试断言落盘——测试红 ⇒ 本快照同轮红，不遗留上一轮 PASS）。只覆盖现行切片：3 Active + 9 Support + 21 词缀 + 2429 天赋 + 3 图词缀 + 5 怪。
 
 ## Verdict
 
@@ -14,13 +14,13 @@
 
 | 类别 | 数量 |
 |---|---|
-| Active 技能 | 3 |
-| Support | 7 |
+| Active 技能 | 5 |
+| Support | 9 |
 | 词缀 | 21 |
-| 天赋节点 | 16（含 2 Notable + 1 机制烬心） |
+| 天赋节点 | 2429（含 2 Notable + 1 机制烬心） |
 | 图词缀 | 3 |
 | 怪 | 5（3 普通 + Elite 监守 + 木桩） |
-| Modifier 引用（Support+Passive） | 26 |
+| Modifier 引用（Support+Passive） | 594 |
 
 内容数量护栏（Collect 阶段核入「结构/契约问题」）：Support=7 / StatId=28 / ModOp、Tag、Effect、Event、Condition、Skill、图词缀轴全部 +0；词缀=13 基线 + S4-P3 追加 ≤4（旧 ID 只追加不缩水，S4-P3 前基线冻结）。
 
@@ -53,17 +53,18 @@ REQUIRED 通过 10/10；GATED present 0 / missing 3（缺失不失败）。
 | Melee | Attack, Melee, Hit, Physical | Attack, Melee, Hit, Physical | ✓ |
 | Projectile | Attack, Projectile, Hit, Physical | Attack, Projectile, Hit, Physical | ✓ |
 | Area | Spell, Area, Hit, Physical | Spell, Area, Hit, Physical | ✓ |
+| IceSpear | Spell, Projectile, Hit, Physical | Spell, Projectile, Hit, Physical | ✓ |
+| Fireball | Spell, Projectile, Area, Hit, Fire | Spell, Projectile, Area, Hit, Fire | ✓ |
 
 ## Tagged Modifier Reachability（Rule E：死 Tagged Modifier = 0）
 
 | Owner | RequiredTags | 可满足 Skill | 结果 |
 |---|---|---|---|
-| Support.集中 | Area | 范围 | ✓ |
-| Support.集中 | Area | 范围 | ✓ |
+| Support.集中 | Area | 范围/火球术 | ✓ |
+| Support.集中 | Area | 范围/火球术 | ✓ |
 | Support.火焰转化 | Attack, Hit, Physical | 近战/弹道 | ✓ |
-| Passive.残暴打击 | Melee | 近战 | ✓ |
 
-Tagged Modifier 总数 4，可满足 4，不可满足 0（期望 0）。负向测试 `ContentAuditTagRules_NegativeCases_AreRejected` 证明规则能抓坏合成输入。
+Tagged Modifier 总数 3，可满足 3，不可满足 0（期望 0）。负向测试 `ContentAuditTagRules_NegativeCases_AreRejected` 证明规则能抓坏合成输入。
 
 ## 缺失 / 非法
 
@@ -93,6 +94,8 @@ Tagged Modifier 总数 4，可满足 4，不可满足 0（期望 0）。负向�
 | 燃尽 | ✓ | ✓ | ✓ |
 | 分裂 | ✗ | ✓ | ✗ |
 | 火焰转化 | ✓ | ✓ | ✗ |
+| 投射物返回 | ✗ | ✓ | ✗ |
+| 狙击印记 | ✗ | ✓ | ✗ |
 
 已知不兼容（钉死，不得放宽）：集中×近战、集中×弹道（Tag.Area 仅范围技能满足）；分裂×近战、分裂×范围（ForkProjectiles 只进弹道结算）；火焰转化×范围（RequiredTags=Attack|Hit|Physical，范围=Spell 无 Attack）。
 
@@ -103,6 +106,8 @@ Tagged Modifier 总数 4，可满足 4，不可满足 0（期望 0）。负向�
 | ID | 名称 | Modifier | RequiredTags | ChangesMechanism | MechanicSkill | Trigger |
 |---|---|---|---|---|---|---|
 | FireConversion | 火焰转化 | ConvertPhysToFire 固定 0.5 | Attack, Hit, Physical | true | 无（Tag 路径推导） | 无 |
+| ReturningProjectiles | 投射物返回 |  | None | true | Projectile | 无 |
+| SnipersMark | 狙击印记 |  | None | true | Projectile | 无 |
 
 ## S3 第一批 + S4-P3 追加词缀
 
@@ -127,6 +132,7 @@ Tagged Modifier 总数 4，可满足 4，不可满足 0（期望 0）。负向�
 **预留 Tag 不是失败项**：以下 Tag 为已声明预留，当前切片未引用；后续批次未立令前不得当作「缺实现」去补系统或补技能。
 
 - Spell
+- Melee
 - Projectile
 - Fire
 - Duration

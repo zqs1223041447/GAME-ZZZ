@@ -15,8 +15,9 @@ namespace Game.Tests.EditMode
         {
             Assert.AreEqual(0, (int)SupportId.None);
             // sentinel 存在且 = 真实数 + 1；SupportCatalog.Count 由 sentinel 派生
-            Assert.AreEqual(8, (int)SupportId.Count);
-            Assert.AreEqual(7, SupportCatalog.Count);
+            // S6P-WO-05：真实 Support 7 → 9（+投射物返回/+狙击印记），sentinel 8 → 10；既有 1-7 数值零漂移
+            Assert.AreEqual(10, (int)SupportId.Count);
+            Assert.AreEqual(9, SupportCatalog.Count);
             Assert.AreEqual((int)SupportId.Count - 1, SupportCatalog.Count);
 
             // Get(None) / Get(Count sentinel) / 任意非法 id：一律 default，不越界不异常
@@ -55,11 +56,12 @@ namespace Game.Tests.EditMode
                 Assert.LessOrEqual((int)pair.Key, SupportCatalog.Count, "golden 键超出真实范围：" + pair.Key);
                 Assert.IsNotNull(pair.Value);
                 foreach (SkillId skill in pair.Value)
-                    Assert.IsTrue(skill == SkillId.Melee || skill == SkillId.Projectile || skill == SkillId.Area,
+                    Assert.AreNotEqual(Tag.None, SkillTags.Of(skill),
                         "golden 含未知技能：" + pair.Key + " -> " + skill);
             }
             // 全覆盖：每个真实 Support × 每个当前 Active Skill 都有确定性期望（parity 测试逐组合对拍）
-            Assert.AreEqual(3 * SupportCatalog.Count, 3 * SupportCompatGolden.Matrix.Count);
+            int skills = SkillTagGolden.All.Length;
+            Assert.AreEqual(skills * SupportCatalog.Count, skills * SupportCompatGolden.Matrix.Count);
         }
 
         [Test]

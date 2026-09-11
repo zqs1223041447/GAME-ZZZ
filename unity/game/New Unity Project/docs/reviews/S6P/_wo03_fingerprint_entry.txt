@@ -1,0 +1,104 @@
+```text
+Working-Tree Fingerprint (content-addressed, SHA-256)
+branch                : main
+HEAD                  : 64b614f2a0effc0e073f5997fa595702effd5bc1
+tracked+untracked files: 13765
+total bytes           : 2062028701
+WORKING-TREE HASH     : a85a5e2e23ca5acfae2a96b41a61d12cfdd59fd9fd9ec8a77ab1b43f4a12c926
+dirty                 : YES
+--- changed-file inventory (git status --porcelain, by area) ---
+[Assets/Runtime] 18
+    ?? unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/PassiveSupport.cs
+    ?? unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/PassiveSupport.cs.meta
+    ?? unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/PoeStatParser.cs
+    ?? unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/PoeStatParser.cs.meta
+    ?? unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/PoeTree.cs
+    ?? unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/PoeTree.cs.meta
+    ?? unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/PoeTreeView.cs
+    ?? unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/PoeTreeView.cs.meta
+    ?? unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceAria.cs
+    ?? unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceAria.cs.meta
+    D unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SlicePassiveLayout.cs
+    D unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SlicePassiveLayout.cs.meta
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/Catalogs.cs
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceDrawerLayout.cs
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceHud.cs
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceHudIcons.cs
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceSession.cs
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceSkin.cs
+[Assets/other] 12
+    ?? unity/game/New Unity Project/Assets/Editor.meta
+    ?? unity/game/New Unity Project/Assets/Editor/
+    ?? unity/game/New Unity Project/Assets/ProceduralUIImage.meta
+    ?? unity/game/New Unity Project/Assets/ProceduralUIImage/
+    ?? unity/game/New Unity Project/Assets/RAEL STUDIOS.meta
+    ?? unity/game/New Unity Project/Assets/RAEL STUDIOS/
+    ?? unity/game/New Unity Project/Assets/Resources/UI.meta
+    ?? unity/game/New Unity Project/Assets/Resources/UI/
+    ?? unity/game/New Unity Project/Assets/Standard Assets.meta
+    ?? unity/game/New Unity Project/Assets/Standard Assets/
+    ?? unity/game/New Unity Project/Assets/Temp.meta
+    M unity/game/New Unity Project/Assets/Settings/Mobile_RPAsset.asset
+[Assets/Tests] 37
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveAwareProductionSimulation.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveAwareProductionSimulation.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveAwareProductionSimulationTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveAwareProductionSimulationTests.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveCensus.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveCensus.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveCensusTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveCensusTests.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveSupportTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PassiveSupportTests.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PoeStatParserTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PoeStatParserTests.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PoeTreeTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PoeTreeTests.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PoeTreeViewTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/PoeTreeViewTests.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/S5UAriaAssetTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/S5UAriaAssetTests.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/SliceBagPanelTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/EditMode/SliceBagPanelTests.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/PlayMode/S5UAriaVisualPlayModeTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/PlayMode/S5UAriaVisualPlayModeTests.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/PlayMode/S5UPoeTreeVisualPlayModeTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/PlayMode/S5UPoeTreeVisualPlayModeTests.cs.meta
+    ?? unity/game/New Unity Project/Assets/Tests/PlayMode/S6PPassiveSupportPlayModeTests.cs
+    ?? unity/game/New Unity Project/Assets/Tests/PlayMode/S6PPassiveSupportPlayModeTests.cs.meta
+    D unity/game/New Unity Project/Assets/Tests/EditMode/SlicePassiveLayoutTests.cs
+    D unity/game/New Unity Project/Assets/Tests/EditMode/SlicePassiveLayoutTests.cs.meta
+    M unity/game/New Unity Project/Assets/Tests/EditMode/ContentAuditS2Tests.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/ProductionContentReport.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/ProductionSimulator.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/S3R2FireConversionTests.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/S5UDrawerTests.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/S5UHudTests.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/SliceDrawerTests.cs
+    M unity/game/New Unity Project/Assets/Tests/EditMode/SliceLoopTests.cs
+    M unity/game/New Unity Project/Assets/Tests/PlayMode/EnemyVisualFeedbackPlayModeTests.cs
+[docs] 12
+    ?? unity/game/New Unity Project/docs/qa/PASSIVE_CENSUS_REPORT.json
+    ?? unity/game/New Unity Project/docs/reviews/S5U/asset-source/aria_icons_dark_check.png
+    ?? unity/game/New Unity Project/docs/reviews/S5U/S5U_WO_04_POE_TREE.md
+    ?? unity/game/New Unity Project/docs/reviews/S5U/screenshots/09_bag_modal_aria_1440.png
+    ?? unity/game/New Unity Project/docs/reviews/S5U/screenshots/10_bag_modal_crowded_1440.png
+    ?? unity/game/New Unity Project/docs/reviews/S5U/screenshots/wo04/
+    ?? unity/game/New Unity Project/docs/reviews/S6P/
+    M unity/game/New Unity Project/docs/qa/CONTENT_PRODUCTION_REPORT.json
+    M unity/game/New Unity Project/docs/qa/PRODUCTION_SIMULATION_REPORT.json
+    M unity/game/New Unity Project/docs/reviews/s3/CONTENT_AUDIT_S3_CLOSEOUT.md
+    M unity/game/New Unity Project/docs/reviews/S5U/S5U_ASSET_ADMISSION.md
+    M unity/game/New Unity Project/docs/reviews/S5U/S5U_VISUAL_CONTRACT.md
+[other] 8
+    ?? _搴撳瓨娓呭崟.txt
+    ?? _搴撳瓨娓呭崟.txt.pkgs
+    ?? _aria_stage/
+    ?? 寮€鍙戣鍒?UNATTENDED_STATE.md
+    ?? 绱犳潗鍒濈瓫锛岀瓑寰呴獙鏀?
+    ?? build/
+    ?? tools/
+    M 寮€鍙戣鍒?瑙勫垝AI浼氳瘽.md
+[_poe_src] 1
+    ?? _poe_src/
+```

@@ -237,3 +237,24 @@ S5U Final Gate 至少提供：Arena clean combat HUD / two-link active / item to
 - **呈现网格**：92×70×3 列；1 物品=1 恰一格；顺序=InventoryCount 真值；零网格机制（内容高=ceil(count/3)×行高，测试锁定）。
 - **Tooltip 层级**：金分隔线×2（标题块|正文|对比区）为渲染层视觉（模型零改动）；cell 悬停坐标换算修复（内容→设计空间；旧列表缺陷一并修正）。
 - **Compact 升位**：K/M/T 段舍入达上段阈值=升位（999999→1.0M；禁 1000.0K/1000.0M）——规划 AI WO-02 Gate 合同修正项，随 WO-03 落地。
+
+---
+
+## 修订（2026-09-10，Director Input 无人值守批次）
+
+| 项 | 修订 |
+|---|---|
+| 背包窗口（原右侧抽屉壳） | **D2 式居中独立弹窗**（导演参考图驱动）：上=装备纸娃娃三列（武器高槽 200×240 / 头盔 92 / 胸甲 108 / 腰带 74 / 手套 92 / 靴子 108），下=8 列满幅格子网格（78×70，5 行可见，滚动溢出）；几何单一来源不变（SliceDrawerLayout.Shell*，几何测试全量更新重跑） |
+| 窗框 | Aria FrameGold 描金九宫（NineSlice b=12；缺失→程序化 PanelBg 独立成立） |
+| 生命/法力球 | Aria FrameRoundGold 金环覆层叠加程序化球体之上（缺失→程序化球框独立成立）；截图实测=铆钉金环包络红/蓝球，风格成立 |
+| 装备槽图标 | Aria 128² 白模板（Sword/Helmet/ChestArmor/Gloves/Boots/Belt），绘制端缩放+GUI.color 染色；程序化 64² 符文保留为回退 |
+| 许可基础 | Director Attestation 2026-09-10（本机素材包全部已授权）；准入台账 S5U_ASSET_ADMISSION §7/§8 |
+| 验收 | EditMode 350/350 + PlayMode 12/12（含 S5UAriaVisualPlayModeTests 截图锚）；canonical 截图 `screenshots/09_bag_modal_aria_1440.png` |
+### 修订 2（2026-09-10，Director 指令"多件同类装备并排"）
+
+| 项 | 修订 |
+|---|---|
+| 背包格子渲染 | **D2 图标优先格**：稀有度染底（Rare=暗金雾/Ordinary=中性极弱）+ 同色 1px 内框 + 居中 44² 槽位类型图标；名称/词缀摘要从格内移除，唯一承载=悬停 ItemCard tooltip（既有）；已装备=右上 37×14 角标（三字不换行） |
+| 多件同类辨识 | 格底/框色=稀有度第一辨识层，居中图标=槽位类型第二辨识层；同类并排（实测 3 把剑/3 件胸甲同屏）按列分布可逐一辨认 |
+| 拥挤演示 | PlayMode 截图锚注入 22 件（每槽 3-4 件、混合稀有度、2 件已装备）：`screenshots/10_bag_modal_crowded_1440.png` |
+| 附带修复 | `EnemyVisualFeedbackPlayModeTests.FireLion_*` 泄漏 ArenaDirector（未 Destroy）→ 滞留场景双 HUD 叠画污染后续截图；已补 Destroy。S5UAriaVisualPlayModeTests 加"场景恰 1 个 ArenaDirector"防回归断言 |

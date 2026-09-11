@@ -16,12 +16,19 @@ namespace Game.Tests.EditMode
     /// all generated affix Stats consumed / fixed seed output reproducible（FNV-1a 64 hash）。
     /// 产物：docs/qa/PRODUCTION_SIMULATION_REPORT.json（machine-readable；确定性渲染，禁止手填）。
     /// 纯 tooling/测试层（Game.Tests.EditMode），零 runtime hot path。
+    ///
+    /// S6P-WO-02：canonical 面从 loot→craft→equip 扩到 loot→craft→equip→passive allocation→
+    /// passive modifier→effective gameplay stat（见 <see cref="PassiveAwareProductionSimulation"/>）。
+    /// 每个 session 先经 domain API 建立 canonical 被动 loadout，再把顺序无关的被动语义状态喂进 FNV 负载。
+    /// 旧 hash FNV1A64:9a4c9524d0b3e214 从本单起只是 predecessor reference，不是 expected oracle。
     /// </summary>
     internal static class ProductionSimulator
     {
-        internal const string SchemaName = "PRODUCTION_SIMULATION_REPORT_V1";
-        internal const int SchemaVersion = 1;
-        internal const string GeneratedBy = "Game.Tests.EditMode.ProductionSimulatorTests（EditMode 测试再生；真实 Drop/Craft/Equip 路径驱动，禁止手填）";
+        internal const string SchemaName = "PRODUCTION_SIMULATION_REPORT_V2";
+        internal const int SchemaVersion = 2;
+        internal const string GeneratedBy = "Game.Tests.EditMode.ProductionSimulatorTests（EditMode 测试再生；真实 Drop/Craft/Equip + canonical Passive allocation 路径驱动，禁止手填）";
+        /// <summary>本单建立新 canonical hash 前的 predecessor（仅参照，不是期望值）。</summary>
+        internal const string PredecessorHash = "FNV1A64:9a4c9524d0b3e214";
         internal const uint Seed = 20260909u;
         internal const int SessionCycleSize = 40;
         internal const int TotalIterations = 10000;
@@ -45,22 +52,82 @@ namespace Game.Tests.EditMode
             public string Hash;             // FNV-1a 64 hex
             public bool RepeatHashMatch;
             public string RepeatHash;
+
+            // ---- S6P-WO-02：被动面证据（canonical session 的状态，不是判据本身） ----
+            public string PassiveScenarioVersion;
+            public int AllocatedPassiveNodeCount;
+            public string AllocatedPassiveNodeIds;
+            public int PassiveModifierCount;
+            public int PassiveOffensiveTupleCount;
+            public int PassiveDefensiveOrAttributeTupleCount;
+            public string PassiveEffectiveStatSnapshot;
+            public string PassiveEffectiveSkillStatSnapshot;
+            public bool PassiveSensitive;
+            public List<string> PassiveAllocationEvents = new List<string>();
+
+            // ---- 敏感性证明（临时构造的合法变体；不进 canonical hash） ----
+            public string SensitivityAllocationBaselineHash;
+            public string SensitivityAllocationMutatedHash;
+            public bool AllocationMutationChangedHash;
+            public string SensitivityStatBaselineHash;
+            public string SensitivityStatMutatedHash;
+            public bool StatMutationChangedHash;
+            public string SensitivityRestoredHash;
+            public bool RestoreExactMatch;
+            public bool OrderingInvariant;
         }
 
         /// <summary>跑 TotalIterations 个 cycle（SessionCycleSize/会话 × N 会话）；decisionRng 决定 cycle 类别。</summary>
         internal static Result Run(uint seed, bool writeArtifact)
         {
-            var r = RunCore(seed);
-            var repeat = RunCore(seed);
+            var r = RunCore(seed, PassiveAwareProductionSimulation.CanonicalNodeIds);
+            var repeat = RunCore(seed, PassiveAwareProductionSimulation.CanonicalNodeIds);
             r.RepeatHash = repeat.Hash;
             r.RepeatHashMatch = repeat.Hash == r.Hash && repeat.InvalidCount == 0;
             r.VerdictPass = r.InvalidCount == 0 && r.RepeatHashMatch;
             if (writeArtifact)
+            {
+                ProvePassiveSensitivity(r, seed);
                 WriteArtifact(r, seed);
+            }
             return r;
         }
 
-        static Result RunCore(uint seed)
+        /// <summary>用显式被动 loadout 跑一次完整 simulation（工具/测试层：合同 §7 敏感性证明用）。</summary>
+        internal static Result RunWithScenario(uint seed, int[] nodeIds)
+        {
+            var r = RunCore(seed, nodeIds);
+            r.VerdictPass = r.InvalidCount == 0;
+            return r;
+        }
+
+        /// <summary>
+        /// 合同 §7 必做证明：A 改一个 canonical 加点 → hash 必须变；B 合法换一组加点使有效属性不同 → hash 必须变；
+        /// C 恢复 canonical → 必须精确复原；另证加点顺序不影响 hash（§8）。
+        /// </summary>
+        static void ProvePassiveSensitivity(Result r, uint seed)
+        {
+            string canonical = r.Hash;
+            var idsA = PassiveAwareProductionSimulation.SensitivityAllocationNodeIds;
+            var idsB = PassiveAwareProductionSimulation.SensitivityStatNodeIds;
+            var reversed = PassiveAwareProductionSimulation.CanonicalReverseOrderNodeIds;
+
+            r.SensitivityAllocationBaselineHash = canonical;
+            r.SensitivityAllocationMutatedHash = RunCore(seed, idsA).Hash;
+            r.AllocationMutationChangedHash = r.SensitivityAllocationMutatedHash != canonical;
+
+            r.SensitivityStatBaselineHash = canonical;
+            r.SensitivityStatMutatedHash = RunCore(seed, idsB).Hash;
+            r.StatMutationChangedHash = r.SensitivityStatMutatedHash != canonical;
+
+            r.SensitivityRestoredHash = RunCore(seed, PassiveAwareProductionSimulation.CanonicalNodeIds).Hash;
+            r.RestoreExactMatch = r.SensitivityRestoredHash == canonical;
+
+            r.OrderingInvariant = RunCore(seed, reversed).Hash == canonical;
+            r.PassiveSensitive = r.AllocationMutationChangedHash && r.StatMutationChangedHash && r.RestoreExactMatch;
+        }
+
+        static Result RunCore(uint seed, int[] passiveNodeIds)
         {
             var r = new Result();
             ulong hash = 14695981039346656037UL;
@@ -71,6 +138,11 @@ namespace Game.Tests.EditMode
                 var session = new SliceSession();
                 session.ResetTown(seed + (uint)s * 7919u);
                 session.Etching = 999;   // 定向制作不因资源枯竭产生伪失败
+                // S6P-WO-02：canonical 被动 loadout（只走 domain API；事件 trace 进报告，语义状态进哈希）
+                var events = PassiveAwareProductionSimulation.Apply(session, passiveNodeIds);
+                if (s == 0)
+                    CapturePassiveEvidence(r, session, events);
+                hash = HashString(hash, "|" + PassiveAwareProductionSimulation.StatePayload(session));
                 var decision = new SeededRng(seed ^ (0x9E3779B9u + (uint)s));
                 for (int c = 0; c < SessionCycleSize && done < TotalIterations; c++, done++)
                 {
@@ -101,6 +173,26 @@ namespace Game.Tests.EditMode
             r.Iterations = done;
             r.Hash = string.Format(CultureInfo.InvariantCulture, "FNV1A64:{0:x16}", hash);
             return r;
+        }
+
+        static void CapturePassiveEvidence(Result r, SliceSession session, List<string> events)
+        {
+            r.PassiveScenarioVersion = PassiveAwareProductionSimulation.ScenarioVersion;
+            int[] ids = PassiveAwareProductionSimulation.AllocatedNodeIds(session);
+            r.AllocatedPassiveNodeCount = ids.Length;
+            var sb = new StringBuilder();
+            for (int i = 0; i < ids.Length; i++)
+            {
+                if (i > 0) sb.Append(',');
+                sb.Append(ids[i].ToString(CultureInfo.InvariantCulture));
+            }
+            r.AllocatedPassiveNodeIds = sb.ToString();
+            r.PassiveModifierCount = PassiveAwareProductionSimulation.ModifierTuples(session).Count;
+            r.PassiveOffensiveTupleCount = PassiveAwareProductionSimulation.OffensiveTupleCount(session);
+            r.PassiveDefensiveOrAttributeTupleCount = PassiveAwareProductionSimulation.DefensiveOrAttributeTupleCount(session);
+            r.PassiveEffectiveStatSnapshot = PassiveAwareProductionSimulation.StatSnapshot(session);
+            r.PassiveEffectiveSkillStatSnapshot = PassiveAwareProductionSimulation.SkillStatSnapshot(session);
+            r.PassiveAllocationEvents = events;
         }
 
         // ---- cycles ----
@@ -293,6 +385,7 @@ namespace Game.Tests.EditMode
             sb.Append("{\n");
             sb.Append("  \"schema\": "); AppendStr(sb, SchemaName); sb.Append(",\n");
             sb.Append("  \"schemaVersion\": ").Append(SchemaVersion).Append(",\n");
+            sb.Append("  \"simulationContractVersion\": "); AppendStr(sb, PassiveAwareProductionSimulation.ContractVersion); sb.Append(",\n");
             sb.Append("  \"generatedBy\": "); AppendStr(sb, GeneratedBy); sb.Append(",\n");
             sb.Append("  \"verdict\": "); AppendStr(sb, r.VerdictPass ? "PASS" : "FAIL"); sb.Append(",\n");
             sb.Append("  \"seed\": ").Append(seed).Append(",\n");
@@ -332,7 +425,40 @@ namespace Game.Tests.EditMode
             sb.Append("  \"rejectedDirectedCraft\": ").Append(r.RejectedDirectedCraft).Append(",\n");
             sb.Append("  \"deterministicHash\": "); AppendStr(sb, r.Hash); sb.Append(",\n");
             sb.Append("  \"repeatHashMatch\": ").Append(r.RepeatHashMatch ? "true" : "false").Append(",\n");
-            sb.Append("  \"repeatHash\": "); AppendStr(sb, r.RepeatHash); sb.Append("\n");
+            sb.Append("  \"repeatHash\": "); AppendStr(sb, r.RepeatHash); sb.Append(",\n");
+
+            sb.Append("  \"passiveSimulation\": {\n");
+            sb.Append("    \"scenarioVersion\": "); AppendStr(sb, r.PassiveScenarioVersion ?? ""); sb.Append(",\n");
+            sb.Append("    \"allocatedPassiveNodeCount\": ").Append(r.AllocatedPassiveNodeCount).Append(",\n");
+            sb.Append("    \"allocatedPassiveNodeIds\": "); AppendStr(sb, r.AllocatedPassiveNodeIds ?? ""); sb.Append(",\n");
+            sb.Append("    \"passiveModifierCount\": ").Append(r.PassiveModifierCount).Append(",\n");
+            sb.Append("    \"passiveOffensiveTupleCount\": ").Append(r.PassiveOffensiveTupleCount).Append(",\n");
+            sb.Append("    \"passiveDefensiveOrAttributeTupleCount\": ").Append(r.PassiveDefensiveOrAttributeTupleCount).Append(",\n");
+            sb.Append("    \"passiveEffectiveStatSnapshot\": "); AppendStr(sb, r.PassiveEffectiveStatSnapshot ?? ""); sb.Append(",\n");
+            sb.Append("    \"passiveEffectiveSkillStatSnapshot\": "); AppendStr(sb, r.PassiveEffectiveSkillStatSnapshot ?? ""); sb.Append(",\n");
+            sb.Append("    \"allocationEvents\": [ ");
+            for (int i = 0; i < r.PassiveAllocationEvents.Count; i++)
+            {
+                AppendStr(sb, r.PassiveAllocationEvents[i]);
+                if (i < r.PassiveAllocationEvents.Count - 1)
+                    sb.Append(", ");
+            }
+            sb.Append(" ],\n");
+            sb.Append("    \"passiveSensitive\": ").Append(r.PassiveSensitive ? "true" : "false").Append("\n");
+            sb.Append("  },\n");
+
+            sb.Append("  \"passiveSensitivity\": {\n");
+            sb.Append("    \"predecessorHash\": "); AppendStr(sb, PredecessorHash); sb.Append(",\n");
+            sb.Append("    \"allocationMutationBaselineHash\": "); AppendStr(sb, r.SensitivityAllocationBaselineHash ?? ""); sb.Append(",\n");
+            sb.Append("    \"allocationMutationHash\": "); AppendStr(sb, r.SensitivityAllocationMutatedHash ?? ""); sb.Append(",\n");
+            sb.Append("    \"allocationMutationChangedHash\": ").Append(r.AllocationMutationChangedHash ? "true" : "false").Append(",\n");
+            sb.Append("    \"statMutationBaselineHash\": "); AppendStr(sb, r.SensitivityStatBaselineHash ?? ""); sb.Append(",\n");
+            sb.Append("    \"statMutationHash\": "); AppendStr(sb, r.SensitivityStatMutatedHash ?? ""); sb.Append(",\n");
+            sb.Append("    \"statMutationChangedHash\": ").Append(r.StatMutationChangedHash ? "true" : "false").Append(",\n");
+            sb.Append("    \"restoredHash\": "); AppendStr(sb, r.SensitivityRestoredHash ?? ""); sb.Append(",\n");
+            sb.Append("    \"restoreExactMatch\": ").Append(r.RestoreExactMatch ? "true" : "false").Append(",\n");
+            sb.Append("    \"allocationOrderingInvariant\": ").Append(r.OrderingInvariant ? "true" : "false").Append("\n");
+            sb.Append("  }\n");
             sb.Append("}\n");
             string path = ArtifactPath;
             string dir = Path.GetDirectoryName(path);

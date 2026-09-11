@@ -7,7 +7,9 @@ namespace Game.Runtime.Core
     {
         Normal = 0,
         Ignite = 1,
-        Hit = 2
+        Hit = 2,
+        // S6P-WO-05：狙击印记标记态（最低优先级——被印记是持续态，不应盖过命中/点燃这两个瞬时反馈）
+        Mark = 3
     }
 
     /// <summary>
@@ -24,8 +26,11 @@ namespace Game.Runtime.Core
         // Hit=短促更强白闪（与 placeholder HitColor/强度对齐），不做高频刺眼纯白闪屏。
         static readonly Color IgniteTint = new Color(0.95f, 0.42f, 0.12f);
         static readonly Color HitTint = new Color(1f, 0.97f, 0.92f);
+        // S6P-WO-05：印记 tint = 冷白偏青（与 Life紫/火橙/命中白都可区分），强度弱于命中闪
+        static readonly Color MarkTint = new Color(0.55f, 0.95f, 1f);
         const float IgniteBlend = 0.55f;
         const float HitBlend = 0.95f;
+        const float MarkBlend = 0.40f;
 
         struct RendererSlots
         {
@@ -77,8 +82,14 @@ namespace Game.Runtime.Core
             }
         }
 
-        /// <summary>状态映射纯函数（确定性）：死亡→Normal；HitFlash 窗口内→Hit；否则 Ignited→Ignite；否则 Normal。</summary>
+        /// <summary>状态映射纯函数（确定性）：死亡→Normal；HitFlash 窗口内→Hit；否则 Ignited→Ignite；否则 Marked→Mark；否则 Normal。</summary>
         public static EnemyFeedbackState Compute(bool alive, float hitFlash, bool ignited)
+        {
+            return Compute(alive, hitFlash, ignited, false);
+        }
+
+        /// <summary>S6P-WO-05：加上印记态的完整映射（3 参重载=marked:false，既有行为逐位不变）。</summary>
+        public static EnemyFeedbackState Compute(bool alive, float hitFlash, bool ignited, bool marked)
         {
             if (!alive)
                 return EnemyFeedbackState.Normal;
@@ -86,15 +97,23 @@ namespace Game.Runtime.Core
                 return EnemyFeedbackState.Hit;
             if (ignited)
                 return EnemyFeedbackState.Ignite;
+            if (marked)
+                return EnemyFeedbackState.Mark;
             return EnemyFeedbackState.Normal;
         }
 
         /// <summary>每帧调用：状态未变化时不写任何 renderer（§18）；变化时全量覆盖所有有效材质槽。</summary>
         public void Apply(bool alive, float hitFlash, bool ignited)
         {
+            Apply(alive, hitFlash, ignited, false);
+        }
+
+        /// <summary>S6P-WO-05：含印记态的写入路径（3 参重载=marked:false）。</summary>
+        public void Apply(bool alive, float hitFlash, bool ignited, bool marked)
+        {
             if (_slots == null)
                 return;
-            EnemyFeedbackState state = Compute(alive, hitFlash, ignited);
+            EnemyFeedbackState state = Compute(alive, hitFlash, ignited, marked);
             if (_written && state == _last)
                 return;
             _written = true;
@@ -113,6 +132,8 @@ namespace Game.Runtime.Core
                         block.SetColor(BaseColorId, slot.Original[m]); // 精确恢复缓存原色
                     else if (state == EnemyFeedbackState.Hit)
                         block.SetColor(BaseColorId, Color.Lerp(slot.Original[m], HitTint, HitBlend));
+                    else if (state == EnemyFeedbackState.Mark)
+                        block.SetColor(BaseColorId, Color.Lerp(slot.Original[m], MarkTint, MarkBlend));
                     else
                         block.SetColor(BaseColorId, Color.Lerp(slot.Original[m], IgniteTint, IgniteBlend));
                     slot.Renderer.SetPropertyBlock(block, m);

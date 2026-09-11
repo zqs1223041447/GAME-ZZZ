@@ -11,9 +11,13 @@ namespace Game.Runtime.Core
         Fork = 6,
         // S3 R2（工作令 S3-R2-FIRE-CONVERSION）：机制型转换 Support，复用 ConvertPhysToFire，无新 Effect/Stat
         FireConversion = 7,
+        // S6P-WO-05（导演 2026-09-11「辅助技能做一个投射物返回和狙击印记的效果」）：两条机制型 Support，
+        // 追加在既有正式 Support 后、Count 前；既有数值 1-7 不得漂移。行为常数见 SliceRules。
+        ReturningProjectiles = 8,
+        SnipersMark = 9,
         // Sentinel（S3-M1-REPO-TRUTH-CATALOG）：真实 Support 数 = (int)Count - 1（None 不算内容）；
         // 仅作目录容量/Count 真相源，不进 UI/golden/审计内容清单，不计作内容 +1
-        Count = 8
+        Count = 10
     }
 
     public enum AffixId : byte
@@ -232,11 +236,17 @@ namespace Game.Runtime.Core
 
     public static class SliceRules
     {
-        public const int InventoryCap = 24;
+        /// <summary>2026-09-10 导演：背包满幅格网（12 列 × 8 行）——容量随呈现格局扩大。</summary>
+        public const int InventoryCap = 96;
         public const int MaxAffixesOrdinary = 2;
         public const int MaxAffixesRare = 4;
-        public const int PassiveCount = 16;
-        public const int StartPoints = 8;
+        /// <summary>天赋域大小 = 真实 PoE 天赋树节点数（数据缺失时退化为 1，保证不崩）。</summary>
+        public static int PassiveCount
+        {
+            get { return PoeTree.Count > 0 ? PoeTree.Count : 1; }
+        }
+        /// <summary>起始天赋点 = 官方天赋树总点数（123）。旧 16 节点域用 8；2429 节点域下 8 点点不动任何基石。</summary>
+        public const int StartPoints = 123;
         // 导演 2026-09-08：QA/游玩期玩家血量提升至 9999999（原 80）——玩家不再被围杀打断表现验证
         public const float PlayerBaseLife = 9999999f;
         public const float PlayerBaseMana = 40f;
@@ -267,6 +277,12 @@ namespace Game.Runtime.Core
         public const int MeleeBase = 8;
         public const int ProjectileBase = 7;
         public const int AreaBase = 10;
+        // S6P-WO-05：新技能进图基础伤害（与既有三技能同轴，不新增伤害类型）
+        public const int IceSpearBase = 6;
+        public const int FireballBase = 8;
+        // S6P-WO-05：狙击印记数值（唯一真相源=此处；SupportDef.Desc 由它派生，避免两处数字漂移）
+        public const float SnipersMarkMoreDamage = 0.35f;
+        public const float SnipersMarkDuration = 8f;
         public const int SandboxMelee = 1;
         public const int SandboxProjectile = 1;
         public const int SandboxArea = 2;
@@ -361,6 +377,29 @@ namespace Game.Runtime.Core
                 ChangesMechanism = true,
                 // 唯一核心 Modifier：转换走既有 ConvertPhysToFire 轴；RequiredTags 让兼容性由 Tag 路径自然推导（近战/弹道可接，范围=Spell 无 Attack 不可接）
                 Mods = new[] { Modifier.Tagged(StatId.ConvertPhysToFire, ModOp.Flat, 0.50f, Tag.Attack | Tag.Hit | Tag.Physical) }
+            };
+            // S6P-WO-05：投射物返回（PoE Returning Projectiles Support）——命中或飞完全程后掉头返回，
+            // 返程可再命中（同一目标不重复结算），回到玩家处消失。纯机制，无 Stat 轴 Mod。
+            _defs[(int)SupportId.ReturningProjectiles] = new SupportDef
+            {
+                Id = SupportId.ReturningProjectiles,
+                Name = "投射物返回",
+                Desc = "投射物命中或到达射程尽头后返回，返程可再次命中（同一目标不重复）",
+                ChangesMechanism = true,
+                Mods = new Modifier[0],
+                MechanicSkill = SkillId.Projectile
+            };
+            // S6P-WO-05：狙击印记（PoE Sniper's Mark）——支持的投射物命中时给目标打上印记，
+            // 被印记的敌人受到该玩家投射物的伤害提高（+SliceRules.SnipersMarkMoreDamage），持续 SliceRules.SnipersMarkDuration。
+            _defs[(int)SupportId.SnipersMark] = new SupportDef
+            {
+                Id = SupportId.SnipersMark,
+                Name = "狙击印记",
+                Desc = "投射物命中时施加印记，被印记敌人受到的投射物伤害提高 " +
+                       (int)(SliceRules.SnipersMarkMoreDamage * 100f) + "%",
+                ChangesMechanism = true,
+                Mods = new Modifier[0],
+                MechanicSkill = SkillId.Projectile
             };
         }
     }
@@ -478,62 +517,56 @@ namespace Game.Runtime.Core
         }
     }
 
+    /// <summary>
+    /// 天赋目录 = 真实 PoE 天赋树（S5U 导演插入周期 2026-09-10 换域）。
+    /// 节点身份/坐标/连线/词条来自 PoeTree 数据层；Mods 由 PoeStatParser 把 PoE 词条文本
+    /// 映射到 canonical StatId（映射不上的词条只做展示，不产生数值）。
+    /// 逐节点惰性构造 + 缓存：2429 个节点不会在启动时全部解析。
+    /// </summary>
     public static class PassiveCatalog
     {
-        static PassiveNode[] _nodes;
+        static PassiveNode[] _cache;
 
         public static PassiveNode Get(int id)
         {
-            Ensure();
-            if (id < 0 || id >= _nodes.Length)
+            if (PoeTree.Count <= 0 || id < 0 || id >= PoeTree.Count)
                 return default;
-            return _nodes[id];
+            if (_cache == null || _cache.Length != PoeTree.Count)
+                _cache = new PassiveNode[PoeTree.Count];
+            if (_cache[id].Links == null)
+                _cache[id] = Build(PoeTree.Get(id));
+            return _cache[id];
         }
 
         public static int Count
         {
-            get
-            {
-                Ensure();
-                return _nodes.Length;
-            }
+            get { return PoeTree.Count; }
         }
 
-        static void Ensure()
-        {
-            if (_nodes != null)
-                return;
-            _nodes = new PassiveNode[16];
-            _nodes[0] = Node(0, "心脉", false, false, new[] { 1, 2, 3, 6 }, "+20 生命", Modifier.Make(StatId.Life, ModOp.Flat, 20f));
-            _nodes[1] = Node(1, "蛮力", false, false, new[] { 0, 4, 7, 11 }, "+12 力量", Modifier.Make(StatId.Strength, ModOp.Flat, 12f));
-            _nodes[2] = Node(2, "敏足", false, false, new[] { 0, 5, 9 }, "+12 敏捷", Modifier.Make(StatId.Dexterity, ModOp.Flat, 12f));
-            _nodes[3] = Node(3, "灵思", false, false, new[] { 0, 8, 14 }, "+12 智力", Modifier.Make(StatId.Intelligence, ModOp.Flat, 12f));
-            _nodes[4] = Node(4, "铁骨", false, false, new[] { 1, 6 }, "+30 护甲", Modifier.Make(StatId.Armour, ModOp.Flat, 30f));
-            _nodes[5] = Node(5, "影蔽", false, false, new[] { 2, 9 }, "+30 闪避", Modifier.Make(StatId.Evasion, ModOp.Flat, 30f));
-            _nodes[6] = Node(6, "血脉", false, false, new[] { 0, 4, 10 }, "+25 生命", Modifier.Make(StatId.Life, ModOp.Flat, 25f));
-            _nodes[7] = Node(7, "粉碎", false, false, new[] { 1, 11 }, "16% 物理伤害", Modifier.Make(StatId.PhysicalDamage, ModOp.Increased, 0.16f));
-            _nodes[8] = Node(8, "余烬", false, false, new[] { 3, 12, 13 }, "16% 火焰伤害", Modifier.Make(StatId.FireDamage, ModOp.Increased, 0.16f));
-            _nodes[9] = Node(9, "精准", false, false, new[] { 2, 5, 10 }, "+50 命中", Modifier.Make(StatId.Accuracy, ModOp.Flat, 50f));
-            _nodes[10] = Node(10, "冲击", false, false, new[] { 6, 9 }, "30% 暴击率", Modifier.Make(StatId.CritChanceIncreased, ModOp.Increased, 0.30f));
-            _nodes[11] = Node(11, "残暴打击", true, false, new[] { 1, 7 }, "近战物理更多 25%", Modifier.Tagged(StatId.MorePhysical, ModOp.More, 0.25f, Tag.Melee));
-            _nodes[12] = Node(12, "火葬", true, false, new[] { 8, 13 }, "30% 火焰伤害，+25% 点燃", Modifier.Make(StatId.FireDamage, ModOp.Increased, 0.30f), Modifier.Make(StatId.IgniteChance, ModOp.Flat, 0.25f));
-            _nodes[13] = Node(13, "烬心", false, true, new[] { 8, 12 }, "40% 物理转火", Modifier.Make(StatId.ConvertPhysToFire, ModOp.Flat, 0.40f));
-            _nodes[14] = Node(14, "厚皮", false, false, new[] { 3, 15 }, "+12% 火焰抗性", Modifier.Make(StatId.FireResistance, ModOp.Flat, 0.12f));
-            _nodes[15] = Node(15, "搏动", false, false, new[] { 14 }, "12% 攻击速度", Modifier.Make(StatId.AttackSpeed, ModOp.Increased, 0.12f));
-        }
-
-        static PassiveNode Node(int id, string name, bool notable, bool mechanic, int[] links, string desc, params Modifier[] mods)
+        static PassiveNode Build(PoeNode src)
         {
             PassiveNode n;
-            n.Id = id;
-            n.Name = name;
-            n.Notable = notable;
-            n.Mechanic = mechanic;
-            n.Links = links;
-            n.Mods = mods;
-            n.Desc = desc;
+            n.Id = src.index;
+            n.Name = src.name;
+            n.Notable = src.Kind == PoeNodeKind.Notable;
+            n.Mechanic = src.Kind == PoeNodeKind.Keystone;
+            n.Links = src.links ?? EmptyLinks;
+            // S6P-WO-04A §17：专精在 WO-03 建立显式选择前**不得**有任何隐式效果 ——
+            // 旧行为（把 choices 首条当默认 Mods 烘焙）就是"点亮了但玩家没选过"的静默半效果，已拆除。
+            n.Mods = src.Kind == PoeNodeKind.Mastery ? EmptyMods : PoeStatParser.ParseCached(src.stats);
+            n.Desc = src.Kind == PoeNodeKind.Mastery ? src.choices : src.stats;
             return n;
         }
+
+        static readonly Modifier[] EmptyMods = new Modifier[0];
+
+        /// <summary>专精节点的全部可选效果（换行分隔；tooltip 展示用，无则空）。</summary>
+        public static string Choices(int id)
+        {
+            return PoeTree.Get(id).choices ?? "";
+        }
+
+        static readonly int[] EmptyLinks = new int[0];
     }
 
     public static class EnemyCatalog

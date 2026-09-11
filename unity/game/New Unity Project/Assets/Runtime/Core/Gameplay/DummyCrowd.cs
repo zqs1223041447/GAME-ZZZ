@@ -35,6 +35,9 @@ namespace Game.Runtime.Core
         public float IgniteDps;
         public float IgniteRemain;
         public float DotAcc;
+        /// <summary>S6P-WO-05 狙击印记剩余时间（&gt;0 = 被印记：受到玩家投射物伤害提高，倍率=SliceRules.SnipersMarkMoreDamage）。
+        /// 由 ArenaSim 在支持的投射物命中时写入，DummyCrowd.TickMarks 衰减——单一写入点，无第二处修改。</summary>
+        public float MarkRemain;
     }
 
     public sealed class DummyCrowd
@@ -110,6 +113,7 @@ namespace Game.Runtime.Core
                 d.IgniteDps = 0f;
                 d.IgniteRemain = 0f;
                 d.DotAcc = 0f;
+                d.MarkRemain = 0f;
                 Items[i] = d;
                 OccupiedCount++;
                 AliveCount++;
@@ -238,6 +242,17 @@ namespace Game.Runtime.Core
             }
         }
 
+        /// <summary>S6P-WO-05：施加/刷新狙击印记（唯一写入点；<paramref name="duration"/> ≤0 = 清除）。</summary>
+        public void ApplyMark(int index, float duration)
+        {
+            if (index < 0 || index >= Items.Length)
+                return;
+            ref Dummy d = ref Items[index];
+            if (!d.Occupied || !d.Alive)
+                return;
+            d.MarkRemain = duration > 0f ? duration : 0f;
+        }
+
         public void TickDots(float dt, FeedbackPool feedback)
         {
             for (int i = 0; i < Items.Length; i++)
@@ -265,6 +280,20 @@ namespace Game.Runtime.Core
                     d.IgniteDps = 0f;
                     d.IgniteRemain = 0f;
                 }
+            }
+        }
+
+        /// <summary>S6P-WO-05：印记衰减（唯一衰减点）。印记只影响玩家投射物对它的伤害，不影响其它任何 gameplay 判定。</summary>
+        public void TickMarks(float dt)
+        {
+            for (int i = 0; i < Items.Length; i++)
+            {
+                ref Dummy d = ref Items[i];
+                if (d.MarkRemain <= 0f)
+                    continue;
+                d.MarkRemain -= dt;
+                if (d.MarkRemain < 0f)
+                    d.MarkRemain = 0f;
             }
         }
 

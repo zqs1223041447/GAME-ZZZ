@@ -179,6 +179,14 @@ namespace Game.Runtime.Core
             _feedback.Apply(alive, hitFlash, ignited);
         }
 
+        /// <summary>S6P-WO-05：含狙击印记标记态的反馈入口（marked 由调用方从 MarkRemain&gt;0 派生）。</summary>
+        public void ApplyFeedback(bool alive, float hitFlash, bool ignited, bool marked)
+        {
+            if (_feedback == null)
+                return;
+            _feedback.Apply(alive, hitFlash, ignited, marked);
+        }
+
         /// <summary>只读观察：最近应用的战斗反馈状态（测试/QA 验证钩子；未挂载视觉时为 Normal）。</summary>
         public EnemyFeedbackState LastFeedbackState
         {
