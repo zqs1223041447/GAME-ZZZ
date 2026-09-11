@@ -3,7 +3,7 @@
 | 项 | 值 |
 |---|---|
 | 令号 | **S6P-WO-04A2** |
-| 状态 | **READY FOR GATE REVIEW**（编译 0 error；EditMode **475/475**；PlayMode **18/18**；ProdSim canonical **未变**，出口冷进程 ×3 EXACT MATCH） |
+| 状态 | **CLOSED / ACCEPT** —— Channel A Gate Review（审 `c57f55f`）= **ACCEPT，AC-1..AC-20 = 20 / 20 PASS**；Product rework = NONE；Rebaseline = NONE；Blocking technical follow-up = NONE。原文：`S6P_WO_04A2_GATE_REVIEW.md` |
 | 权威 | Channel A（话题 `game-zzz-planning-2` / 会话 `6aa368c5-7478-83ea-a2d3-95003ee4e6ab`，2026-09-11 新建；取代旧会话 `game-zzz-planning`） |
 | 合同原文 | `docs/reviews/S6P/S6P_WO_04A2_CONTRACT.md`（20 条 AC + PF-1..PF-6 + §7 可达性门 + §8 冻结 fixture + §14 敏感性 + §16 禁止项 + §18 Evidence 字段 + §19 自动停止条件） |
 | 基准 commit | `ce6f85cd23d324ea68a76f98d28663f1258a3c01`（本地 = origin/main，已推送） |
@@ -244,10 +244,12 @@ FULLY_SUPPORTED 367 ／ UNFULFILLED 1660 ／ SPECIAL_BLOCKED 402（87 + 315）  
 
 ## 12. 已知限制与开放项
 
-1. **L1 — 42 个 supported 节点仍在起点连通域之外**（`supportedNotStartConnected := 42`，ID 全表见
-   `docs/qa/WO_04A2_TRAVERSAL_REPORT.json`）。它们被不可通行的特殊节点（珠宝孔 / 时光珠宝类）围住，
-   按合同 §7.2 的 `D` 定义不参与「100% 可达」，但**玩家确实到不了**。
-   本令不解（会越界到 Jewel/Timeless 域）——登记为 WO-03 之后、真正实现 Jewel 时的输入。
+1. **L1 — 42 个 supported 节点仍是 start-disconnected supported nodes**（起点非连通 supported 节点；
+   `supportedNotStartConnected := 42`，ID 全表见 `docs/qa/WO_04A2_TRAVERSAL_REPORT.json`）。
+   注意措辞：它们**不是** `OUT_OF_DOMAIN`（`outOfDomain = 0`）。它们被不可通行的特殊节点
+   （珠宝孔 / 时光珠宝类）围住，按合同 §7.2 的 `D` 定义不参与"100% 可达"，但**玩家确实到不了**。
+   本令不解（会越界到 Jewel/Timeless 域）——登记为后续 special-interaction topology 工作的输入，
+   且不预承诺"实现 Jewel 就一定全部解开"。
 2. **L2 — `EffectTruth == UNFULFILLED` 的节点仍会消耗天赋点**。这是合同 §6 的显式规定
    （route-only「normal cost」），不是 bug；但玩家可能觉得「花了点没效果」。
    UI 已如实标注（见下），若导演要求「route-only 免费」，需另开令改产品语义。
@@ -287,6 +289,26 @@ FULLY_SUPPORTED 367 ／ UNFULFILLED 1660 ／ SPECIAL_BLOCKED 402（87 + 315）  
 `_wo04a2_fingerprint_final.txt` 自身（它由该次测量的输出写入）。
 指纹输出版面内的 `changed-file inventory` 逐行列出了被测文件清单，故被测状态可完整重建 ——
 不存在「测完之后又改了被测内容」的情形。
+
+### 13.1 Gate Review 后的 UI 缺陷修复（主动申报，见 `S6P_WO_04A2_GATE_REVIEW.md` 末节）
+
+Gate Review 判定「route-only 的 UI 明示是产品语义成立所必需的 disclosure」并 ACCEPT 之后，
+本轮做**实机视觉取证**时发现该 disclosure 实际上**看不见**：
+
+- 根因：`SliceTooltipModel.TextCard(title, body)` 的第二参数落在**单行 Subtitle 槽**，
+  多行字符串在那里会被裁掉 —— 我写的 `body + "\n\n" + state` 只显示出词条，状态行被吃掉。
+- 修复（仅 `SliceHud.NodeCard`，呈现层）：节点 tooltip 正文改为**按行拆进 `Body[]`**
+  （与既有 `DrawSkillCell` 同一做法，`Body.Length` 参与卡片高度计算）；状态行拆成两行短句
+  以适应 `SliceTooltipLayout.BaseW`(360) 的宽度；新增 `AppendLines` 逐行拆分词条。
+  顺带把状态行**放在正文第一行**，任何情况下都不会再被词条挤掉。
+- 影响面：`Assets/Runtime/Core/Gameplay/SliceHud.cs` 一个文件，不产生 gameplay 语义，
+  与分配门 / 消费门 / ProdSim 零接触。
+- 重跑门：编译 0 error、EditMode **475/475**、PlayMode **18/18**（数字不变）。
+- 取证：`docs/_dirshots/s6pwo04a2/01_tree_route_only_tooltip.png`（route-only：两行披露 + 词条）
+  与 `02_tree_effective_tooltip.png`（真生效：仅「可点亮 · 消耗 1 天赋点」）。
+  取景方式：`SliceHud.DebugTreeAt(0.9f, <node>)` + `SliceHud.DebugHoverAt(视口中心)`
+  + `ScreenCapture.CaptureScreenshot`（IMGUI 不进 `capture_game_view`，必须走 ScreenCapture）。
+- 已请 Channel A 确认这处修复是否需要第二次 Gate Review。
 
 ---
 

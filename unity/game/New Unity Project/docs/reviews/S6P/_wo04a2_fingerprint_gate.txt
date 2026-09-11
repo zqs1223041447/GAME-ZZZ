@@ -1,0 +1,21 @@
+```text
+Working-Tree Fingerprint (content-addressed, SHA-256)
+branch                : main
+HEAD                  : c57f55fb385be0d7104cee15a07ddae971413c37
+tracked+untracked files: 2813
+total bytes           : 322928292
+WORKING-TREE HASH     : 436763e9e5839eae0cd6749420f3487bb2c1a5c5e8c7ee4158b4bc2c5bce9ca7
+dirty                 : YES
+--- changed-file inventory (git status --porcelain, by area) ---
+[Assets/Runtime] 1
+    M unity/game/New Unity Project/Assets/Runtime/Core/Gameplay/SliceHud.cs
+[docs] 5
+    ?? unity/game/New Unity Project/docs/_dirshots/s6pwo04a2/
+    ?? unity/game/New Unity Project/docs/reviews/S6P/S6P_WO_04A2_GATE_REVIEW.md
+    M unity/game/New Unity Project/docs/qa/WO_04A2_TRAVERSAL_REPORT.json
+    M unity/game/New Unity Project/docs/reviews/S6P/S6P_WO_04A2_EVIDENCE_PACK.md
+    M unity/game/New Unity Project/docs/reviews/S6P/S6P_WO_04A2.md
+[other] 2
+    M 寮€鍙戣鍒?瑙勫垝AI浼氳瘽.md
+    M 寮€鍙戣鍒?UNATTENDED_STATE.md
+```

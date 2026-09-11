@@ -3,22 +3,34 @@
 > 本文件是无人值守循环的**持久记忆**。每次醒来先读本文件，再决定做什么。
 > 上下文丢失后，一切以本文件 + 仓库工作令为准。
 
-> ## ⛔ 当前有互斥锁：冷进程基线校验进行中
+> ## ✅ 冷进程基线：无互斥锁（2026-09-11 11:0x 释放并归档）
 >
-> WO-04A 的**强制前置**要求「三独立 Unity 冷启动进程」跑 ProdSim 基线，这段时间
-> **Unity 编辑器必须保持关闭**（batch 模式要独占工程）。
->
-> **在锁释放（本段被删除）之前，任何一轮心跳都不要执行 `unity open`、不要跑
-> `unity command`、不要跑 `unity test`** —— 并发启动会污染冷进程校验结果。
->
-> 只做不需要编辑器的活（读文件、写文档、看 git 状态），或直接等待。
->
-> 释放方式：`pwsh -NoProfile -File tools/evidence/cold-process-prodsim.ps1 -Runs 3`
-> 跑完并由执行者重新打开编辑器后，删除本段。
+> **互斥锁已释放，编辑器处于打开状态，可以正常 `unity open` / `unity command` / `unity test`。**
+> 之前那段"⛔ 冷进程校验进行中，禁止启动编辑器"的警告属 WO-04A 入口阶段，已过期并删除；
+> 其历史记录保留在下方。
 
-> ## ✅ 冷进程入口基线校验：已完成（2026-09-11 04:51–04:52）
+> ### 冷进程基线记录（历史，按时间倒序）
 >
-> 三独立冷启动 Unity 进程（编辑器已关闭，batch EditMode，filter=`ProductionSimulatorTests`）：
+> **S6P-WO-04A2 出口 Final Gate（2026-09-11 10:53–10:54）** —— 编辑器关闭、三独立冷启动：
+>
+> ```
+> Run1 | 10:53:54 | 15.5s | exit=0 | contract=pv|passive-v1 | invalid=0 | FNV1A64:ec1d3ed67d3035d0
+> Run2 | 10:54:08 | 14.0s | exit=0 | contract=pv|passive-v1 | invalid=0 | FNV1A64:ec1d3ed67d3035d0
+> Run3 | 10:54:23 | 14.3s | exit=0 | contract=pv|passive-v1 | invalid=0 | FNV1A64:ec1d3ed67d3035d0
+> Distinct hashes : 1   EXACT MATCH : YES
+> ```
+>
+> **S6P-WO-04A2 入口 preflight（2026-09-11 11:00–11:01）** —— 用 `git stash push -u` 在干净 HEAD
+> `ce6f85c` 上真实取得（这是 04A 那个 entry-fingerprint 缺口的正确补法，见 `S6P_WO_04A2.md` §3）：
+>
+> ```
+> Run1 | 11:00:46 | 16.7s | exit=0 | contract=pv|passive-v1 | invalid=0 | FNV1A64:ec1d3ed67d3035d0
+> Run2 | 11:01:00 | 14.2s | exit=0 | contract=pv|passive-v1 | invalid=0 | FNV1A64:ec1d3ed67d3035d0
+> Run3 | 11:01:14 | 14.2s | exit=0 | contract=pv|passive-v1 | invalid=0 | FNV1A64:ec1d3ed67d3035d0
+> Distinct hashes : 1   EXACT MATCH : YES
+> ```
+>
+> **S6P-WO-04A 入口 preflight（2026-09-11 04:51–04:52）**：
 >
 > ```
 > Run1 | 04:51:40 | 15.8s | exit=0 | contract=pv|passive-v1 | invalid=0 | FNV1A64:ec1d3ed67d3035d0
@@ -27,10 +39,7 @@
 > Distinct hashes : 1   EXACT MATCH : YES
 > ```
 >
-> 满足 WO-04A 的 AC-29（入口冷进程基线 ×3）。工具：`tools/evidence/cold-process-prodsim.ps1`。
-> **出口 Final Gate 必须重跑同一条命令，且仍须 = `ec1d3ed67d3035d0`。**
->
-> 互斥锁已释放，编辑器已重新打开。
+> 工具：`tools/evidence/cold-process-prodsim.ps1`。
 
 ## 模式
 
@@ -49,7 +58,7 @@
 | 项 | 值 |
 |---|---|
 | 令号 | **S6P-WO-04A2 — Passive Traversal / Effect Separation** |
-| 状态 | **READY_FOR_GATE_REVIEW**（编译 0 error；EditMode **475/475**；PlayMode **18/18**；ProdSim 入口/出口冷进程 ×3 均 `FNV1A64:ec1d3ed67d3035d0` EXACT MATCH；可达性门 100.000%，缺失集 `[]`；04A census 367/1660/87/315 未变） |
+| 状态 | **CLOSED / ACCEPT** —— Channel A Gate Review（2026-09-11，审 `c57f55f`）= **ACCEPT，AC-1..AC-20 = 20 / 20 PASS**；Product rework = NONE；Rebaseline = NONE；Blocking technical follow-up = NONE。原文待落库（本轮回复见 `docs/reviews/S6P/S6P_WO_04A2_GATE_REVIEW.md`）。门：编译 0 error；EditMode **475/475**；PlayMode **18/18**；ProdSim 入口/出口冷进程 ×3 均 `FNV1A64:ec1d3ed67d3035d0` EXACT MATCH；可达性门 100.000%，缺失集 `[]`；04A census 367/1660/87/315 未变 |
 | 授权来源 | Channel A（新会话 `game-zzz-planning-2`）2026-09-11 下发完整合同（20 AC + PF-1..PF-6 + §7 可达性门 + §8 冻结 fixture + §14 敏感性 + §16 禁止 + §18 Evidence 字段 + §19 STOP 条件） |
 | 合同原文 | `docs/reviews/S6P/S6P_WO_04A2_CONTRACT.md` |
 | 实现记录 | `docs/reviews/S6P/S6P_WO_04A2.md` |
@@ -67,8 +76,9 @@
 
 | 项 | 值 |
 |---|---|
-| 队列 | **S6P-WO-04A2**（本令，待 Gate Review）→ WO-03 → WO-04B → [WO-04C 条件] → WO-05 |
-| 下一令 | **S6P-WO-03 — Mastery Explicit Selection & Allocation Correctness**（合同与前置已就绪：`S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md` §4–§19 + `S6P_WO_03_PREFLIGHT.md`；**必须等 04A2 ACCEPT 才动**） |
+| 队列 | **S6P-WO-03 → WO-04B → [WO-04C 条件] → WO-05**（04A2 已 CLOSED/ACCEPT，已移出队列头） |
+| 下一令 | **S6P-WO-03 — Mastery Explicit Selection & Allocation Correctness** = **RELEASED / EXECUTE NOW**（合同与前置已就绪：`S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md` §4–§19 + `S6P_WO_03_PREFLIGHT.md`） |
+| WO-03 必须继承的 04A2 事实 | ① `TraversalTruth` / `EffectTruth` 分离**不可回退**；② route-only 不得被重新当成"分配被拒"；③ Mastery 在 WO-03 正式选择提交之前仍为 `SPECIAL_PENDING + SPECIAL_BLOCKED`；④ Jewel / Timeless **不属于 WO-03 职权**；⑤ 04A 的 367 / 315 冻结数字若因 WO-03 合法移动，必须给出 before / after / delta / reason，禁静默更新 |
 | WO-03 新约束（由 04A2 产生） | ① 04A2 的 14→1985 与 `\|D\|`=325 是新的基线事实，WO-03 若使其移动必须显式更新并说明；② 42 个域外 supported 节点是 WO-03 之后实现 Jewel 时的输入，不得在本轮偷偷解；③ `BlockedAllocatedCount` 语义已改为「不可通行却被点亮」，WO-03 不得再把它当「不可兑现」用 |
 
 ## 上一令（S6P-DIR-01 — 已实现、已提交入库 `ce6f85c`、已推送）
@@ -104,7 +114,7 @@
 | 项 | 值 |
 |---|---|
 | 令号 | **S6P-WO-03 — Mastery Explicit Selection & Allocation Correctness** |
-| 状态 | **PREFLIGHT PASS / 实现未开始 / 当前 BLOCKED**（等 Channel A 对 S6P-WO-04A2 的 Gate Review = ACCEPT） |
+| 状态 | **RELEASED / EXECUTE NOW**（Channel A 于 WO-04A2 Gate Review ACCEPT 时正式放行）。前置：只读 preflight 已 PASS 并落库，产品实现尚未开始 |
 | 授权来源 | `docs/reviews/S6P/S6P_WO_04A_GATE_REVIEW_AND_WO_03_CONTRACT.md`（04A Gate Review = ACCEPT WITH FOLLOW-UP + WO-03 完整合同 §4–§19） |
 | 前置记录 | `docs/reviews/S6P/S6P_WO_03_PREFLIGHT.md`；entry fingerprint `a85a5e2e23ca5acfae2a96b41a61d12cfdd59fd9fd9ec8a77ab1b43f4a12c926`（13765 files，HEAD `64b614f`） |
 | 入口基线 | EditMode 426/426、PlayMode 17/17、ProdSim `FNV1A64:ec1d3ed67d3035d0` |
@@ -236,7 +246,11 @@ pwsh -NoProfile -File tools/evidence/cold-process-prodsim.ps1 -Runs 3
 4. **不臆造**：源数据证明不了的关系写 `UNRESOLVED_WITH_SOURCE`，禁止凑数。
 5. **不把覆盖率当 KPI**：判据是「声称支持的 100% 真生效，不支持的 0% 假生效」。
 6. **不做破坏性操作**：不 `git reset --hard`、不删分支、不强推、不动 `.git`。
-7. **不静默空效果**：任何"点亮了但没效果"的路径都是错误产品语义。
+7. **不静默空效果**：不允许**静默**的"点亮了但没效果"。唯一合法例外是 **S6P-WO-04A2 明确授权、
+   且在 UI 上明示**的 route-only 节点（`EffectTruth=UNFULFILLED` + `TraversalTruth=TRAVERSABLE`）：
+   它可合法消耗天赋点作为路径、贡献恒 0 modifier，**前提是玩家在 tooltip 上能看到"该节点当前无法
+   兑现任何效果（0 效果）"**。除它之外，任何"点亮了但没效果"的路径仍是错误产品语义。
+   不允许再新增第二类静默零效果；也不允许把 route-only 重新当成"分配被拒"（那会退回 14/2429）。
 
 ## 门禁命令（怎么验）
 

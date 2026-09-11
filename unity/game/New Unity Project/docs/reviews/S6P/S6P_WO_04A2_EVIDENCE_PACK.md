@@ -4,11 +4,18 @@
 **Status**: `READY FOR GATE REVIEW`（未自行写 ACCEPTED）
 **Authority**: Channel A
 **Base commit**: `ce6f85cd23d324ea68a76f98d28663f1258a3c01`（= origin/main）
-**Implementation commit**: 尚未提交（工作区改动；见 §A）
+**Implementation commit**: **`c57f55f`**（"S6P-WO-04A2: Passive Traversal / Effect Separation"；已推送 origin/main）
+**HEAD at gate review**: `c57f55f`（Gate Review 按 commit-pinned 内容审阅）
 **Unity**: 6000.3.23f1（URP，Windows）
 **Execution**: 2026-09-11 10:35–11:05 (+08)
 **Contract**: `docs/reviews/S6P/S6P_WO_04A2_CONTRACT.md`
 **Record**: `docs/reviews/S6P/S6P_WO_04A2.md`
+**Gate Review**: `docs/reviews/S6P/S6P_WO_04A2_GATE_REVIEW.md`（**ACCEPT，AC-1..AC-20 = 20/20 PASS**）
+
+> 提交后补记（Gate Review 第一节要求）：本 Pack 首次成文时工作区尚未提交（HEAD `ce6f85c`，dirty）。
+> 该 dirty content state 随后被提交为 **`c57f55f`**，Gate Review 审的就是该提交。
+> 历史 final fingerprint `2dd76339fec2741e7bbd79df0b2bf9fac4b21ca31c837ca431bdd56956e2cfbd`
+> **原样保留**：它准确描述的是"提交前、全部 04A2 内容就位的 dirty content state"，不是笔误。
 
 ---
 
@@ -193,9 +200,13 @@ missing node IDs            : []
 - **诚实说明**：按合同 §7.2 / §7.3 的字面定义，`G_ref` 与 `G_runtime` 的 transit 集合是同一个集合，
   因此两者同构、AC-15 的等式**构造性成立**。其机械化价值 = 「生产 BFS 无 bug」+「D 已穷举」+「missing 每次复核」。
   本令真正的收益数字是 **14 → 1985**。若 Channel A 要求更严格的参考图定义，请给出修正，可另开一轮补测。
-- **分母之外的诚实登记**：`D` 之外的 42 个 `FULLY_SUPPORTED` 节点（被特殊节点围住，玩家到不了）已单独列出并钉死：
+- **分母之外的诚实登记**：`D` 之外的 42 个 `FULLY_SUPPORTED` 节点（**start-disconnected supported nodes**，
+  即"起点非连通 supported 节点"，**不是** `OUT_OF_DOMAIN`——`outOfDomain = 0`）已单独列出并钉死：
   `supportedNotStartConnected = 42`，ID 全表见 `docs/qa/WO_04A2_TRAVERSAL_REPORT.json`；
   测试 `SupportedNodesOutsideStartConnectedRegion_AreRegistered` 防它被静默吞掉。
+  本令与 WO-03 均不得触碰这 42 个；它们是未来明确获批的 special-interaction topology 工作的输入，
+  且**不得预承诺"实现 Jewel 就一定会解开全部 42 个"**（哪些属 Jewel、哪些由 locked/Timeless
+  或其它结构原因控制，须待相应域正式开令后按源图重测）。
 
 ---
 

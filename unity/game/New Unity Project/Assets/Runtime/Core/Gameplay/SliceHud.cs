@@ -1073,7 +1073,7 @@ namespace Game.Runtime.Core
             Label(new Rect(18f, 8f, 320f, 30f), "天赋树", _pageTitle);
             Label(new Rect(140f, 12f, dw - 460f, 24f),
                 "天赋点 " + s.Unspent + " / " + s.TotalPoints + "     已点亮 " + allocated + " / " + count +
-                "     金=已点亮 · 亮框=可点亮 · 暗=当前不可用（悬停看原因）",
+                "     金=已点亮 · 亮金框=可点亮且真生效 · 冷蓝框=可点亮但当前 0 效果 · 暗=当前不可用（悬停看原因）",
                 _small);
             Label(new Rect(140f, 30f, dw - 460f, 20f),
                 "滚轮缩放 · 拖拽平移 · 悬停看词条 · 点击加点 · P 关闭（连线：金=已通 · 灰=未点亮）",
@@ -1305,46 +1305,79 @@ namespace Game.Runtime.Core
                 local.y + local.height * 0.5f - n.y * zoom);
         }
 
-        /// <summary>节点 tooltip：真实名称 + 真实词条（专精=全部可选效果）+ 当前状态与加点结果。</summary>
+        /// <summary>节点 tooltip：真实名称 + 当前状态（**放在正文第一行，不得被词条挤掉**）+ 真实词条（专精=全部可选效果）。
+        /// 正文按行拆进 Body[]：Subtitle 槽只放得下一行，多行字符串在那里会被裁掉（route-only 的
+        /// 「0 效果」披露曾经因此不可见）。</summary>
         static SliceTooltipModel.Card NodeCard(SliceSession s, int index, PoeNode n)
         {
-            string body;
-            if (n.Kind == PoeNodeKind.Mastery)
-            {
-                body = string.IsNullOrEmpty(n.choices) ? "（无生效词条）" : "可选效果（本轮尚未开放显式选择）：\n" + n.choices;
-            }
-            else
-            {
-                body = string.IsNullOrEmpty(n.stats) ? "（无词条）" : n.stats;
-            }
+            var lines = new System.Collections.Generic.List<string>();
 
             // S6P-WO-04A2 §20：可点/不可点读**通行**真值、"是否真生效"读**效果**真值，UI 不自己判定。
             NodeUiState st = LockedState(n, s.NodeState(index));
             string blocked = s.NodeBlockReason(index);
             bool yields = PassiveSupport.YieldsModifiers(s.NodeTruth(index).Effect);
-            string state;
             if (st == NodeUiState.Allocated)
             {
                 if (blocked != null)
-                    state = "已点亮　·　" + blocked;
+                    lines.Add("已点亮　·　" + blocked);
                 else if (yields)
-                    state = "已点亮　·　点击无效果，可用 R 重构";
+                    lines.Add("已点亮　·　点击无效果，可用 R 重构");
                 else
-                    state = "已点亮（路径）　·　该节点当前 0 游戏效果（引擎兑现不了其承诺），可用 R 重构";
+                {
+                    // route-only 的 disclosure 拆成两行：单行超过 tooltip 宽（BaseW 360）会被裁掉
+                    lines.Add("已点亮（路径）　·　可用 R 重构");
+                    lines.Add("该节点当前 0 游戏效果（引擎兑现不了它的承诺）");
+                }
             }
             else if (st == NodeUiState.Available)
-                state = yields
-                    ? "可点亮　·　消耗 1 天赋点"
-                    : "可点亮（路径）　·　消耗 1 天赋点；该节点当前无法兑现任何效果（0 效果）";
+            {
+                if (yields)
+                    lines.Add("可点亮　·　消耗 1 天赋点");
+                else
+                {
+                    lines.Add("可点亮（路径）　·　消耗 1 天赋点");
+                    lines.Add("该节点当前无法兑现任何效果（0 效果）");
+                }
+            }
             else if (n.locked != 0)
-                state = "不可点　·　该类显著点只能由时光珠宝授予";
+                lines.Add("不可点　·　该类显著点只能由时光珠宝授予");
             else if (blocked != null)
-                state = "当前不可点亮　·　" + blocked;
+                lines.Add("当前不可点亮　·　" + blocked);
             else
-                state = "未连接　·　需与已点亮节点相连";
+                lines.Add("未连接　·　需与已点亮节点相连");
 
-            string kind = KindName(n.Kind);
-            return SliceTooltipModel.TextCard(n.name + "　【" + kind + "】", body + "\n\n" + state);
+            if (n.Kind == PoeNodeKind.Mastery)
+            {
+                if (string.IsNullOrEmpty(n.choices))
+                    lines.Add("（无生效词条）");
+                else
+                {
+                    lines.Add("可选效果（本轮尚未开放显式选择）：");
+                    AppendLines(lines, n.choices);
+                }
+            }
+            else if (string.IsNullOrEmpty(n.stats))
+                lines.Add("（无词条）");
+            else
+                AppendLines(lines, n.stats);
+
+            var card = SliceTooltipModel.TextCard(n.name + "　【" + KindName(n.Kind) + "】", null);
+            card.Body = lines.ToArray();
+            return card;
+        }
+
+        static void AppendLines(System.Collections.Generic.List<string> lines, string text)
+        {
+            int start = 0;
+            while (start < text.Length)
+            {
+                int nl = text.IndexOf('\n', start);
+                string line;
+                if (nl < 0) { line = text.Substring(start); start = text.Length; }
+                else { line = text.Substring(start, nl - start); start = nl + 1; }
+                if (line.Length > 0)
+                    lines.Add(line);
+            }
         }
 
         static string KindName(PoeNodeKind k)
