@@ -22,6 +22,26 @@ namespace Game.Runtime.Core
         public static int Epoch { get { return _epoch; } }
 
         public static int ResidentIconCount { get { return Icons.Count; } }
+
+        public static int ResidentBytes
+        {
+            get
+            {
+                int n = 0;
+                foreach (var kv in Icons)
+                    n += ByteSize(kv.Value);
+                n += ByteSize(_frame);
+                n += ByteSize(_group);
+                return n;
+            }
+        }
+
+        static int ByteSize(Texture2D t)
+        {
+            if (t == null)
+                return 0;
+            return t.width * t.height * 4;
+        }
         public static int ResidentChromeCount
         {
             get { return (_frame != null ? 1 : 0) + (_group != null ? 1 : 0); }

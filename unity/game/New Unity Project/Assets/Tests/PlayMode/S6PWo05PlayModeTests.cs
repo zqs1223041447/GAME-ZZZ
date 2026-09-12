@@ -46,18 +46,30 @@ namespace Game.Tests.PlayMode
             yield return null;
             var s = director.Sim.Session;
             s.Panel = SlicePanel.Build;
-            yield return null;
+            float ds = SliceHud.DesignScale(Screen.width, Screen.height);
             string dir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "docs/qa/wo05"));
             Directory.CreateDirectory(dir);
-            string path = Path.Combine(dir, "playmode_tree.png");
-            if (File.Exists(path))
-                File.Delete(path);
-            ScreenCapture.CaptureScreenshot(path, 1);
-            for (int i = 0; i < 12; i++)
+            float[] px = { 6f, 12f, 24f };
+            string[] names = { "lod0", "lod1", "lod2" };
+            int got = 0;
+            for (int i = 0; i < px.Length; i++)
+            {
+                float z = PassiveTreeLod.ZoomForProjectedPx(px[i], ds);
+                SliceHud.DebugTreeAt(z, 2172);
                 yield return null;
-            if (!File.Exists(path))
+                string path = Path.Combine(dir, names[i] + "_" + Screen.width + ".png");
+                if (File.Exists(path))
+                    File.Delete(path);
+                ScreenCapture.CaptureScreenshot(path, 1);
+                for (int f = 0; f < 12; f++)
+                    yield return null;
+                if (File.Exists(path) && new FileInfo(path).Length > 1024)
+                    got++;
+            }
+            SliceHud.DebugTreeOff();
+            if (got == 0)
                 Assert.Ignore("无 Game View，截图跳过");
-            Assert.Greater(new FileInfo(path).Length, 1024);
+            Assert.Greater(got, 0);
             Object.Destroy(go);
         }
     }

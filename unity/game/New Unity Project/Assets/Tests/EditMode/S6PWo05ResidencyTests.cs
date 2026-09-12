@@ -216,6 +216,78 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void VramFourStates_WritesTable()
+        {
+            float ds = 1f;
+            PassiveTreeTextures.ReleaseAll();
+            int closedIcons = PassiveTreeTextures.ResidentIconCount;
+            int closedChrome = PassiveTreeTextures.ResidentChromeCount;
+            int closedBytes = PassiveTreeTextures.ResidentBytes;
+            Assert.AreEqual(0, closedIcons);
+            Assert.AreEqual(0, closedChrome);
+            Assert.AreEqual(0, closedBytes);
+
+            float z0 = PassiveTreeLod.ZoomForProjectedPx(6f, ds);
+            Vector2 pan0 = PassiveTreeLod.FocusPan(View, z0, 2172);
+            var p0 = PassiveTreeRenderPlan.Build(View, pan0, z0, ds);
+            PassiveTreeTextures.Sync(p0);
+            Assert.AreEqual(0, p0.RequiredIconCount);
+            Assert.AreEqual(0, PassiveTreeTextures.ResidentIconCount);
+            Assert.AreEqual(0, PassiveTreeTextures.ResidentChromeCount);
+            int lod0Bytes = PassiveTreeTextures.ResidentBytes;
+            Assert.AreEqual(0, lod0Bytes);
+
+            float z1 = PassiveTreeLod.ZoomForProjectedPx(12f, ds);
+            Vector2 pan1 = PassiveTreeLod.FocusPan(View, z1, 2172);
+            var p1 = PassiveTreeRenderPlan.Build(View, pan1, z1, ds);
+            PassiveTreeTextures.Sync(p1);
+            foreach (string stem in p1.RequiredIconStems)
+            {
+                bool fromAllowed = false;
+                for (int i = 0; i < PoeTree.Count; i++)
+                {
+                    if (!p1.VisibleNodes[i] || string.IsNullOrEmpty(PoeTree.Get(i).icon))
+                        continue;
+                    if (PoeTree.Get(i).icon != stem)
+                        continue;
+                    PoeNodeKind k = PoeTree.Get(i).Kind;
+                    if (k == PoeNodeKind.Notable || k == PoeNodeKind.Keystone || k == PoeNodeKind.Mastery || k == PoeNodeKind.Start)
+                        fromAllowed = true;
+                }
+                Assert.IsTrue(fromAllowed, "LOD1 stem 必须来自 Notable/Keystone/Mastery/Start：" + stem);
+            }
+            Assert.IsTrue(PassiveTreeTextures.ResidentIconsMatch(p1.RequiredIconStems));
+            int lod1Icons = PassiveTreeTextures.ResidentIconCount;
+            int lod1Chrome = PassiveTreeTextures.ResidentChromeCount;
+            int lod1Bytes = PassiveTreeTextures.ResidentBytes;
+
+            float z2 = PassiveTreeLod.ZoomForProjectedPx(24f, ds);
+            Vector2 pan2 = PassiveTreeLod.FocusPan(View, z2, 2172);
+            var p2 = PassiveTreeRenderPlan.Build(View, pan2, z2, ds);
+            PassiveTreeTextures.Sync(p2);
+            Assert.IsTrue(PassiveTreeTextures.ResidentIconsMatch(p2.RequiredIconStems));
+            Assert.Greater(p2.RequiredIconCount, 0);
+            int lod2Icons = PassiveTreeTextures.ResidentIconCount;
+            int lod2Chrome = PassiveTreeTextures.ResidentChromeCount;
+            int lod2Bytes = PassiveTreeTextures.ResidentBytes;
+            Assert.Greater(lod2Bytes, lod0Bytes);
+
+            PassiveTreeTextures.ReleaseAll();
+            Assert.AreEqual(0, PassiveTreeTextures.ResidentBytes);
+
+            var sb = new StringBuilder();
+            sb.Append("{\n");
+            sb.Append("  \"CLOSED\": {\"icons\":").Append(closedIcons).Append(",\"chrome\":").Append(closedChrome).Append(",\"bytes\":").Append(closedBytes).Append("},\n");
+            sb.Append("  \"LOD0\": {\"icons\":0,\"chrome\":0,\"bytes\":").Append(lod0Bytes).Append("},\n");
+            sb.Append("  \"LOD1\": {\"icons\":").Append(lod1Icons).Append(",\"chrome\":").Append(lod1Chrome).Append(",\"bytes\":").Append(lod1Bytes).Append("},\n");
+            sb.Append("  \"LOD2\": {\"icons\":").Append(lod2Icons).Append(",\"chrome\":").Append(lod2Chrome).Append(",\"bytes\":").Append(lod2Bytes).Append("}\n");
+            sb.Append("}\n");
+            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "docs/qa/wo05/VRAM_FOUR_STATE.json"));
+            File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
+            TestContext.WriteLine(sb.ToString());
+        }
+
+        [Test]
         public void WritesUnityGeomArtifacts_G0G3()
         {
             string dir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "docs/qa/wo05"));

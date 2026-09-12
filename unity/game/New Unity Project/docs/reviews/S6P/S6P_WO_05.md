@@ -30,6 +30,17 @@
 - Chrome 边端点：G0–G3 × 1920/2560 edgeSetMismatch=0，maxEdgeErrPx ≤ 0.0038
 - PlayMode **23/23**（含关树释放 + 可选截图）
 
-## 未做（Gate 前）
+## VRAM 四态（`docs/qa/wo05/VRAM_FOUR_STATE.json`）
 
-VRAM/tree-owned bytes 四态表、1920/2560 × LOD0/1/2 导演截图全套、冷进程 ×3（关编辑器）。不自行宣布 READY_FOR_GATE_REVIEW。
+| 态 | icons | chrome | bytes |
+|---|---:|---:|---:|
+| CLOSED | 0 | 0 | 0 |
+| LOD0 | 0 | 0 | 0 |
+| LOD1 | 68 | 2 | 14010472 |
+| LOD2 | 50 | 2 | 9737896 |
+
+LOD2 比 LOD1 少 icon 是因为同一 2172 焦点下更高 zoom 可见集更小；LOD2 含 Normal 全图。LOD0 individual icon=0。
+
+截图：PlayMode Game View **1920** 下 `lod0_1920.png` / `lod1_1920.png` / `lod2_1920.png`。2560 视口本机 Game View 未切到 2560。
+
+EditMode **532/532**。S6PWo05 **18/18**。PlayMode WO-05 **2/2**。
