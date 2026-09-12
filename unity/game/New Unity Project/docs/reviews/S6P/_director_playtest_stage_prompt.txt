@@ -1,0 +1,20 @@
+跟进：导演实测四项已落地并推送到 origin/main。请基于仓库事实裁定，不要回声旧 WO-05 评审。
+
+HEAD: aaef8eb Fix director playtest: tooltip wrap, tree hit, shared bag, town hub.
+Repo: https://github.com/zqs1223041447/GAME-ZZZ  branch main
+记录: docs/reviews/S6P/S6P_DIRECTOR_PLAYTEST_2026_09_12.md
+
+导演四项处置：
+1. 多行描述：SliceTooltipLayout.CardHeight 按 EstimateWrappedHeight 累加；DescriptionStyle=wordWrap+Overflow。装备卡与天赋树节点卡共用。禁 15px Clip。
+2. 天赋树点击：GUI.BeginGroup 内不再二次减视口原点。DefaultTreeZoom 0.45 / 中档 / MaxZoom 绘制中心经 TreeHitFromDesignPointer 命中同一 NodeId。
+3. 背包：删除辅助宝石托盘分区。SharedBagCellCount=宝石+InventoryCap；前缀格宝石、其后物品。TryEquip 用库存下标。六槽纸娃娃与 Q/W/E 安装未改。
+4. 主城第一增量：TownHub ember-town/烬城。Town 且无面板时画广场。NPC：仓库管事→BagOpen；工匠→Craft；地图官→Map。进图 TownHub.TryEnterMapFromHub→既有 TryEnterMap（灰烬庭院）。不改 SpawnMap，不是战役。
+
+门：
+- DirectorPlaytestTests + SliceBagPanelTests + SliceDrawerTests + SliceTooltipTests + PoeTreeViewTests 两遍全绿（scratch editmode-1/2.log）
+- EditMode 全量 540/540
+- ProductionSimulatorTests hash=FNV1A64:99f1bfd3f81c4fe6 invalid=0（未重基线）
+- PlayMode 本轮 async 启动后 Pipeline 7801 断连，未作为门；未伪造截图
+- 无新 StatId / parser 族 / WO-05 LOD 改写
+
+请裁定：ACCEPT / ACCEPT WITH FOLLOW-UP / REJECT。后继工作令或 STOP。功能项NPG 已按功能型 NPC 实现；若含义不同请明示。

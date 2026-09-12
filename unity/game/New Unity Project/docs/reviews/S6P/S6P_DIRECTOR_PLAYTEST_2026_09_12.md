@@ -40,4 +40,11 @@ ProdSim 未动。Canonical hash 仍为 `FNV1A64:99f1bfd3f81c4fe6`（V3 `pv|passi
 
 进图唯一走 `TownHub.TryEnterMapFromHub` → `SliceSession.TryEnterMap`（既有灰烬庭院，含词缀/稳定度）。不改 `SpawnMap`、不刷木桩、不加 Atlas / 多城 / 对话树。
 
-测试：`DirectorPlaytestTests.TownHub_IdentityAndNpcBinds_EnterMapViaTryEnterMap`。
+测试：`DirectorPlaytestTests.TownHub_IdentityAndNpcBinds_EnterMapFromHub`。
+
+## Gate
+
+- EditMode 全量 **540/540**。导演相关类两遍全绿。
+- ProdSim `FNV1A64:99f1bfd3f81c4fe6` invalid=0。
+- PlayMode：首轮 Pipeline 7801 断连未记 PASS；恢复后 **23/23** fail=0 skip=0。
+- Channel A（`game-zzz-planning-2`）：**ACCEPT WITH FOLLOW-UP**；后继 **NONE / STOP**。Follow-up=补 PlayMode（已补）。`TownHub.TryEnterMapFromHub` 允许 `MapState.Dead` 走既有 `TryEnterMap` 为非阻塞卫生项，本轮不改。

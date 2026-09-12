@@ -1,0 +1,36 @@
+Verdict: ACCEPT WITH FOLLOW-UP
+四项导演实测修复按 
+main@aaef8eb 的 shipped 路径成立，没有发现需要 REJECT 的主线缺陷：
+
+多行描述 PASS：
+CardHeight 按实际 wrap height 累加，正文样式为 
+wordWrap + Overflow；装备 tooltip 与天赋节点卡走同一套布局语义，不再依赖 15px 单行裁切。GitHub+1
+
+天赋树点击 PASS：生产绘制在 
+BeginGroup 内直接使用组内 
+Pointer，没有再次减 viewport origin；真实 hit 仍走 WO-05 的 
+PassiveTreeLod.HitNodeId，默认 0.45 / 中档 / MaxZoom 的绘制中心均由测试锁定为同一 NodeId。GitHub+2GitHub+2
+
+共享背包 PASS：独立 support tray 已删除；gem prefix cells 与随后 
+InventoryCap 个物品格组成单一网格，物品格明确转换回 inventory index，
+TryEquip 仍消费真实库存下标。GitHub+2GitHub+2
+
+TownHub 第一增量 PASS：
+ember-town / 烬城、三个功能 NPC 均落地；仓库→Bag、工匠→Craft、地图官→Map；真正进图仍调用既有 
+SliceSession.TryEnterMap，没有第二套 SpawnMap/战役系统。GitHub+1
+
+ProdSim 维持 
+FNV1A64:99f1bfd3f81c4fe6 / V3 / invalid=0，没有 rebaseline，符合本增量边界。 commit 也没有改 StatId/parser/WO-05 LOD 机制。GitHub
+Follow-up
+唯一需要补的 Gate 证据是：在 Pipeline 恢复后跑一次当前 
+aaef8eb 的完整 PlayMode，全量 PASS / fail=0 / skip=0。 这次 7801 断连属于基础设施中断，而且你没有伪造结果；现有 540/540 EditMode 加 shipped-API integration tests 足以让我不阻塞导演四项，但不能把“未完成的 PlayMode run”写成 PASS。
+另登记一个非阻塞 API 契约卫生项：
+TownHub.TryEnterMapFromHub 的注释/错误文案写“仅主城”，但代码显式允许 
+MapState.Dead 调用既有 
+TryEnterMap。GitHub 这不影响本次“功能型 NPC 主城第一增量”的 ACCEPT，因为 Hub UI 本身只在 
+Town + Panel.None 绘制，GitHub 但以后改到这里时应二选一：要么真正收紧为 Town-only，要么明确文档化“Dead 可直接再进图”是既有产品语义。本轮不要顺手改。
+你写的 NPG 我按上下文理解为 NPC；仓库实际实现也是 functional NPC。如果导演所谓 NPG 是另一个专有缩写，那不在当前仓库事实里，应另行定义，不能把它反向解释成这次 NPC 实现。
+状态：Director Playtest 2026-09-12 = ACCEPT WITH FOLLOW-UP。
+后继工作令：NONE。STOP。
+
+不采购、不换框架、不自动插新 WO；补完 fresh PlayMode 证据即可做纯治理回填，不需要第二次产品 Gate Review。
