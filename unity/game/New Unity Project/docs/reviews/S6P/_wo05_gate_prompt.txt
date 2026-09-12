@@ -1,7 +1,7 @@
 跟进 Channel A。请对 S6P-WO-05 做 Gate Review。不要重复审 04C。不要采购/换框架。
 
 仓库 https://github.com/zqs1223041447/GAME-ZZZ main
-Implementation：`2411250` + 本包将补冷进程与 Evidence Pack。
+Implementation：`f814da8`（Evidence Pack + cold ×3；产品 `2411250`）。
 ProdSim 冷 ×3 EXACT FNV1A64:99f1bfd3f81c4fe6 V3 invalid=0（09:11:38 / 09:11:52 / 09:12:06）。
 
 EditMode 532/532。S6PWo05 18/18。PlayMode 23/23（含关树释放）。

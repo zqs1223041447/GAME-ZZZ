@@ -3,7 +3,7 @@
 **Work Order:** S6P-WO-05 — Passive Tree Overview LOD & Texture Residency  
 **Base:** `ef11cae`（04C CLOSED）  
 **Implementation:** `2411250`（VRAM + 1920 LOD shots；前序 `22de41e` / `0edbe95` / `c4959d9` / `74dc522`）  
-**状态：** READY_FOR_GATE_REVIEW
+**状态：** CLOSED / ACCEPT WITH FOLLOW-UP（Channel A；下一令 NONE / STOP）
 
 ## EP-A Entry / identity
 
@@ -37,6 +37,8 @@
 
 见 `docs/qa/wo05/VRAM_FOUR_STATE.json`。CLOSED/LOD0 bytes=0。
 
+**测量方法：** `PassiveTreeTextures.ResidentBytes` = 各 resident `Texture2D` 的 `width × height × 4`（按 RGBA32 估算）。**不是** GPU driver 真实 VRAM。unique Texture2D 数 = `ResidentIconCount + ResidentChromeCount`。load/unload 计数见 `ResourceLoadCalls` / `OwnerUnloadCalls`，由 `S6PWo05ResidencyTests` 机械核对。
+
 ## EP-K Nine-point
 
 resident == required last station；无九站 union。
@@ -47,7 +49,12 @@ resident == required last station；无九站 union。
 
 ## EP-O Visual
 
-`lod0_1920.png` `lod1_1920.png` `lod2_1920.png`。2560 Game View 未切到。
+| 视口 | LOD0 | LOD1 | LOD2 |
+|---|---|---|---|
+| 1920 | `lod0_1920.png` | `lod1_1920.png` | `lod2_1920.png` |
+| 2560 | **NOT CAPTURED — machine geometry evidence available** | 同左 | 同左 |
+
+2560 机械 geometry oracle（G0–G3_2560）已运行并 PASS；截图缺口不构成产品失败（Gate follow-up）。
 
 ## EP-Q ProdSim cold
 

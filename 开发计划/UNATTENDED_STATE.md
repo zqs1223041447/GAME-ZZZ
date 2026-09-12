@@ -58,7 +58,7 @@
 | 项 | 值 |
 |---|---|
 | 令号 | **S6P-WO-05 — Passive Tree Overview LOD & Texture Residency** |
-| 状态 | **RELEASED / EXECUTE NOW** |
+| 状态 | **CLOSED / ACCEPT WITH FOLLOW-UP**。Channel A：**下一令 NONE / STOP**。S6P 已释放队列耗尽，等待下一则 Channel A 或导演指令。 |
 | 授权来源 | Channel A 于 04C Gate **RELEASED / EXECUTE NOW**；合同 `S6P_WO_05_CONTRACT.md`（69 AC） |
 | 上一令 | **S6P-WO-04C = CLOSED / ACCEPT WITH FOLLOW-UP**（AreaDamageMore Increased 不接 ACCEPT；disposition 48 行 OUT_AMBIGUOUS_STOP=0） |
 | 入口基线（04C 收口） | EditMode **514/514**、PlayMode **21/21**、ProdSim `FNV1A64:99f1bfd3f81c4fe6`（V3，冷 ×3 EXACT） |

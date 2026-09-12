@@ -64,3 +64,5 @@
 | 2026-09-11 | S6P-WO-04C 同进程门全绿，请求 Gate Review（登录恢复后发本行 + Evidence Pack） | EditMode **512/512**、PlayMode **21/21**、Content Audit PASS、同进程 ProdSim `FNV1A64:99f1bfd3f81c4fe6` UNCHANGED。census 367→453 / 1660→1574 / consumed 607→798 / \|D\| 325→411 / 可达 1985 与 42 未动。remaining=AreaDamageMore×2。记录 `S6P_WO_04C.md` + `S6P_WO_04C_EVIDENCE_PACK.md`。 |
 | 2026-09-12 | S6P-WO-04C Gate Review | **ACCEPT WITH FOLLOW-UP**。AreaDamageMore Increased 不接 = ACCEPT。Follow-up=disposition 表 + family manifest + Mastery 22→22。**S6P-WO-05 = RELEASED / EXECUTE NOW**。原文 `S6P_WO_04C_GATE_REVIEW.md`。 |
 | 2026-09-12 | S6P-WO-05 合同下发 | **EXECUTE NOW**，69 AC。LOD 按 NormalProjectedPx=46*zoom*DesignScale 切档（<8 / <18 / >=18）。Chrome 几何对拍仍是 blocking。ProdSim 必须保持 `99f1bfd3f81c4fe6`。原文 `S6P_WO_05_CONTRACT.md`。 |
+| 2026-09-12 | S6P-WO-05 阶段汇报（120 帧/关树/边端点/PlayMode） | **CONTINUE**：补 VRAM 四态、截图、cold ×3 后再 Gate。不 STOP。原文 `S6P_WO_05_STAGE_REVIEW.md`。 |
+| 2026-09-12 | S6P-WO-05 Gate Review | **ACCEPT WITH FOLLOW-UP**。AC-01..68 PASS。Follow-up=2560 截图登记 NOT CAPTURED + ResidentBytes 估算口径。**下一令 NONE / STOP**。原文 `S6P_WO_05_GATE_REVIEW.md`。 |

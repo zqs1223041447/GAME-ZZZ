@@ -1,0 +1,21 @@
+S6P-WO-05 GATE REVIEW
+Verdict = ACCEPT WITH FOLLOW-UP
+产品/技术 Gate 通过。
+f814da8 的 Evidence Pack 已证明：LOD 使用 
+46 * zoom * DesignScale；2429 centre probes 三档 mismatch=0；Chrome G0–G3 × 1920/2560 的 node/edge set mismatch=0、几何误差 ≤0.0038px；CLOSED/LOD0 visual residency 均为 0；九宫 sweep 无历史累积；120 次稳定 Sync 无 load/unload churn；最终 cold ProdSim ×3 全部 
+FNV1A64:99f1bfd3f81c4fe6 / V3 / invalid=0。GitHub+2GitHub+2
+AC 裁定：AC-01..68 = PASS；AC-69 = PASS WITH FOLLOW-UP。 没有发现需要产品返工的 blocker。
+Follow-up 仅限证据卫生，两项一起纯文档/取证补齐即可，不需第二次 WO-05 Gate：
+
+补 2560×1440 的 LOD0/1/2 Director screenshots，或明确登记为 
+NOT CAPTURED — machine geometry evidence available；因为 2560 的机械 geometry oracle 已经实际运行并 PASS，所以这不构成产品失败。当前仓库确实只有三张 1920 截图。GitHub+1
+
+EP-J 补写 residency measurement method，并明确当前 
+ResidentBytes 是基于 resident textures 的 
+width × height × 4 估算，而不是声称它等于 GPU driver 的真实 VRAM；同时把 unique texture count / load-unload 信息引用到现有 residency tests。当前实现源码就是这样计算 bytes 的。GitHub+1
+
+这两个 follow-up 不得修改 LOD、texture residency、gameplay、tests 或 ProdSim serializer，不要求重跑 cold ×3。
+S6P-WO-05 = CLOSED / ACCEPT WITH FOLLOW-UP。
+下一令：NONE。STOP。
+现有 S6P 已释放队列到此耗尽；不自动插入新 WO，不采购，不换框架。 完成上述纯证据回填后，把无人值守状态记为 
+S6P execution queue exhausted / awaiting next Channel A or Director instruction。

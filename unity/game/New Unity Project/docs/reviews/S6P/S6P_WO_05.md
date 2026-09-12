@@ -1,6 +1,6 @@
 # S6P-WO-05 — Passive Tree Overview LOD & Texture Residency
 
-**状态：** IMPLEMENTING  
+**状态：** CLOSED / ACCEPT WITH FOLLOW-UP（Channel A；下一令 NONE / STOP）  
 **合同：** `S6P_WO_05_CONTRACT.md`（Channel A，69 AC）  
 **入口 HEAD：** `ef11cae`（04C CLOSED）  
 **ProdSim：** 必须保持 `FNV1A64:99f1bfd3f81c4fe6`
