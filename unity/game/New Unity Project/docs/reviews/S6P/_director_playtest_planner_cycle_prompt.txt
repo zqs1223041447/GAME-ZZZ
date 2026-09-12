@@ -1,0 +1,24 @@
+跟进：导演实测四项已在 origin/main，本轮是「同规划AI一起开始工作」的 Channel A 回合。不要回声 WO-05，不要发明 S6P-WO-06。STOP/NONE 是合法完成本回合。
+
+HEAD: 3242fe9（主体 aaef8eb 四项落地 + 81f50b0 PlayMode 回填 + 本提交仅文档测试名对齐）
+Repo: https://github.com/zqs1223041447/GAME-ZZZ  branch main
+记录: docs/reviews/S6P/S6P_DIRECTOR_PLAYTEST_2026_09_12.md
+
+四项 shipped 事实（本轮复验，未改 runtime）：
+1. 多行描述：SliceTooltipLayout.CardHeight 按 EstimateWrappedHeight；DescriptionStyle=wordWrap+Overflow。
+2. 天赋树点击：BeginGroup 内不再二次减视口原点。DefaultTreeZoom 0.45 / 中档 / MaxZoom 绘制中心经 TreeHitFromDesignPointer 命中同一 NodeId。
+3. 背包：无 TrayArea/DrawSupportTray。宝石前缀格 + InventoryCap 物品格共用滚动区。TryEquip 用库存下标。
+4. 主城第一增量：TownHub ember-town/烬城。NPC：仓库→背包、工匠→制作、地图官→地图。进图 TryEnterMapFromHub→TryEnterMap（灰烬庭院）。功能项NPG=功能型NPC。
+
+本轮复验：
+- DirectorPlaytestTests + SliceBagPanelTests + SliceDrawerTests + SliceTooltipTests + PoeTreeViewTests 两遍全绿
+- EditMode 全量 540/540
+- ProductionSimulatorTests hash=FNV1A64:99f1bfd3f81c4fe6 invalid=0（未重基线）
+- PlayMode 23/23 fail=0 skip=0（上次 follow-up 已补，本轮再跑一次仍 23/23）
+
+上次 Channel A：ACCEPT WITH FOLLOW-UP；后继 NONE/STOP；follow-up=PlayMode（已补）。非阻塞项 TownHub.TryEnterMapFromHub 允许 Dead 走既有 TryEnterMap，本轮仍不改。
+
+请裁定：ACCEPT / ACCEPT WITH FOLLOW-UP / REJECT / STOP / NONE。
+若 RELEASE 的 follow-up 仍在这四项导演范围内，请写清要改什么。
+若超出这四项，请只登记、不要当本回合执行令。
+不要采购、不要换框架、不要自动插新 WO。

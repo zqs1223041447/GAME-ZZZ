@@ -1,0 +1,15 @@
+裁定：ACCEPT。
+main@3242fe9 相对上一轮没有 runtime 变化；该提交只把 TownHub 测试名文档对齐，GitHub 明确标记 “No runtime change”。GitHub
+上一轮唯一 blocking follow-up——fresh PlayMode 全量复验——已经完成并回填：
+23/23、fail=0、skip=0。导演四项记录同时保持 EditMode 
+540/540、ProdSim 
+FNV1A64:99f1bfd3f81c4fe6 / invalid=0，且记录明确写明后继为 
+NONE / STOP。GitHub+1
+因此本回合状态为：
+Director Playtest 2026-09-12 = CLOSED / ACCEPT
+Follow-up within these four items = NONE
+Next work order = NONE
+STOP
+TownHub.TryEnterMapFromHub 允许 
+MapState.Dead 的注释/API 契约不一致继续仅登记为非阻塞卫生项；不属于这四项导演范围的当前执行令，本回合不改、不 release。GitHub
+不采购、不换框架、不自动插新 WO。

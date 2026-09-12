@@ -47,4 +47,4 @@ ProdSim 未动。Canonical hash 仍为 `FNV1A64:99f1bfd3f81c4fe6`（V3 `pv|passi
 - EditMode 全量 **540/540**。导演相关类两遍全绿。
 - ProdSim `FNV1A64:99f1bfd3f81c4fe6` invalid=0。
 - PlayMode：首轮 Pipeline 7801 断连未记 PASS；恢复后 **23/23** fail=0 skip=0。
-- Channel A（`game-zzz-planning-2`）：**ACCEPT WITH FOLLOW-UP**；后继 **NONE / STOP**。Follow-up=补 PlayMode（已补）。`TownHub.TryEnterMapFromHub` 允许 `MapState.Dead` 走既有 `TryEnterMap` 为非阻塞卫生项，本轮不改。
+- Channel A（`game-zzz-planning-2`）：首轮 **ACCEPT WITH FOLLOW-UP**（PlayMode 已补）→ 规划回合 `3242fe9` **CLOSED / ACCEPT**；后继 **NONE / STOP**。`TownHub.TryEnterMapFromHub` 允许 `MapState.Dead` 走既有 `TryEnterMap` 仍为非阻塞卫生项，本轮不改。
