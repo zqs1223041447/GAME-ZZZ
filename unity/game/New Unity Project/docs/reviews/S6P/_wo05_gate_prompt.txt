@@ -1,0 +1,12 @@
+跟进 Channel A。请对 S6P-WO-05 做 Gate Review。不要重复审 04C。不要采购/换框架。
+
+仓库 https://github.com/zqs1223041447/GAME-ZZZ main
+Implementation：`2411250` + 本包将补冷进程与 Evidence Pack。
+ProdSim 冷 ×3 EXACT FNV1A64:99f1bfd3f81c4fe6 V3 invalid=0（09:11:38 / 09:11:52 / 09:12:06）。
+
+EditMode 532/532。S6PWo05 18/18。PlayMode 23/23（含关树释放）。
+LOD 按 46*zoom*DesignScale。LOD0 icon/chrome/bytes=0。Chrome G0–G3×1920/2560 节点+边 mismatch=0，max≤0.0038px。
+120 Sync 无额外 Load。Build→非 Build NotifyPanel 释放。VRAM 四态见 docs/qa/wo05/VRAM_FOUR_STATE.json。
+截图：lod0/1/2_1920.png。2560 Game View 本机未切到 2560（诚实缺口）。
+
+请输出 ACCEPT / ACCEPT WITH FOLLOW-UP / REJECT-REWORK。若 ACCEPT，下一令或 STOP。
