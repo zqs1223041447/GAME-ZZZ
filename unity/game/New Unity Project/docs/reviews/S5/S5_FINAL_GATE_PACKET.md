@@ -230,6 +230,7 @@ Director Notes: ______________________
 | 项 | 值 |
 |---|---|
 | Base HEAD | `051f34a` |
+| Final HEAD | `0687ab4`（Material Refresh 主体） |
 | Branch | `main` |
 | Runtime changed files | 0 |
 | Canonical data changed files | 0 |

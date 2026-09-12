@@ -3,6 +3,7 @@
 **Type:** Governance-only  
 **Not a Work Order:** YES  
 **Entry HEAD:** `051f34a`  
+**Final HEAD:** `0687ab4`（本 Refresh 主体；本文件回填提交另计）  
 **Branch:** `main`  
 **Channel A:** `6aa368c5-7478-83ea-a2d3-95003ee4e6ab` / `game-zzz-planning-2`
 
