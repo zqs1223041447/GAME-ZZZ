@@ -57,21 +57,21 @@
 
 | 项 | 值 |
 |---|---|
-| 令号 | **S6P-WO-05 — Passive Tree Overview LOD & Texture Residency** |
-| 状态 | **CLOSED / ACCEPT WITH FOLLOW-UP**。Channel A：**下一令 NONE / STOP**。S6P 已释放队列耗尽，等待下一则 Channel A 或导演指令。 |
-| 授权来源 | Channel A 于 04C Gate **RELEASED / EXECUTE NOW**；合同 `S6P_WO_05_CONTRACT.md`（69 AC） |
-| 上一令 | **S6P-WO-04C = CLOSED / ACCEPT WITH FOLLOW-UP**（AreaDamageMore Increased 不接 ACCEPT；disposition 48 行 OUT_AMBIGUOUS_STOP=0） |
-| 入口基线（04C 收口） | EditMode **514/514**、PlayMode **21/21**、ProdSim `FNV1A64:99f1bfd3f81c4fe6`（V3，冷 ×3 EXACT） |
-| LOD 切档 | `NormalProjectedPx = 46 * treeZoom * DesignScale`：<8 LOD0；[8,18) LOD1；>=18 LOD2。禁止 raw zoom 单独决定 |
-| 硬约束 | 只改 presentation；Traversal/Effect/parser/Mastery/allocation/modifier/canonical data delta=0；可达 1985 / \|D\|=411 / 42 不得动；禁采购/换框架；禁静默 rebaseline `99f1bfd3f81c4fe6` |
+| 令号 | **S5 Director Final Gate Material Refresh**（治理-only，不是 WO） |
+| 状态 | **COMPLETE**。Channel A 裁定 **B**。**S5 Director Final Gate = READY / PENDING DIRECTOR DECISION**。S5 = NOT COMPLETE。Implementation = **STOPPED**。Next Cycle = **NOT STARTED**。等导演勾 Decision Form。 |
+| 授权来源 | 导演「继续」→ Channel A `game-zzz-planning-2`；合同 `S5_DIRECTOR_FINAL_GATE_MATERIAL_REFRESH.md` |
+| 上一令 | **导演实测 2026-09-12 = CLOSED / ACCEPT**（后继当时 NONE/STOP）；再上一令 **S6P-WO-05 = CLOSED / ACCEPT WITH FOLLOW-UP** |
+| 入口 HEAD | `051f34a`（dirty 已清；InitTestScene 丢弃） |
+| 当前门（披露，未重跑） | EditMode **540/540**、PlayMode **23/23** fail=0 skip=0、ProdSim `FNV1A64:99f1bfd3f81c4fe6` V3 invalid=0、**no rebaseline** |
+| 硬约束 | runtime/canonical/parser/LOD/Mastery/TownHub delta=0；禁代勾 Decision Form；禁把「继续」译成 APPROVE；禁 S6P-WO-06；禁新周期；禁采购/换框架 |
 | 规划渠道 | Channel A = `game-zzz-planning-2` / `6aa368c5-7478-83ea-a2d3-95003ee4e6ab` |
 
-## 队列（WO-05 进行中）
+## 队列（已耗尽）
 
 | 项 | 值 |
 |---|---|
-| 队列 | **S6P-WO-05（进行中）** |
-| 上一令 | **S6P-WO-04C = CLOSED / ACCEPT WITH FOLLOW-UP**；记录见 `S6P_WO_04C.md` / `S6P_WO_04C_GATE_REVIEW.md` |
+| 队列 | **S6P 已释放队列耗尽**。S5 Final Gate 材料已刷新。下一步 = **导演 Decision Form**（APPROVE 或 HOLD/REWORK）。 |
+| 上一令 | **S6P-WO-05 = CLOSED / ACCEPT WITH FOLLOW-UP**；导演实测 2026-09-12 = CLOSED / ACCEPT |
 
 
 ## 上一令（S6P-DIR-01 — 已实现、已提交入库 `ce6f85c`、已推送）
@@ -346,3 +346,5 @@ unity command capture_game_view --source screen --width 2560 --height 1440 --sav
 | 2026-09-11 | **S6P-WO-04B Gate = ACCEPT WITH FOLLOW-UP**（无产品返工）。Follow-up=Evidence 回填 Implementation commit `22fd6d3`。**S6P-WO-04C = RELEASED / EXECUTE NOW**（条件桶已触发，不跳过）。队列 `WO-04C → WO-05`。原文 `S6P_WO_04B_GATE_REVIEW.md` |
 | 2026-09-11 | **S6P-WO-04C 实现完毕（同进程门全绿，冷进程进行中）**。入口指纹 `7310214b…` @ `8959a60` dirty=NO。parser 只接已有 consumer 的无条件句式；故意不接 `increased Area Damage`。census 367→453 / 1660→1574 / consumed 607→798 / \|D\| 325→411 / 可达 1985 与 42 未动。remaining 桶 = AreaDamageMore×2。门：EditMode **512/512**、PlayMode **21/21**、Content Audit PASS、同进程 ProdSim `FNV1A64:99f1bfd3f81c4fe6` UNCHANGED。Channel A `ask` 两次登录失效，未停工。记录 `S6P_WO_04C.md` + `S6P_WO_04C_EVIDENCE_PACK.md`。WO-05 等 Gate ACCEPT。 |
 | 2026-09-11 | **S6P-WO-04C 入库 `e1d8eea`**。冷进程 ×3 EXACT `FNV1A64:99f1bfd3f81c4fe6`（23:41:14 / 23:41:28 / 23:41:42）。READY_FOR_GATE_REVIEW。WO-05 禁止开工直到 Channel A ACCEPT。 |
+| 2026-09-12 | 导演「继续」。S6P-WO-05 与导演实测均已 CLOSED/STOP。向 Channel A 请求下一周期（禁止自开 S6P-WO-06）。裁定 **B**：S5 Director Final Gate Material Refresh（治理-only）。Packet §8–§11 已写当前背景。Decision Form 未勾选。**STOP，等导演 Decision Form。** |
+

@@ -1,0 +1,795 @@
+裁定：B）先走 S5 Director Final Gate 材料整理；不实现新产品，等待导演勾 Decision Form。
+理由很明确：当前 
+S5_FINAL_GATE_PACKET.md 仍写着 S5 Director Final Gate = READY/PENDING、S5 尚未 COMPLETE、Next Cycle = NOT STARTED；只有导演勾选 
+APPROVE S5 FINAL GATE 才授权正式同步 S5=COMPLETE 并开始下一周期规划。导演一句「继续」不足以替代这个明确 Decision Form，更不构成 Jewel / Flask / Ascendancy / 新 Stat 轴等玩法域授权。GitHub 当前 
+051f34a 也只记录上一轮后继 
+NONE / STOP，没有释放新产品令。GitHub
+这不是新 WO，不是 S6P-WO-06，也不是新产品周期。
+S5 Director Final Gate Material Refresh — Governance-Only Contract
+S5 DIRECTOR FINAL GATE MATERIAL REFRESH
+Type: Governance-only / evidence-only
+Status: 
+RELEASED / EXECUTE NOW
+Not a Work Order: YES
+New Product Authority: NONE
+Next Cycle Authority: NONE until Director Decision Form
+Canonical current ProdSim: 
+V3 / FNV1A64:99f1bfd3f81c4fe6
+1. Mission
+把现有 
+S5_FINAL_GATE_PACKET.md 刷新成导演今天可以直接决策的最终材料。
+不得重新实现 S5，不得修改 S6P 已关闭产品，不得启动下一周期。
+本任务唯一出口：
+S5 Director Final Gate = READY / PENDING DIRECTOR DECISION
+Implementation = STOPPED
+Next Cycle = NOT STARTED
+直到导演本人明确勾：
+[ ] APPROVE S5 FINAL GATE
+或：
+[ ] HOLD / REWORK
+2. 必须保留原始 S5 决策对象
+Director Final Gate 的原始授权范围仍是：
+BL-002.A1 有界词缀
+BL-021.A2 多连接组
+原本未授权内容不得因后续 S5U/S6P 已经发生而被倒写成“S5 当时已授权”。
+因此必须区分：
+A. S5 Final Gate 原始 closure facts
+B. S5 之后插入的 S5U / S6P 已关闭增量
+C. 当前仓库总体健康状态
+不得混成一个“全部都属于 S5”的叙事。
+3. 本次 Refresh 允许修改的文件
+优先只修改治理/证据文件，例如：
+docs/reviews/S5/S5_FINAL_GATE_PACKET.md
+docs/reviews/STATUS.md
+开发计划/UNATTENDED_STATE.md
+若存在专门的 Director decision handoff 文件，也可同步。
+禁止修改：
+Assets/Runtime/**
+Assets/Resources/**
+canonical gameplay data
+tests 的产品语义
+ProdSim serializer
+除非只是文档路径/文件名引用修正。
+4. 必须增加 Current-State Addendum
+在 S5 Final Gate Packet 增加一个清晰的：
+Post-S5 Insertions / Current Repository State
+章节。
+至少记录：
+4.1 S5U / S6P 状态
+S5U = historical inserted work, closed as recorded
+S6P-WO-01..05 = CLOSED
+S6P-DIR-01 = CLOSED
+Director Playtest 2026-09-12 = CLOSED / ACCEPT
+S6P released queue = exhausted
+这些只作“导演决策时的当前背景”，不得改写 S5 原始 scope。
+4.2 当前质量门
+记录当前 latest verified：
+EditMode = 540/540
+PlayMode = 23/23
+fail = 0
+skip = 0
+
+ProdSim:
+Contract = V3
+Hash = FNV1A64:99f1bfd3f81c4fe6
+invalid = 0
+rebaseline = NO
+4.3 当前 passive truth
+登记：
+FULLY_SUPPORTED = 453
+UNFULFILLED = 1574
+special = 87
+Mastery nodes = 315
+
+CONSUMED = 798
+reachable = 1985
+|D| = 411
+start-disconnected supported = 42
+Mastery supported choices = 22
+并注明：
+04C remaining:
+"increased Area Damage" ×2
+status = intentionally fail-closed
+reason = existing AreaDamageMore consumer only consumes RawMore;
+mapping Increased would silently do nothing,
+mapping to More would change semantics.
+这只是当前状态披露，不属于 S5 Final Gate 的批准对象。
+5. Outstanding / Excluded Items
+Final Gate Packet 必须显式列出：
+Pending governance
+S5 Director Final Gate = PENDING
+S5 != COMPLETE
+Non-blocking hygiene
+TownHub.TryEnterMapFromHub:
+MapState.Dead currently allowed through existing TryEnterMap.
+Status = recorded non-blocking hygiene item.
+No change in this task.
+Requires explicit future Director gameplay authorization
+至少：
+Flask
+Jewel
+Ascendancy
+Timeless
+
+Cold
+Lightning
+Energy Shield
+Block
+Suppression
+Minion
+Totem
+Warcry
+Ailment expansion
+Charges
+Leech
+DoT
+
+new Skill / Support domains
+campaign / town expansion beyond already shipped first increment
+这些项目必须写：
+NOT AUTHORIZED FOR EXECUTION BY THIS REFRESH
+不得写 
+NEXT / 
+RELEASED / 
+EXECUTE NOW。
+6. Director Decision Form
+保留且突出显示唯一正式选择：
+[ ] APPROVE S5 FINAL GATE
+
+Effect:
+- S5 may be marked COMPLETE.
+- Planning AI may begin next-cycle planning.
+- Does NOT by itself authorize any excluded gameplay domain.
+以及：
+[ ] HOLD / REWORK
+
+Effect:
+- S5 remains not COMPLETE.
+- Implementation remains STOPPED.
+- Director provides bounded concern/evidence request.
+并保留：
+Director Notes: ______________________
+不得由工作 AI、Channel A 代理勾选。
+“继续”不得自动翻译成 APPROVE。
+7. ProdSim Policy
+本治理任务：
+Expected =
+FNV1A64:99f1bfd3f81c4fe6
+V3
+invalid=0
+但因为禁止 runtime/product mutation：
+正常情况下不要求重跑 cold ×3。
+若仅文档变化：
+Canonical hash expected delta = 0 by construction
+如果任何实现动作意外导致 ProdSim/hash/runtime diff：
+STOP。
+禁止：
+rebaseline
+V4
+serializer edit
+new payload fields
+8. Acceptance Criteria
+AC-01 当前 HEAD / branch / clean-state 被记录。
+AC-02 
+S5_FINAL_GATE_PACKET.md 仍明确说明 Director Final Gate 是正式 S5 COMPLETE 的唯一剩余批准门。
+AC-03 原始 S5 授权 
+{BL-002.A1, BL-021.A2} 不被后续工作改写。
+AC-04 原始 S5 NOT AUTHORIZED 清单保留其历史语义。
+AC-05 S5U/S6P 被作为 post-S5/current-state addendum，而非倒算成 S5 scope。
+AC-06 S6P-WO-01..05 全 CLOSED 被正确登记。
+AC-07 S6P-DIR-01 CLOSED 被正确登记。
+AC-08 Director Playtest 2026-09-12 CLOSED/ACCEPT 被正确登记。
+AC-09 当前 EditMode 
+540/540 被登记。
+AC-10 当前 PlayMode 
+23/23, fail=0, skip=0 被登记。
+AC-11 当前 ProdSim 
+V3 / 99f1bfd3f81c4fe6 / invalid=0 被登记。
+AC-12 明确写 
+no rebaseline。
+AC-13 当前 passive census 被作为背景事实准确登记。
+AC-14 AreaDamageMore Increased ×2 被登记为 intentional fail-closed，不作为 S5 blocker。
+AC-15 TownHub Dead seam 只登记为 non-blocking hygiene，不执行修改。
+AC-16 Flask/Jewel/Ascendancy/Timeless/new Stat axes 等明确标记 
+requires explicit Director gameplay authorization。
+AC-17 没有任何新产品域被标记 RELEASED。
+AC-18 没有创建 S6P-WO-06。
+AC-19 没有创建下一周期 WO。
+AC-20 Director Decision Form 保留 APPROVE/HOLD 两个正式选择。
+AC-21 Decision Form 未被 AI 预勾。
+AC-22 
+APPROVE 的效果明确为“允许规划下一周期”，而不是自动授权具体新玩法域。
+AC-23 
+HOLD/REWORK 的效果明确为继续 STOP，并等待导演限定问题。
+AC-24 runtime file delta=0。
+AC-25 canonical data delta=0。
+AC-26 gameplay/parser/LOD/Mastery delta=0。
+AC-27 ProdSim serializer delta=0。
+AC-28 没有采购。
+AC-29 没有换框架。
+AC-30 最终状态只能是：
+S5 Director Final Gate = READY / PENDING DIRECTOR DECISION
+S5 = NOT COMPLETE
+Implementation = STOPPED
+Next Cycle = NOT STARTED
+直到 Director Decision Form 被导演本人明确填写。
+9. Evidence Fields
+提交一个简短 governance evidence section，至少包含：
+Base HEAD
+Final HEAD
+Branch
+git status
+
+Changed files
+Runtime changed files = 0
+Canonical data changed files = 0
+Test semantic changes = 0
+
+S5 original authorization preserved = YES
+Post-S5 addendum present = YES
+
+Current EditMode = 540/540
+Current PlayMode = 23/23
+Current ProdSim = FNV1A64:99f1bfd3f81c4fe6
+Contract = V3
+invalid = 0
+
+Director Decision Form:
+APPROVE checked = NO
+HOLD checked = NO
+
+S5 COMPLETE = NO
+Next Cycle Started = NO
+New Product WO Released = NO
+10. STOP Conditions
+立即 STOP，如果发生任一项：
+需要改 runtime 才能整理 Final Gate；
+需要改 parser / StatId / ModOp；
+需要改 passive truth；
+需要改 Mastery；
+需要改 LOD；
+需要改 inventory/TownHub gameplay；
+需要修改 canonical data；
+需要重新基线 ProdSim；
+需要创建 V4；
+AI 被要求代导演勾 Decision Form；
+“继续”被解释成某个具体 gameplay domain 的授权；
+自动创建 S6P-WO-06；
+自动开启新周期；
+自动 RELEASE Jewel/Flask/Ascendancy/Timeless/new Stat axis；
+采购或换框架。
+STOP 状态：
+S5 DIRECTOR FINAL GATE MATERIAL REFRESH
+= BLOCKED / NEEDS DIRECTOR OR CHANNEL A ARBITRATION
+11. Completion
+材料整理完成后：
+Material Refresh = COMPLETE
+S5 Director Final Gate = READY / PENDING DIRECTOR DECISION
+S5 = NOT COMPLETE
+Implementation = STOPPED
+Next Cycle = NOT STARTED
+然后把 Packet 交导演。
+工作 AI 停止。
+不得在导演 Decision Form 前继续产品实现。
+所以本回合的执行顺序只有：
+整理 S5 Director Final Gate 材料 → 提交治理回填 → STOP → 等导演 Decision Form。
+不释放任何新玩法域，不创建 S6P-WO-06，不开启下一周期。
+来源
+window.__oai_logHTML?window.__oai_logHTML():window.__oai_SSR_HTML=window.__oai_SSR_HTML||Date.now();requestAnimationFrame((function(){window.__oai_logTTI?window.__oai_logTTI():window.__oai_SSR_TTI=window.__oai_SSR_TTI||Date.now()}))
+极高
+ChatGPT 也可能会犯错。请核查重要信息。查看 Cookie 首选项。
+ChatGPT 说：**裁定：B）先走 S5 Director Final Gate 材料整理；不实现新产品，等待导演勾 Decision Form。**
+
+理由很明确：当前 `S5_FINAL_GATE_PACKET.md` 仍写着 **S5 Director Final Gate = READY/PENDING、S5 尚未 COMPLETE、Next Cycle = NOT STARTED**；只有导演勾选 `APPROVE S5 FINAL GATE` 才授权正式同步 S5=COMPLETE 并开始下一周期规划。导演一句「继续」不足以替代这个明确 Decision Form，更不构成 Jewel / Flask / Ascendancy / 新 Stat 轴等玩法域授权。citeturn953333view1 当前 `051f34a` 也只记录上一轮后继 `NONE / STOP`，没有释放新产品令。citeturn953333view0
+
+**这不是新 WO，不是 S6P-WO-06，也不是新产品周期。**
+
+:::writing{variant="document" id="58321" title="S5 Director Final Gate Material Refresh — Governance-Only Contract"}
+# S5 DIRECTOR FINAL GATE MATERIAL REFRESH
+
+**Type:** Governance-only / evidence-only 
+**Status:** `RELEASED / EXECUTE NOW` 
+**Not a Work Order:** YES 
+**New Product Authority:** NONE 
+**Next Cycle Authority:** NONE until Director Decision Form 
+**Canonical current ProdSim:** `V3 / FNV1A64:99f1bfd3f81c4fe6`
+
+## 1. Mission
+
+把现有 `S5_FINAL_GATE_PACKET.md` 刷新成导演今天可以直接决策的最终材料。
+
+不得重新实现 S5，不得修改 S6P 已关闭产品，不得启动下一周期。
+
+本任务唯一出口：
+
+```text
+S5 Director Final Gate = READY / PENDING DIRECTOR DECISION
+Implementation = STOPPED
+Next Cycle = NOT STARTED
+```
+
+直到导演本人明确勾：
+
+```text
+[ ] APPROVE S5 FINAL GATE
+```
+
+或：
+
+```text
+[ ] HOLD / REWORK
+```
+
+---
+
+## 2. 必须保留原始 S5 决策对象
+
+Director Final Gate 的原始授权范围仍是：
+
+```text
+BL-002.A1 有界词缀
+BL-021.A2 多连接组
+```
+
+原本未授权内容不得因后续 S5U/S6P 已经发生而被倒写成“S5 当时已授权”。
+
+因此必须区分：
+
+```text
+A. S5 Final Gate 原始 closure facts
+B. S5 之后插入的 S5U / S6P 已关闭增量
+C. 当前仓库总体健康状态
+```
+
+不得混成一个“全部都属于 S5”的叙事。
+
+---
+
+## 3. 本次 Refresh 允许修改的文件
+
+优先只修改治理/证据文件，例如：
+
+```text
+docs/reviews/S5/S5_FINAL_GATE_PACKET.md
+docs/reviews/STATUS.md
+开发计划/UNATTENDED_STATE.md
+```
+
+若存在专门的 Director decision handoff 文件，也可同步。
+
+禁止修改：
+
+```text
+Assets/Runtime/**
+Assets/Resources/**
+canonical gameplay data
+tests 的产品语义
+ProdSim serializer
+```
+
+除非只是文档路径/文件名引用修正。
+
+---
+
+## 4. 必须增加 Current-State Addendum
+
+在 S5 Final Gate Packet 增加一个清晰的：
+
+```text
+Post-S5 Insertions / Current Repository State
+```
+
+章节。
+
+至少记录：
+
+### 4.1 S5U / S6P 状态
+
+```text
+S5U = historical inserted work, closed as recorded
+S6P-WO-01..05 = CLOSED
+S6P-DIR-01 = CLOSED
+Director Playtest 2026-09-12 = CLOSED / ACCEPT
+S6P released queue = exhausted
+```
+
+这些只作“导演决策时的当前背景”，不得改写 S5 原始 scope。
+
+### 4.2 当前质量门
+
+记录当前 latest verified：
+
+```text
+EditMode = 540/540
+PlayMode = 23/23
+fail = 0
+skip = 0
+
+ProdSim:
+Contract = V3
+Hash = FNV1A64:99f1bfd3f81c4fe6
+invalid = 0
+rebaseline = NO
+```
+
+### 4.3 当前 passive truth
+
+登记：
+
+```text
+FULLY_SUPPORTED = 453
+UNFULFILLED = 1574
+special = 87
+Mastery nodes = 315
+
+CONSUMED = 798
+reachable = 1985
+|D| = 411
+start-disconnected supported = 42
+Mastery supported choices = 22
+```
+
+并注明：
+
+```text
+04C remaining:
+"increased Area Damage" ×2
+status = intentionally fail-closed
+reason = existing AreaDamageMore consumer only consumes RawMore;
+mapping Increased would silently do nothing,
+mapping to More would change semantics.
+```
+
+这只是当前状态披露，不属于 S5 Final Gate 的批准对象。
+
+---
+
+## 5. Outstanding / Excluded Items
+
+Final Gate Packet 必须显式列出：
+
+### Pending governance
+
+```text
+S5 Director Final Gate = PENDING
+S5 != COMPLETE
+```
+
+### Non-blocking hygiene
+
+```text
+TownHub.TryEnterMapFromHub:
+MapState.Dead currently allowed through existing TryEnterMap.
+Status = recorded non-blocking hygiene item.
+No change in this task.
+```
+
+### Requires explicit future Director gameplay authorization
+
+至少：
+
+```text
+Flask
+Jewel
+Ascendancy
+Timeless
+
+Cold
+Lightning
+Energy Shield
+Block
+Suppression
+Minion
+Totem
+Warcry
+Ailment expansion
+Charges
+Leech
+DoT
+
+new Skill / Support domains
+campaign / town expansion beyond already shipped first increment
+```
+
+这些项目必须写：
+
+```text
+NOT AUTHORIZED FOR EXECUTION BY THIS REFRESH
+```
+
+不得写 `NEXT` / `RELEASED` / `EXECUTE NOW`。
+
+---
+
+## 6. Director Decision Form
+
+保留且突出显示唯一正式选择：
+
+```text
+[ ] APPROVE S5 FINAL GATE
+
+Effect:
+- S5 may be marked COMPLETE.
+- Planning AI may begin next-cycle planning.
+- Does NOT by itself authorize any excluded gameplay domain.
+```
+
+以及：
+
+```text
+[ ] HOLD / REWORK
+
+Effect:
+- S5 remains not COMPLETE.
+- Implementation remains STOPPED.
+- Director provides bounded concern/evidence request.
+```
+
+并保留：
+
+```text
+Director Notes: ______________________
+```
+
+不得由工作 AI、Channel A 代理勾选。
+
+“继续”不得自动翻译成 APPROVE。
+
+---
+
+# 7. ProdSim Policy
+
+本治理任务：
+
+```text
+Expected =
+FNV1A64:99f1bfd3f81c4fe6
+V3
+invalid=0
+```
+
+但因为禁止 runtime/product mutation：
+
+**正常情况下不要求重跑 cold ×3。**
+
+若仅文档变化：
+
+```text
+Canonical hash expected delta = 0 by construction
+```
+
+如果任何实现动作意外导致 ProdSim/hash/runtime diff：
+
+**STOP。**
+
+禁止：
+
+```text
+rebaseline
+V4
+serializer edit
+new payload fields
+```
+
+---
+
+# 8. Acceptance Criteria
+
+**AC-01** 当前 HEAD / branch / clean-state 被记录。
+
+**AC-02** `S5_FINAL_GATE_PACKET.md` 仍明确说明 Director Final Gate 是正式 S5 COMPLETE 的唯一剩余批准门。
+
+**AC-03** 原始 S5 授权 `{BL-002.A1, BL-021.A2}` 不被后续工作改写。
+
+**AC-04** 原始 S5 NOT AUTHORIZED 清单保留其历史语义。
+
+**AC-05** S5U/S6P 被作为 post-S5/current-state addendum，而非倒算成 S5 scope。
+
+**AC-06** S6P-WO-01..05 全 CLOSED 被正确登记。
+
+**AC-07** S6P-DIR-01 CLOSED 被正确登记。
+
+**AC-08** Director Playtest 2026-09-12 CLOSED/ACCEPT 被正确登记。
+
+**AC-09** 当前 EditMode `540/540` 被登记。
+
+**AC-10** 当前 PlayMode `23/23`, fail=0, skip=0 被登记。
+
+**AC-11** 当前 ProdSim `V3 / 99f1bfd3f81c4fe6 / invalid=0` 被登记。
+
+**AC-12** 明确写 `no rebaseline`。
+
+**AC-13** 当前 passive census 被作为背景事实准确登记。
+
+**AC-14** AreaDamageMore Increased ×2 被登记为 intentional fail-closed，不作为 S5 blocker。
+
+**AC-15** TownHub Dead seam 只登记为 non-blocking hygiene，不执行修改。
+
+**AC-16** Flask/Jewel/Ascendancy/Timeless/new Stat axes 等明确标记 `requires explicit Director gameplay authorization`。
+
+**AC-17** 没有任何新产品域被标记 RELEASED。
+
+**AC-18** 没有创建 S6P-WO-06。
+
+**AC-19** 没有创建下一周期 WO。
+
+**AC-20** Director Decision Form 保留 APPROVE/HOLD 两个正式选择。
+
+**AC-21** Decision Form 未被 AI 预勾。
+
+**AC-22** `APPROVE` 的效果明确为“允许规划下一周期”，而不是自动授权具体新玩法域。
+
+**AC-23** `HOLD/REWORK` 的效果明确为继续 STOP，并等待导演限定问题。
+
+**AC-24** runtime file delta=0。
+
+**AC-25** canonical data delta=0。
+
+**AC-26** gameplay/parser/LOD/Mastery delta=0。
+
+**AC-27** ProdSim serializer delta=0。
+
+**AC-28** 没有采购。
+
+**AC-29** 没有换框架。
+
+**AC-30** 最终状态只能是：
+
+```text
+S5 Director Final Gate = READY / PENDING DIRECTOR DECISION
+S5 = NOT COMPLETE
+Implementation = STOPPED
+Next Cycle = NOT STARTED
+```
+
+直到 Director Decision Form 被导演本人明确填写。
+
+---
+
+# 9. Evidence Fields
+
+提交一个简短 governance evidence section，至少包含：
+
+```text
+Base HEAD
+Final HEAD
+Branch
+git status
+
+Changed files
+Runtime changed files = 0
+Canonical data changed files = 0
+Test semantic changes = 0
+
+S5 original authorization preserved = YES
+Post-S5 addendum present = YES
+
+Current EditMode = 540/540
+Current PlayMode = 23/23
+Current ProdSim = FNV1A64:99f1bfd3f81c4fe6
+Contract = V3
+invalid = 0
+
+Director Decision Form:
+APPROVE checked = NO
+HOLD checked = NO
+
+S5 COMPLETE = NO
+Next Cycle Started = NO
+New Product WO Released = NO
+```
+
+---
+
+# 10. STOP Conditions
+
+立即 STOP，如果发生任一项：
+
+1. 需要改 runtime 才能整理 Final Gate；
+2. 需要改 parser / StatId / ModOp；
+3. 需要改 passive truth；
+4. 需要改 Mastery；
+5. 需要改 LOD；
+6. 需要改 inventory/TownHub gameplay；
+7. 需要修改 canonical data；
+8. 需要重新基线 ProdSim；
+9. 需要创建 V4；
+10. AI 被要求代导演勾 Decision Form；
+11. “继续”被解释成某个具体 gameplay domain 的授权；
+12. 自动创建 S6P-WO-06；
+13. 自动开启新周期；
+14. 自动 RELEASE Jewel/Flask/Ascendancy/Timeless/new Stat axis；
+15. 采购或换框架。
+
+STOP 状态：
+
+```text
+S5 DIRECTOR FINAL GATE MATERIAL REFRESH
+= BLOCKED / NEEDS DIRECTOR OR CHANNEL A ARBITRATION
+```
+
+---
+
+# 11. Completion
+
+材料整理完成后：
+
+```text
+Material Refresh = COMPLETE
+S5 Director Final Gate = READY / PENDING DIRECTOR DECISION
+S5 = NOT COMPLETE
+Implementation = STOPPED
+Next Cycle = NOT STARTED
+```
+
+然后把 Packet 交导演。
+
+**工作 AI 停止。**
+
+不得在导演 Decision Form 前继续产品实现。
+:::
+
+所以本回合的执行顺序只有：
+
+**整理 S5 Director Final Gate 材料 → 提交治理回填 → STOP → 等导演 Decision Form。**
+
+不释放任何新玩法域，不创建 S6P-WO-06，不开启下一周期。
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+
+ 日夜切换
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+预设提示词
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 导出对话
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+要求更改
+CtrlK
+标题 1
+要求更改
+CtrlK
+标题 1
+要求更改
+CtrlK
+文本

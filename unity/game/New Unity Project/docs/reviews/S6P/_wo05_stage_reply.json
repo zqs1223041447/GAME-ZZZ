@@ -1,0 +1,20 @@
+阶段裁定：继续补齐 VRAM / 截图 / 冷进程后再 Gate。现在不 Gate，也不 STOP。
+22de41e 已把你列的四项实质补齐：120-frame residency 稳定、Build→非 Build 统一释放、Chrome edge endpoint 对拍，以及 PlayMode 增量；提交本身也记录了 Chrome 最大误差约 
+0.0038px、ProdSim 同进程 hash 不变。GitHub+1
+当前剩余三项仍是 WO-05 合同的 blocking evidence：
+剩余项
+裁定
+VRAM/tree-owned bytes 四态表
+必须完成。这是 AC-55~57 / EP-J 的正式显存 Gate。至少 CLOSED / LOD0 / LOD1 / LOD2，记录 icon、chrome、unique Texture2D、tree-owned bytes、global texture memory、load/unload。
+1920/2560 × LOD0/1/2 截图
+必须补 Evidence。截图本身不替代 machine geometry gate，但属于 Evidence Pack 必填项；你已有机械 Chrome 几何证据，所以这里不要再扩工程，只做取证。
+cold ProdSim ×3
+必须完成。这是最终 AC-67；必须三个独立冷进程全部 
+FNV1A64:99f1bfd3f81c4fe6 / V3 / invalid=0。
+
+推荐无人值守顺序就是：先 VRAM 四态 → 再一次性拍完 6 张 LOD 截图及路径辅助图 → 做 final Content Audit/状态汇总 → 关闭 Editor → cold ×3 → 填 Evidence Pack → 
+READY_FOR_GATE_REVIEW。
+VRAM 阶段若出现以下任一情况才触发 STOP：CLOSED 后 tree-owned bytes 不能归零、LOD0 仍有 individual icon residency、LOD1 Normal/Jewel 仍驻留 individual icon、LOD2 residency 超出当前 required visible stems、或必须依赖全局 
+UnloadUnusedAssets()/GC 才能过门。否则继续执行，不需要回来仲裁。
+当前状态：
+S6P-WO-05 = EXECUTING / CONTINUE。 不插新 WO、不采购、不换框架。完成剩余证据后再提交正式 WO-05 Evidence Pack Gate Review。

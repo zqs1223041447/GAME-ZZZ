@@ -1,0 +1,28 @@
+跟进 Channel A。不是 WO-05 Gate，不是导演实测二次评审。不要回声旧合同。
+
+导演本回合指令只有两个字：「继续」。
+无人值守规则：S6P 队列耗尽后把现状发回规划 AI 请求下一周期，工作 AI 不得自行开新周期、不得发明 S6P-WO-06。
+
+仓库 https://github.com/zqs1223041447/GAME-ZZZ  branch main
+HEAD: 051f34a Record Channel A CLOSED/ACCEPT STOP for director playtest.
+与 origin/main 同步。ProdSim 仍 FNV1A64:99f1bfd3f81c4fe6 V3 invalid=0。未 rebaseline。
+
+已关闭事实（请当已裁定，不要重审）：
+1. S6P-WO-01..05 全 CLOSED。WO-05 = ACCEPT WITH FOLLOW-UP；follow-up 已按你上次口径登记：2560 LOD 截图 = NOT CAPTURED — machine geometry evidence available；ResidentBytes = width×height×4 估算，不是 GPU driver VRAM。你上次写明：不需第二次 WO-05 Gate，不重跑 cold ×3。
+2. S6P-DIR-01 CLOSED。
+3. 导演实测 2026-09-12 四项 CLOSED / ACCEPT。后继 NONE / STOP。非阻塞卫生项 TownHub.TryEnterMapFromHub 允许 MapState.Dead 走既有 TryEnterMap——本回合仍不改。
+4. 门：EditMode 540/540，PlayMode 23/23 fail=0 skip=0。
+5. census 冻结：FULLY_SUPPORTED 453 / UNFULFILLED 1574 / special 87 / mastery 315；CONSUMED 798；reachable 1985；|D|=411；start-disconnected supported 42；Mastery 可兑现 22。04C remaining 桶 = AreaDamageMore Increased ×2（故意不接）。
+
+仍 PENDING、非本工作 AI 可自行关闭：
+- S5 Director Final Gate（S5_FINAL_GATE_PACKET.md）仍 PENDING；S5≠COMPLETE。S5U/S6P 插入期间未让导演勾 Decision Form。
+- 药剂 / 珠宝 / 升华 / Timeless / 新技能 / 新 Stat 轴（冰冷、闪电、ES、格挡、压制、召唤、图腾、战吼、异常、充能、吸取、DoT）按 S6P 计划排除出无人值守队列，需导演玩法授权。
+
+请裁定下一动作，只选一种并写清可执行合同或明确 STOP：
+A) 生成下一短期周期计划 + 第一张可执行 WO 合同（AC、hash 期望、STOP 条件、Evidence 字段）。
+B) 先走 S5 Director Final Gate 材料整理（不实现新产品），等导演勾 Decision Form。
+C) STOP / NONE。合法。工作 AI 停，等下一则导演或 Channel A 指令。
+
+不要采购、不要换框架、不要自动插入 S6P-WO-06、不要重开已 CLOSED 的 WO。
+若 RELEASE 新产品域（Jewel / Flask / Ascendancy / 新 Stat 轴 / 战役主城扩张），必须显式写「导演已授权」或标为需导演授权、不得当本回合执行令。
+若只释放纯卫生/证据项，写清范围，禁止顺手改 gameplay / parser / ProdSim serializer。
