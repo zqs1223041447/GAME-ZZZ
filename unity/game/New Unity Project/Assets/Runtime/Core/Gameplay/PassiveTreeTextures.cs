@@ -13,6 +13,13 @@ namespace Game.Runtime.Core
         static readonly HashSet<string> Missing = new HashSet<string>();
         static Texture2D _frame;
         static Texture2D _group;
+        static int _loadCalls;
+        static int _unloadCalls;
+        static int _epoch;
+
+        public static int ResourceLoadCalls { get { return _loadCalls; } }
+        public static int OwnerUnloadCalls { get { return _unloadCalls; } }
+        public static int Epoch { get { return _epoch; } }
 
         public static int ResidentIconCount { get { return Icons.Count; } }
         public static int ResidentChromeCount
@@ -46,13 +53,31 @@ namespace Game.Runtime.Core
             }
             var chrome = PoeTree.Data != null ? PoeTree.Data.chrome : null;
             if (plan.NeedFrameAtlas && chrome != null && chrome.frame != null)
-                _frame = LoadChrome(chrome.frame.file);
-            else
+            {
+                if (_frame == null)
+                {
+                    _loadCalls++;
+                    _frame = LoadChrome(chrome.frame.file);
+                }
+            }
+            else if (_frame != null)
+            {
+                _unloadCalls++;
                 _frame = null;
+            }
             if (plan.NeedGroupAtlas && chrome != null && chrome.group != null)
-                _group = LoadChrome(chrome.group.file);
-            else
+            {
+                if (_group == null)
+                {
+                    _loadCalls++;
+                    _group = LoadChrome(chrome.group.file);
+                }
+            }
+            else if (_group != null)
+            {
+                _unloadCalls++;
                 _group = null;
+            }
 
             if (plan.RequiredIconStems == null || plan.RequiredIconStems.Count == 0)
             {
@@ -66,11 +91,15 @@ namespace Game.Runtime.Core
                     drop.Add(kv.Key);
             }
             for (int i = 0; i < drop.Count; i++)
+            {
                 Icons.Remove(drop[i]);
+                _unloadCalls++;
+            }
             foreach (string stem in plan.RequiredIconStems)
             {
                 if (Icons.ContainsKey(stem) || Missing.Contains(stem))
                     continue;
+                _loadCalls++;
                 Texture2D t = Resources.Load<Texture2D>(PoeTree.IconDir + stem);
                 if (t == null)
                     Missing.Add(stem);
@@ -91,9 +120,12 @@ namespace Game.Runtime.Core
 
         public static void ReleaseAll()
         {
+            _unloadCalls += Icons.Count;
             ReleaseIcons();
             _frame = null;
             _group = null;
+            Missing.Clear();
+            _epoch++;
         }
 
         static Texture2D LoadChrome(string file)

@@ -136,6 +136,86 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void Stable120Syncs_NoAdditionalLoads()
+        {
+            float ds = 1f;
+            float z = PassiveTreeLod.ZoomForProjectedPx(24f, ds);
+            Vector2 pan = PassiveTreeLod.FocusPan(View, z, 2172);
+            var plan = PassiveTreeRenderPlan.Build(View, pan, z, ds);
+            PassiveTreeTextures.ReleaseAll();
+            PassiveTreeTextures.Sync(plan);
+            int loads = PassiveTreeTextures.ResourceLoadCalls;
+            int unloads = PassiveTreeTextures.OwnerUnloadCalls;
+            int n = PassiveTreeTextures.ResidentIconCount;
+            var ids = new List<int>();
+            foreach (string stem in plan.RequiredIconStems)
+            {
+                var t = PassiveTreeTextures.Icon(stem);
+                if (t != null)
+                    ids.Add(t.GetInstanceID());
+            }
+            for (int i = 0; i < 120; i++)
+                PassiveTreeTextures.Sync(plan);
+            Assert.AreEqual(loads, PassiveTreeTextures.ResourceLoadCalls, "120 次同 plan Sync 不得再 Resources.Load");
+            Assert.AreEqual(unloads, PassiveTreeTextures.OwnerUnloadCalls, "120 次同 plan Sync 不得 owner unload");
+            Assert.AreEqual(n, PassiveTreeTextures.ResidentIconCount);
+            int k = 0;
+            foreach (string stem in plan.RequiredIconStems)
+            {
+                var t = PassiveTreeTextures.Icon(stem);
+                if (t != null)
+                {
+                    Assert.AreEqual(ids[k], t.GetInstanceID());
+                    k++;
+                }
+            }
+            PassiveTreeTextures.ReleaseAll();
+        }
+
+        [Test]
+        public void MissingStem_LoadAttemptOncePerEpoch()
+        {
+            float ds = 1f;
+            float z = PassiveTreeLod.ZoomForProjectedPx(6f, ds);
+            Vector2 pan = PassiveTreeLod.FocusPan(View, z, 2172);
+            var plan = PassiveTreeRenderPlan.Build(View, pan, z, ds);
+            PassiveTreeTextures.ReleaseAll();
+            plan.RequiredIconStems.Add("__wo05_missing_stem__");
+            PassiveTreeTextures.Sync(plan);
+            int loads = PassiveTreeTextures.ResourceLoadCalls;
+            PassiveTreeTextures.Sync(plan);
+            Assert.AreEqual(loads, PassiveTreeTextures.ResourceLoadCalls);
+            PassiveTreeTextures.ReleaseAll();
+            PassiveTreeTextures.Sync(plan);
+            Assert.Greater(PassiveTreeTextures.ResourceLoadCalls, loads, "新 epoch 允许再试一次");
+            PassiveTreeTextures.ReleaseAll();
+        }
+
+        [Test]
+        public void LeavingBuildPanel_ReleasesTreeVisuals()
+        {
+            float ds = 1f;
+            float z = PassiveTreeLod.ZoomForProjectedPx(24f, ds);
+            Vector2 pan = PassiveTreeLod.FocusPan(View, z, 2172);
+            var plan = PassiveTreeRenderPlan.Build(View, pan, z, ds);
+            PassiveTreeTextures.ReleaseAll();
+            PassiveTreeTextures.Sync(plan);
+            Assert.Greater(PassiveTreeTextures.ResidentIconCount, 0);
+            var hud = new SliceHud();
+            var s = new SliceSession();
+            s.ResetTown(7u);
+            s.Panel = SlicePanel.Build;
+            hud.NotifyPanel(s);
+            s.Panel = SlicePanel.None;
+            hud.NotifyPanel(s);
+            Assert.AreEqual(0, PassiveTreeTextures.ResidentIconCount);
+            Assert.AreEqual(0, PassiveTreeTextures.ResidentChromeCount);
+            s.Panel = SlicePanel.Map;
+            hud.NotifyPanel(s);
+            Assert.AreEqual(0, PassiveTreeTextures.ResidentIconCount, "幂等：非 Build 再切不加载");
+        }
+
+        [Test]
         public void WritesUnityGeomArtifacts_G0G3()
         {
             string dir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "docs/qa/wo05"));
@@ -200,6 +280,31 @@ namespace Game.Tests.EditMode
                   .Append(",\"y\":").Append(n.y.ToString("R"))
                   .Append(",\"sx\":").Append(px.ToString("R"))
                   .Append(",\"sy\":").Append(py.ToString("R")).Append("}");
+            }
+            sb.Append("\n  ],\n  \"edges\": [\n");
+            first = true;
+            for (int i = 0; i < PoeTree.Count; i++)
+            {
+                int[] links = PoeTree.Get(i).links;
+                if (links == null)
+                    continue;
+                Vector2 a = PoeTreeView.ScreenOf(new Vector2(PoeTree.Get(i).x, PoeTree.Get(i).y), pan, z);
+                for (int k = 0; k < links.Length; k++)
+                {
+                    int j = links[k];
+                    if (j <= i)
+                        continue;
+                    Vector2 b = PoeTreeView.ScreenOf(new Vector2(PoeTree.Get(j).x, PoeTree.Get(j).y), pan, z);
+                    if (!PassiveTreeRenderPlan.IsEdgeVisible(a, b, view, PassiveTreeRenderPlan.EdgeVisiblePad))
+                        continue;
+                    if (!first) sb.Append(",\n");
+                    first = false;
+                    sb.Append("    {\"a\":").Append(i).Append(",\"b\":").Append(j)
+                      .Append(",\"ax\":").Append((a.x * ds).ToString("R"))
+                      .Append(",\"ay\":").Append((a.y * ds).ToString("R"))
+                      .Append(",\"bx\":").Append((b.x * ds).ToString("R"))
+                      .Append(",\"by\":").Append((b.y * ds).ToString("R")).Append("}");
+                }
             }
             sb.Append("\n  ]\n}\n");
             File.WriteAllText(Path.Combine(dir, name + ".unity.json"), sb.ToString(), new UTF8Encoding(false));

@@ -83,8 +83,33 @@ $setMismatch = 0
 foreach ($id in $uIds) { if (-not $cIds.Contains($id)) { $setMismatch++ } }
 foreach ($id in $cIds) { if (-not $uIds.Contains($id)) { $setMismatch++ } }
 
+$umapE = @{}
+if ($u.edges) { foreach ($e in $u.edges) { $umapE["$($e.a)-$($e.b)"] = $e } }
+$maxE = 0.0
+$edgeSetMismatch = 0
+$edgeCompared = 0
+if ($c.edges) {
+    $cKeys = New-Object 'System.Collections.Generic.HashSet[string]'
+    foreach ($e in $c.edges) {
+        $key = "$($e.a)-$($e.b)"
+        [void]$cKeys.Add($key)
+        if (-not $umapE.ContainsKey($key)) { $edgeSetMismatch++; continue }
+        $ue = $umapE[$key]
+        $dax = [double]$e.ax - [double]$ue.ax; $day = [double]$e.ay - [double]$ue.ay
+        $dbx = [double]$e.bx - [double]$ue.bx; $dby = [double]$e.by - [double]$ue.by
+        $d1 = [math]::Sqrt($dax*$dax + $day*$day)
+        $d2 = [math]::Sqrt($dbx*$dbx + $dby*$dby)
+        $d = [math]::Max($d1,$d2)
+        if ($d -gt $maxE) { $maxE = $d }
+        $edgeCompared++
+    }
+    foreach ($k in $umapE.Keys) { if (-not $cKeys.Contains($k)) { $edgeSetMismatch++ } }
+}
+
 Write-Host ("chrome={0}" -f $chrome)
-Write-Host ("fixture={0} compared={1} setMismatch={2} maxCentreErrPx={3:N4}" -f $Fixture, $compared, $setMismatch, $max)
+Write-Host ("fixture={0} compared={1} setMismatch={2} maxCentreErrPx={3:N4} edges={4} edgeSetMismatch={5} maxEdgeErrPx={6:N4}" -f $Fixture, $compared, $setMismatch, $max, $edgeCompared, $edgeSetMismatch, $maxE)
 if ($setMismatch -ne 0) { throw "visible NodeId set mismatch=$setMismatch" }
 if ($max -gt 1.0) { throw "max node-centre error $max > 1px" }
+if ($edgeSetMismatch -ne 0) { throw "visible edge-pair set mismatch=$edgeSetMismatch" }
+if ($maxE -gt 1.0) { throw "max edge-endpoint error $maxE > 1px" }
 Write-Host "PASS"

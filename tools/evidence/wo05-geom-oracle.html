@@ -30,7 +30,7 @@ function vis(x,y,kind){
   const r = (sizes[kind]||46)*zoom*0.5 + pad;
   return cx+r>=0 && cx-r<=vw && cy+r>=0 && cy-r<=vh;
 }
-const nodes = [];
+const pts = [];
 for (let i=0;i<ids.length;i++){
   const n = raw.nodes[ids[i]], g = raw.groups[n.group];
   let x = g.x, y = g.y;
@@ -39,10 +39,33 @@ for (let i=0;i<ids.length;i++){
     x = g.x + radii[n.orbit] * Math.sin(a);
     y = g.y - radii[n.orbit] * Math.cos(a);
   }
-  const k = kindOf(n);
-  if (!vis(x,y,k)) continue;
-  nodes.push({id:i, skill:Number(ids[i]), kind:k, x, y, sx:sx(x), sy:sy(y)});
+  pts.push({i, n, x, y, k: kindOf(n)});
 }
-const out = {name:view.name, zoom, pan:view.pan, designScale:ds, lod:view.lod, visibleNodeCount:nodes.length, nodes};
+function edgeVis(ax,ay,bx,by){
+  const minX=Math.min(ax,bx)-60, maxX=Math.max(ax,bx)+60;
+  const minY=Math.min(ay,by)-60, maxY=Math.max(ay,by)+60;
+  return maxX>=0 && minX<=vw && maxY>=0 && minY<=vh;
+}
+const nodes = [];
+for (const p of pts){
+  if (!vis(p.x,p.y,p.k)) continue;
+  nodes.push({id:p.i, skill:Number(ids[p.i]), kind:p.k, x:p.x, y:p.y, sx:sx(p.x), sy:sy(p.y)});
+}
+const edges = [];
+for (const p of pts){
+  const lists = [p.n.out||[], p.n.in||[]];
+  const seen = new Set();
+  for (const list of lists) for (const o of list){
+    const j = idx.get(o);
+    if (j === undefined || j <= p.i || seen.has(j)) continue;
+    seen.add(j);
+    const q = pts[j];
+    const ax = panx + p.x*zoom, ay = pany + p.y*zoom;
+    const bx = panx + q.x*zoom, by = pany + q.y*zoom;
+    if (!edgeVis(ax,ay,bx,by)) continue;
+    edges.push({a:p.i,b:j,ax:ax*ds,ay:ay*ds,bx:bx*ds,by:by*ds});
+  }
+}
+const out = {name:view.name, zoom, pan:view.pan, designScale:ds, lod:view.lod, visibleNodeCount:nodes.length, visibleEdgeCount:edges.length, nodes, edges};
 document.getElementById('out').textContent = JSON.stringify(out);
 </script>

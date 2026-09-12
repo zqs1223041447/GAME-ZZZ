@@ -85,6 +85,8 @@ namespace Game.Runtime.Core
         Rect _drawer;
         Rect _craftResult;
 
+        SlicePanel _lastPanel = SlicePanel.None;
+
         // ---- 天赋树视图状态（平移/缩放；DrawPoeTree 在 BeginGroup 内绘制，故指针需换算到组内局部坐标） ----
         bool _treeInit;
         Vector2 _treePan;
@@ -170,6 +172,7 @@ namespace Game.Runtime.Core
                     _tray = default;
                 }
 
+                NotifyPanel(s);
                 if (s.Panel == SlicePanel.Build)
                     DrawBuild(s, sim);
                 else if (s.Panel == SlicePanel.Map)
@@ -1052,6 +1055,19 @@ namespace Game.Runtime.Core
         }
 
         // ============================ 真实 PoE 天赋树（全屏表面） ============================
+
+        /// <summary>Build→非 Build 时释放树视觉纹理（P/Tab/Esc/关闭/切 Map/Craft 同源）。</summary>
+        public static void ReleaseTreeVisuals()
+        {
+            PassiveTreeTextures.ReleaseAll();
+        }
+
+        public void NotifyPanel(SliceSession s)
+        {
+            if (_lastPanel == SlicePanel.Build && s.Panel != SlicePanel.Build)
+                ReleaseTreeVisuals();
+            _lastPanel = s.Panel;
+        }
 
         /// <summary>天赋树视口 = 全屏减去顶部标题条（天赋树是独占全屏表面，与 PoE 一致）。</summary>
         public static Rect PoeTreeViewport(float dw, float dh)

@@ -59,7 +59,7 @@ namespace Game.Runtime.Core
                     if (j <= i)
                         continue;
                     Vector2 b = PoeTreeView.ScreenOf(new Vector2(nodes[j].x, nodes[j].y), pan, zoom);
-                    if (EdgeVisible(a, b, viewport, EdgeVisiblePad))
+                    if (IsEdgeVisible(a, b, viewport, EdgeVisiblePad))
                         p.VisibleEdgeCount++;
                 }
             }
@@ -86,7 +86,7 @@ namespace Game.Runtime.Core
             return p;
         }
 
-        static bool EdgeVisible(Vector2 a, Vector2 b, Rect viewport, float pad)
+        public static bool IsEdgeVisible(Vector2 a, Vector2 b, Rect viewport, float pad)
         {
             float minX = Mathf.Min(a.x, b.x) - pad, maxX = Mathf.Max(a.x, b.x) + pad;
             float minY = Mathf.Min(a.y, b.y) - pad, maxY = Mathf.Max(a.y, b.y) + pad;

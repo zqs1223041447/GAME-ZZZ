@@ -22,6 +22,14 @@
 - 路径 [2172,71,183] 三档 NodeState/Effect/Traversal 不变
 - Headless Chrome 对拍 G0–G3 × 1920/2560：setMismatch=0，max centre error ≤ 0.0038 px（≤1 px）
 
-## 未做
+## 本轮（120 帧 / 关树 / 边端点 / PlayMode）
 
-120 帧稳定采样、PlayMode 截图、edge-endpoint 对拍表、CLOSED 关树后的实机释放时序。
+- 同 plan Sync ×120：Resources.Load 与 owner unload 增量为 0；Texture2D instance ID 稳定
+- missing stem 同一 epoch Load 恰好 1 次
+- `SliceHud.NotifyPanel`：Build→None/Map 释放 `PassiveTreeTextures`（P/Tab/Esc/关闭/切页同源，因都改 `s.Panel` 后进 Draw）
+- Chrome 边端点：G0–G3 × 1920/2560 edgeSetMismatch=0，maxEdgeErrPx ≤ 0.0038
+- PlayMode **23/23**（含关树释放 + 可选截图）
+
+## 未做（Gate 前）
+
+VRAM/tree-owned bytes 四态表、1920/2560 × LOD0/1/2 导演截图全套、冷进程 ×3（关编辑器）。不自行宣布 READY_FOR_GATE_REVIEW。
