@@ -376,6 +376,20 @@ Boots  0S → 只吃词缀
 
 1 张 Ash Court。3 词缀 Hearty / Savage / Ash Veil。`Reward = 1 + Σ RewardAdd`，`Stability = 100 - Σ Cost`。进图 `TryEnterMap` → `Snapshot = Capture()`（装备 6 槽索引 + Q/W/E 辅助 + `PassiveHash` FNV1A64 指纹 + Unspent）且 `State=InMap`（`BuildLocked`）。`PassiveHash` 是派生指纹，不是可还原 allocation 的容器。**没有** 32 位 `PassiveMask`（S5U 已迁到 `PassiveHash`）。**没有** clone/存档 seam。同 `SessionSeed` + 同词缀 → 同布局。3 普通（Brute/Stinger/Ashling）+ Elite Warden。
 
+**主城第一增量（2026-09-12 导演实测）**：`MapState.Town` 不再只是空场。`TownHub`（`ember-town` / 烬城）在 Town 且无面板时绘制枢纽广场；3 个功能型 NPC=仓库管事（开背包）/ 工匠（制作面板）/ 地图官（地图面板）。主城侧进图唯一走 `TownHub.TryEnterMapFromHub` → 既有 `TryEnterMap`（灰烬庭院）。不改战斗生成、不加 Atlas/多城/对话树。
+
+### Tooltip 描述换行（2026-09-12）
+
+装备卡与天赋树节点卡的正文按 `EstimateWrappedHeight` 计算行高，绘制样式 `wordWrap` + `TextClipping.Overflow`。禁止按 15px 单行 Clip 裁掉换行字形。专精选择器既有 Overflow+wrap-height 保持。
+
+### 天赋树点击换算（2026-09-12）
+
+树画在 `GUI.BeginGroup(PoeTreeViewport)` 内。组内指针不得再减视口原点。设计空间指针 → 组内探针 = `TreeClickProbeFromDesign`（只减一次 viewport origin）。`DefaultTreeZoom` 0.45 与中档缩放下，绘制中心必须命中同一 NodeId。
+
+### 背包共用格网（2026-09-12）
+
+辅助宝石与物品占用同一背包滚动区：前缀格=宝石（点选后装配到技能孔），其后=库存物品。独立「辅助宝石托盘」分区已删除。装备六槽纸娃娃保留。`TryEquip` 的下标是库存下标，不是格子下标。
+
 ### 输入增量（ArenaDirector）
 
 S1 键保留（按住走、按住 Q/W/E 连发）。S2 UI：顶栏「角色 / 地图 / 制作」与底栏技能格、Support 托盘可全鼠标完成循环。Tab / F6 / F8 仍是加速键。图内 F1/F2/F3 不刷密度 Dummy。

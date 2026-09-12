@@ -205,6 +205,19 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
+        public void DescriptionStyle_DoesNotClipWrappedGlyphs()
+        {
+            GUIStyle st = SliceTooltipLayout.DescriptionStyle();
+            Assert.IsTrue(st.wordWrap);
+            Assert.AreEqual(TextClipping.Overflow, st.clipping);
+            string line = "增加 20% 最大生命，并附加足够长的描述以在 tooltip 内宽处换行，避免被单行高度裁掉";
+            float need = SliceTooltipLayout.BodyLineHeight(line);
+            Assert.Greater(need, SliceTooltipLayout.BodyFont + 4f);
+            var card = SliceTooltipModel.TextCard("装备描述", line);
+            Assert.GreaterOrEqual(SliceTooltipLayout.CardHeight(card), need);
+        }
+
+        [Test]
         public void Placement_FlipsLeft_AtRightEdge()
         {
             // 抽屉槽中心（设计空间 x≈1827）+ 指针右下默认 → 必须翻到指针左侧且不出视口

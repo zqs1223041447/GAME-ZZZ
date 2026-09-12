@@ -60,7 +60,7 @@ namespace Game.Tests.EditMode
             Rect topBar = new Rect(12, 10, 620, 84);
             Rect nav = new Rect(642, 10, 268, 40);
             Rect skillHud = new Rect(200, Dh - 172, 1028, 172);
-            Rect tray = SliceDrawerLayout.TrayArea(Dw, Dh);
+            Rect tray = default;
             Vector2 inside = panel.center;
             Vector2 outside = new Vector2(Dw * 0.4f, Dh * 0.5f); // 战斗区中心（面板之外）
             Assert.IsTrue(SliceHud.BlocksWorldInput(false, false, topBar, nav, skillHud, tray, panel, inside),

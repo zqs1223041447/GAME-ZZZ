@@ -112,6 +112,10 @@ namespace Game.Tests.EditMode
                 view.y + local.y + local.height * 0.5f);
             Assert.AreEqual(view.x + view.width * 0.5f, designCentre.x, 0.01f);
             Assert.AreEqual(view.y + view.height * 0.5f, designCentre.y, 0.01f);
+
+            Vector2 probe = SliceHud.TreeClickProbeFromDesign(designCentre, view);
+            Assert.AreEqual(local.x + local.width * 0.5f, probe.x, 0.01f);
+            Assert.AreEqual(local.y + local.height * 0.5f, probe.y, 0.01f);
         }
 
         static int CountVisible(Rect view, float zoom, Vector2 pan)

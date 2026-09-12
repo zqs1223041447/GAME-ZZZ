@@ -23,10 +23,7 @@ namespace Game.Runtime.Core
         public const float CardW = (PanelW - 2f * PadX - 2f * CardGap) / 3f;
         public const float CardH = 96f;
 
-        /// <summary>辅助宝石托盘（7 格一行）。</summary>
-        public const float TrayH = 48f;
-
-        /// <summary>背包网格：12 列 × 8 行 = 96 格（= SliceRules.InventoryCap）。</summary>
+        /// <summary>背包网格：12 列；宝石与物品共用同一滚动区（不再单独托盘）。</summary>
         public const int InvColumns = 12;
         public const float CellW = 64f;
         public const float CellH = 60f;
@@ -43,10 +40,23 @@ namespace Game.Runtime.Core
         public const float EquipLabelY = HeaderH + 6f;
         public const float EquipY = EquipLabelY + SectionLabelH + 2f;
         public const float EquipZoneH = CardH * 2f + CardGap;
-        public const float TrayLabelY = EquipY + EquipZoneH + 12f;
-        public const float TrayY = TrayLabelY + SectionLabelH + 2f;
-        public const float InvLabelY = TrayY + TrayH + 12f;
+        public const float InvLabelY = EquipY + EquipZoneH + 12f;
         public const float InvViewY = InvLabelY + SectionLabelH + 2f;
+
+        public static int GemOccupantCount { get { return SupportCatalog.Count; } }
+        public static int SharedBagCellCount { get { return GemOccupantCount + SliceRules.InventoryCap; } }
+        public static bool CellIsGem(int cell)
+        {
+            return cell >= 0 && cell < GemOccupantCount;
+        }
+        public static SupportId GemInCell(int cell)
+        {
+            return CellIsGem(cell) ? (SupportId)(cell + 1) : SupportId.None;
+        }
+        public static int ItemIndexForCell(int cell)
+        {
+            return cell - GemOccupantCount;
+        }
 
         /// <summary>背包面板外框：右缘/上缘/下缘全部贴合屏幕边（导演指令）。</summary>
         public static Rect Shell(float dw, float dh)
@@ -89,20 +99,6 @@ namespace Game.Runtime.Core
             int row = index / 3;
             return new Rect(s.x + PadX + col * (CardW + CardGap),
                 s.y + EquipY + row * (CardH + CardGap), CardW, CardH);
-        }
-
-        /// <summary>“辅助宝石”节题行。</summary>
-        public static Rect TrayLabel(float dw, float dh)
-        {
-            var s = Shell(dw, dh);
-            return new Rect(s.x + PadX, s.y + TrayLabelY, s.width - 2f * PadX, SectionLabelH);
-        }
-
-        /// <summary>辅助宝石托盘区（7 格一行；格宽由区宽均分）。</summary>
-        public static Rect TrayArea(float dw, float dh)
-        {
-            var s = Shell(dw, dh);
-            return new Rect(s.x + PadX, s.y + TrayY, s.width - 2f * PadX, TrayH);
         }
 
         /// <summary>“背包”节题行。</summary>

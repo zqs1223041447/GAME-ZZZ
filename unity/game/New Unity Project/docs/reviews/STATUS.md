@@ -1,6 +1,8 @@
 # STATUS（门状态一页纸）
 
-日期：2026-09-09。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
+日期：2026-09-12。本轮提交：见下方「本轮 commit」行（由紧随的回填提交写入，格式 A=STATUS 主体 / B=回填）。
+
+本轮 commit（DIRECTOR-PLAYTEST-2026-09-12）：**导演实测四项落地**——①Tooltip/装备卡/天赋树描述换行高度（`SliceTooltipLayout.CardHeight`+`DescriptionStyle` Overflow）；②天赋树点击=绘制（组内指针不再二次减视口原点；`DefaultTreeZoom` 0.45 / 中档 / MaxZoom 同 NodeId）；③辅助宝石与物品共用背包格网（托盘分区删除；`TryEquip` 用库存下标）；④主城第一增量 `TownHub` 烬城 + 仓库/工匠/地图官 + `TryEnterMapFromHub`→灰烬庭院。门：**EditMode 540/540**；ProdSim hash=`FNV1A64:99f1bfd3f81c4fe6` invalid=0（未重基线）。PlayMode 本轮启动后 Pipeline 断连，未作为门；EditMode 成立。无新 StatId、无 parser 族、无 LOD 改写。证据=`docs/reviews/S6P/S6P_DIRECTOR_PLAYTEST_2026_09_12.md`。
 
 本轮 commit（S5U-WO-03-EQUIPMENT-INVENTORY-PRESENTATION）：**S5U-WO-03 执行完毕——Equipment & Inventory Presentation Renewal（规划 AI 放行单）**。Runtime Delta=presentation-only：抽屉壳全高化（Shell 系纯函数=布局单一来源；底缘恒在战斗栏顶上方 8px，三设计空间测试）+装备 2×3 符文化（6 件原创装备槽符文 EqGlyph，generic 类型+恒等映射，台账 15 项）+背包呈现网格（92×70×3 列滚动；1 物品=1 恰一格；顺序=库存真值；**零网格机制**）+ItemCard 渲染层分隔线层级（模型零改动）+Compact 升位修正（规划 AI 合同修正：999999→1.0M，禁 1000.0K/1000.0M）+Build 页背包列表移除（单一背包表面=常驻抽屉壳；天赋树放宽整幅语义零改动）。**自查修复：网格 cell 悬停坐标换算（内容→设计空间；旧列表悬停检测从未对齐，一并修正）**。门（最终 HEAD 重跑）：**EditMode 344/344（332 前置全保留+12 新：S5UDrawerTests 9+formatter 修正 3）+ PlayMode 11/11 + Audit fresh PASS + ProdSim hash=FNV1A64:9a4c9524d0b3e214 精确不变 + 重编译 clean**。canonical After 7 张（抽屉同屏/选中态/网格悬停 ItemCard/已装备卡/角色页+第二连接条带/明细卡悬停/1080 兼容）。披露：编辑器被外部有序关闭一次（非崩溃，重启后全门重跑）；批处理 canonical tier 留收口。Gameplay/Content/Balance Delta=NONE；Drift=0；SoT=0；Forbidden=PASS。→ WO-02 Gate=ACCEPT 回填已入 DECISIONS；WO-04(Bootstrap Entry Affordance 方案B)=预授权待 WO-03 Gate 后执行。
 

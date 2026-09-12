@@ -81,6 +81,7 @@ namespace Game.Runtime.Core
         Rect _nav;
         Rect _skillHud;
         Rect _tray;
+        Rect _hub;
         Rect _panel;
         Rect _drawer;
         Rect _craftResult;
@@ -96,6 +97,7 @@ namespace Game.Runtime.Core
         bool _treeDrag;
         Vector2 _treeDragLast;
         Vector2 _treeOrigin;
+        Rect _treeView;
         string _treeToast;
         bool _treeToastOk;
         Vector2 _treeToastAt;
@@ -104,21 +106,51 @@ namespace Game.Runtime.Core
         int _masterySelector = -1;
         Vector2 _masterySelectorScroll;
 
-        /// <summary>天赋树组内的局部指针（GUI 组会平移绘制，但 Event.mousePosition 仍是设计空间坐标）。</summary>
+        /// <summary>
+        /// 组内指针。BeginGroup 已把 IMGUI 鼠标换成组内坐标，不得再减视口原点
+        /// （减一次会让显示位置与点击位置错开，缩小时节点小到点不中）。
+        /// </summary>
         Vector2 TreePointer
         {
             get
             {
-                Vector2 p = Pointer;
-                return new Vector2(p.x - _treeOrigin.x, p.y - _treeOrigin.y);
+                if (DebugHover)
+                    return TreeClickProbeFromDesign(DebugHoverPoint, _treeView);
+                return Pointer;
             }
+        }
+
+        /// <summary>设计空间指针 → 天赋树组内探针（与 BeginGroup(view) 同一换算）。</summary>
+        public static Vector2 TreeClickProbeFromDesign(Vector2 designPointer, Rect treeViewport)
+        {
+            return new Vector2(designPointer.x - treeViewport.x, designPointer.y - treeViewport.y);
+        }
+
+        /// <summary>设计空间指针经 HUD 探针换算后的命中 NodeId（与 DrawPoeTreeCanvas 同一路径）。</summary>
+        public static int TreeHitFromDesignPointer(Vector2 designPointer, Rect treeViewport, Vector2 pan, float zoom, float designScale)
+        {
+            return PassiveTreeLod.HitNodeId(TreeClickProbeFromDesign(designPointer, treeViewport), pan, zoom, designScale);
+        }
+
+        /// <summary>节点绘制中心（设计空间）= 视口原点 + NodeRect 中心。测试与 HUD 共用。</summary>
+        public static Vector2 TreeDrawnCentreDesign(int nodeId, Rect treeViewport, Vector2 pan, float zoom)
+        {
+            Rect nr = PoeTreeView.NodeRect(PoeTree.Get(nodeId), pan, zoom);
+            return new Vector2(treeViewport.x + nr.x + nr.width * 0.5f, treeViewport.y + nr.y + nr.height * 0.5f);
+        }
+
+        public static SliceTooltipModel.Card TreeNodeCard(SliceSession s, int nodeId)
+        {
+            return NodeCard(s, nodeId, PoeTree.Get(nodeId));
         }
 
         public bool ShouldBlockWorld(SliceSession s)
         {
             bool panelOpen = s != null && s.Panel != SlicePanel.None;
-            return BlocksWorldInput(panelOpen, _dragging, _topBar, _nav, _skillHud, _tray, _drawer,
-                new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y) / _scale);
+            Vector2 p = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y) / _scale;
+            if (BlocksWorldInput(panelOpen, _dragging, _topBar, _nav, _skillHud, _tray, _drawer, p))
+                return true;
+            return _hub.Contains(p);
         }
 
         /// <summary>纯函数：给定设计空间区域与 GUI 点，判定是否吞掉世界点击（R2 抽屉纳入；供几何测试）。</summary>
@@ -181,6 +213,11 @@ namespace Game.Runtime.Core
                     DrawCraft(s);
                 else
                     _panel = default;
+
+                if (s.State == MapState.Town && s.Panel == SlicePanel.None)
+                    DrawTownHub(s);
+                else
+                    _hub = default;
 
                 // 天赋树是全屏独占表面：横幅（世界状态）不再压在上面
                 if (s.Panel != SlicePanel.Build)
@@ -257,7 +294,7 @@ namespace Game.Runtime.Core
                 string err;
                 if (s.OnMap)
                     s.ExitMap(sim, false);
-                else if (!s.TryEnterMap(sim, out err) && err != null)
+                else if (!TownHub.TryEnterMapFromHub(s, sim, out err) && err != null)
                     s.LastMessage = err;
             }
         }
@@ -724,72 +761,47 @@ namespace Game.Runtime.Core
             }
         }
 
-        /// <summary>2026-09-10 导演：辅助宝石托盘迁出底栏，改在背包面板“辅助宝石”区呈现
-        /// （底栏只保留主动技能 + 预留药剂槽）。拾取/拖拽/落点输入流一字未改。</summary>
-        void DrawSupportTray(SliceSession s, Rect area)
-        {
-            _tray = area;
-            const float gap = 6f;
-            int n = SupportCatalog.Count;
-            if (n <= 0)
-                return;
-            float gw = (area.width - gap * (n - 1)) / n;
-            float gh = area.height;
-            for (int i = 1; i <= n; i++)
-            {
-                Rect g = new Rect(area.x + (i - 1) * (gw + gap), area.y, gw, gh);
-                DrawGem(s, (SupportId)i, g);
-            }
-        }
-
         void DrawGem(SliceSession s, SupportId id, Rect r)
         {
             SupportDef def = SupportCatalog.Get(id);
             bool used = IsLinked(s, id);
             bool pick = _picked == id;
             Event e = Event.current;
-            bool hover = e != null && r.Contains(Pointer);
+            bool hover = e != null && r.Contains(e.mousePosition);
             GUI.Box(r, GUIContent.none, pick ? _slotSel : (hover ? _slotSubtleH : _slotSubtleN));
             if (def.ChangesMechanism)
                 Bar(r.x, r.y, 4, r.height, SlicePalette.Cinder);
-            // S6P-WO-05：poedb 辅助宝石图（真实 PoE 宝石美术）；缺失则退回纯文字格
             Texture2D gem = SliceHudIcons.SupportGem(id);
-            float textX = r.x + 10f;
-            float textW = r.width - 14f;
             if (gem != null)
             {
-                float gs = Mathf.Min(34f, r.height - 8f);
-                var gr = new Rect(r.x + 8f, r.y + (r.height - gs) * 0.5f, gs, gs);
                 GUI.color = used ? Color.white : new Color(1f, 1f, 1f, 0.82f);
-                GUI.DrawTexture(gr, gem);
+                GUI.DrawTexture(FitAspect(r, gem, Mathf.Min(r.width, r.height) - 8f), gem);
                 GUI.color = Color.white;
-                textX = gr.xMax + 6f;
-                textW = r.xMax - textX - 4f;
             }
-            string label = def.Name;
-            GUI.color = used ? SliceSkin.TextCream : SlicePalette.Dim;
-            // 托盘已迁入宽面板：一格一个宝石名，字号与行高按新尺寸给足，不再截断
-            Clipped(new Rect(textX, r.y + (r.height - 20) * 0.5f, textW, 20), used ? label + "*" : label, _clip);
-            GUI.color = Color.white;
+            else
+            {
+                GUI.color = used ? SliceSkin.TextCream : SlicePalette.Dim;
+                Clipped(new Rect(r.x + 2f, r.y + (r.height - 20) * 0.5f, r.width - 4f, 20),
+                    used ? def.Name + "*" : def.Name, _clip);
+                GUI.color = Color.white;
+            }
             if (hover)
-                RequestTip(SliceTooltipModel.SupportCard(id, s), TipPriDrawer); // 兼容性=canonical runtime（工作令 十六/十七）
+                RequestTip(SliceTooltipModel.SupportCard(id, s), TipPriDrawer);
             e = Event.current;
-            if (e == null || !r.Contains(Pointer))
+            if (e == null || !r.Contains(e.mousePosition))
                 return;
             if (e.type == EventType.MouseDown && e.button == 0)
             {
                 _picked = id;
                 _drag = id;
                 _dragging = false;
-                _dragStart = Pointer;
+                _dragStart = e.mousePosition;
                 ClickFlash(r);
                 e.Use();
             }
         }
 
-        /// <summary>背包面板（2026-09-10 导演：完全贴右边、上下通顶、扩大格子显示量）。
-        /// 单渲染器原则不变：装备六槽 / 辅助宝石托盘 / 背包网格三区共用一块常驻面板，
-        /// 拖拽拾取与点击流一字未改，只是搬了家。</summary>
+        /// <summary>背包面板：装备六槽 + 宝石与物品共用的背包格网（无独立辅助宝石托盘）。</summary>
         void DrawDrawer(SliceSession s)
         {
             float dw = Dw(), dh = Dh();
@@ -809,16 +821,11 @@ namespace Game.Runtime.Core
                 s.Panel = s.Panel == SlicePanel.Craft ? SlicePanel.None : SlicePanel.Craft;
             if (NavBtnSmall(new Rect(head.xMax - SliceDrawerLayout.PadX - 76f, head.y + 6, 76, 26), "关闭 I", false))
                 s.BagOpen = false;
-            // 装备区（恒 6 槽；3 列 × 2 行；含第二连接配置条——冻结的构筑功能，随槽卡保留）
             Label(SliceDrawerLayout.EquipLabel(dw, dh), "装备", _title);
             for (int i = 0; i < SliceDrawerLayout.DisplayOrder.Length; i++)
                 DrawSlotCard(s, SliceDrawerLayout.DisplayOrder[i], SliceDrawerLayout.ShellSlot(i, dw, dh));
-            // 辅助宝石区（2026-09-10：自底栏迁入；拾取→点孔/拖放的输入流不变）
-            Label(SliceDrawerLayout.TrayLabel(dw, dh), "辅助宝石（点选后装配到技能孔）", _title);
-            DrawSupportTray(s, SliceDrawerLayout.TrayArea(dw, dh));
-            // 背包区（12 列满幅格子；顺序=库存真值；零网格机制）
             Label(SliceDrawerLayout.InvLabel(dw, dh),
-                "背包  " + s.InventoryCount + "/" + s.Inventory.Length + "（点击装备）", _title);
+                "背包  " + s.InventoryCount + "/" + s.Inventory.Length + "  ·  辅助宝石同区（点选后装配到技能孔）", _title);
             DrawInventoryGrid(s, SliceDrawerLayout.ShellInvView(dw, dh));
             // 底部反馈条
             Clipped(SliceDrawerLayout.ShellFooter(dw, dh),
@@ -855,30 +862,33 @@ namespace Game.Runtime.Core
         /// 选中/hover 独立状态（selected &gt; hover）；点击流=既有 SelectInv+TryEquip（零新机制）。</summary>
         void DrawInventoryGrid(SliceSession s, Rect view)
         {
-            // 2026-09-10 导演：满幅格网——整块容量全部画成格子（空格也是可见槽位），而非只画已有物品。
-            int cells = s.Inventory.Length;
+            int cells = SliceDrawerLayout.SharedBagCellCount;
             float contentH = SliceDrawerLayout.ShellInvContentHeight(cells);
             _invScroll = GUI.BeginScrollView(view, _invScroll, new Rect(0, 0, view.width - 18, contentH));
             for (int i = 0; i < cells; i++)
             {
                 Rect cell = SliceDrawerLayout.ShellInvCell(i);
-                // 悬停/tooltip 用屏幕（设计）坐标：cell 是内容坐标，Pointer 是设计空间
-                // （旧列表实现此处的坐标从未对齐——S5U-WO-03 修复；换算单一来源=InvCellScreenRect 回归锚）
                 Rect cellScreen = InvCellScreenRect(view, _invScroll, i);
                 Event e = Event.current;
-                bool hover = e != null && cellScreen.Contains(Pointer);
-                if (i >= s.InventoryCount)
+                bool hover = e != null && (cell.Contains(e.mousePosition) || cellScreen.Contains(Pointer));
+                if (SliceDrawerLayout.CellIsGem(i))
                 {
-                    // 空槽：只给一层极弱铁框，不喧宾夺主
+                    DrawGem(s, SliceDrawerLayout.GemInCell(i), cell);
+                    continue;
+                }
+
+                int inv = SliceDrawerLayout.ItemIndexForCell(i);
+                if (inv >= s.InventoryCount)
+                {
                     GUI.Box(cell, GUIContent.none, hover ? _slotSubtleH : _slotSubtleN);
                     continue;
                 }
 
-                ItemInstance it = s.Inventory[i];
-                bool sel = i == s.SelectedInv;
+                ItemInstance it = s.Inventory[inv];
+                bool sel = inv == s.SelectedInv;
                 bool equipped = false;
                 for (int k = 0; k < s.Equipped.Length; k++)
-                    if (s.Equipped[k] == i) { equipped = true; break; }
+                    if (s.Equipped[k] == inv) { equipped = true; break; }
                 bool rare = it.Rarity == Rarity.Rare;
                 GUI.Box(cell, GUIContent.none, sel ? _slotSel : (hover ? _slotSubtleH : _slotSubtleN));
                 // 稀有度染底（Rare=暗金雾 / Ordinary=中性极弱）+同色 1px 内框：拥挤网格的第一辨识层
@@ -904,9 +914,9 @@ namespace Game.Runtime.Core
                     RequestTip(SliceTooltipModel.ItemCard(it, s), TipPriPanel); // 候选 vs canonical 同槽已装备（工作令 七-十）
                 if (GUI.Button(cell, GUIContent.none, GUIStyle.none))
                 {
-                    s.SelectedInv = i;
+                    s.SelectedInv = inv;
                     string err;
-                    if (!s.TryEquip(i, out err) && err != null)
+                    if (!s.TryEquip(inv, out err) && err != null)
                         s.LastMessage = err;
                 }
             }
@@ -1047,10 +1057,15 @@ namespace Game.Runtime.Core
             GUI.color = Color.white;
             Clipped(new Rect(r.x, r.y + 16, r.width, 18), SliceSession.CleanBaseName(it.BaseName) + "  " + it.SocketCount + "孔", _body);
             float y = r.y + 36;
-            for (int i = 0; i < it.AffixCount && y < r.yMax - 14; i++)
+            GUIStyle wrap = SliceTooltipLayout.DescriptionStyle();
+            for (int i = 0; i < it.AffixCount && y < r.yMax - 8; i++)
             {
-                Clipped(new Rect(r.x, y, r.width, 16), SliceSession.AffixLine(it, i), _small);
-                y += 16;
+                string line = SliceSession.AffixLine(it, i);
+                float fh = SliceHud.EstimateWrappedHeight(line, r.width, SliceTooltipLayout.BodyFont);
+                if (y + fh > r.yMax)
+                    fh = r.yMax - y;
+                Label(new Rect(r.x, y, r.width, fh), line, wrap);
+                y += fh;
             }
         }
 
@@ -1116,12 +1131,14 @@ namespace Game.Runtime.Core
                 s.Panel = SlicePanel.None;
 
             Rect view = PoeTreeViewport(dw, dh);
+            _treeView = view;
             _treeOrigin = new Vector2(view.x, view.y);
             GUI.BeginGroup(view);
             Rect local = new Rect(0f, 0f, view.width, view.height);
             DrawPoeTreeCanvas(s, local);
             GUI.EndGroup();
             _treeOrigin = Vector2.zero;
+            _treeView = default;
             if (_masterySelector >= 0)
                 DrawMasterySelector(s, dw, dh);
         }
@@ -1770,10 +1787,37 @@ namespace Game.Runtime.Core
             }
         }
 
+        void DrawTownHub(SliceSession s)
+        {
+            float dw = Dw(), dh = Dh();
+            _hub = TownHub.Plaza(dw, dh);
+            Fill(_hub, new Color(0.06f, 0.07f, 0.08f, 0.55f));
+            Fill(new Rect(_hub.x, _hub.y, _hub.width, 2f), SliceSkin.GoldDim);
+            Label(new Rect(_hub.x + 16f, _hub.y + 10f, _hub.width - 32f, 28f),
+                TownHub.DisplayName + "  ·  主城", _pageTitle);
+            Label(new Rect(_hub.x + 16f, _hub.y + 38f, _hub.width - 32f, 20f),
+                "与功能型 NPC 交互 · 地图官进入 " + TownHub.MapDisplayName, _small);
+            for (int i = 0; i < TownHub.NpcCount; i++)
+            {
+                Rect r = TownHub.NpcRect(i, dw, dh);
+                bool hover = r.Contains(Pointer);
+                Fill(r, hover ? new Color(0.20f, 0.18f, 0.12f, 0.92f) : new Color(0.12f, 0.12f, 0.14f, 0.88f));
+                Fill(new Rect(r.x, r.y, 4f, r.height), SliceSkin.GoldDim);
+                Label(new Rect(r.x + 12f, r.y + 10f, r.width - 20f, 24f), TownHub.NpcName(i), _title);
+                Label(new Rect(r.x + 12f, r.y + 36f, r.width - 20f, 22f), TownHub.NpcFunctionLabel(i), _small);
+                if (Click(r))
+                {
+                    string err;
+                    if (!TownHub.ApplyNpc(s, i, out err) && err != null)
+                        s.LastMessage = err;
+                }
+            }
+        }
+
         void DrawMap(SliceSession s, ArenaSim sim)
         {
             _panel = new Rect(12, 140, 480, 300);
-            PanelChrome(_panel, "地图 灰烬庭院  ·  " + s.StatusCopy);
+            PanelChrome(_panel, "地图 " + TownHub.MapDisplayName + "  ·  " + s.StatusCopy);
             Label(new Rect(_panel.x + 16, _panel.y + 32, 448, 18), "进图前勾选词缀，稳定度与收益立即更新。", _small);
             float y = _panel.y + 54;
             for (int i = 0; i < MapAffixCatalog.All.Length; i++)
@@ -1806,7 +1850,7 @@ namespace Game.Runtime.Core
             else if (NavBtn(btn, "进入地图", false))
             {
                 string err;
-                if (!s.TryEnterMap(sim, out err) && err != null)
+                if (!TownHub.TryEnterMapFromHub(s, sim, out err) && err != null)
                     s.LastMessage = err;
                 else
                     s.Panel = SlicePanel.None;
@@ -1910,27 +1954,18 @@ namespace Game.Runtime.Core
             SliceTooltipModel.Card card = _tipCard;
             float w = SliceTooltipLayout.BaseW;
             const float pad = 10f;
-            const float titleH = 20f, lineH = 16f, smallH = 15f;
-            // S5U-WO-03：层级分隔线（标题块|正文|对比区）——渲染层视觉，不动模型
+            const float titleH = 20f, lineH = 16f;
+            GUIStyle wrap = SliceTooltipLayout.DescriptionStyle();
             bool div1 = card.Body != null && card.Body.Length > 0 &&
                 (!string.IsNullOrEmpty(card.Title) || !string.IsNullOrEmpty(card.Subtitle) || !string.IsNullOrEmpty(card.Badge));
             bool div2 = card.Body != null && card.Body.Length > 0 &&
                 (!string.IsNullOrEmpty(card.ContextTitle) || (card.Context != null && card.Context.Length > 0));
-            float h = pad * 2f;
-            if (div1) h += 8f;
-            if (div2) h += 8f;
-            if (!string.IsNullOrEmpty(card.Title)) h += titleH;
-            if (!string.IsNullOrEmpty(card.Subtitle)) h += lineH;
-            if (!string.IsNullOrEmpty(card.Badge)) h += lineH;
-            if (card.Body != null) h += card.Body.Length * smallH;
-            if (!string.IsNullOrEmpty(card.ContextTitle)) h += 18f;
-            if (card.Context != null) h += card.Context.Length * smallH;
-            if (!string.IsNullOrEmpty(card.Footer)) h += lineH;
+            float h = SliceTooltipLayout.CardHeight(card);
 
             Rect r = SliceTooltipLayout.Place(Pointer, w, h, Dw(), Dh());
             PanelBg(r);
             float y = r.y + pad - 2f;
-            float ix = r.x + 12f, iw = w - 24f;
+            float ix = r.x + SliceTooltipLayout.InnerPad, iw = SliceTooltipLayout.InnerW;
             if (!string.IsNullOrEmpty(card.Title))
             {
                 Color old = GUI.color;
@@ -1961,8 +1996,9 @@ namespace Game.Runtime.Core
             {
                 for (int i = 0; i < card.Body.Length; i++)
                 {
-                    Label(new Rect(ix, y, iw, smallH), card.Body[i], _small);
-                    y += smallH;
+                    float bh = SliceTooltipLayout.BodyLineHeight(card.Body[i]);
+                    Label(new Rect(ix, y, iw, bh), card.Body[i], wrap);
+                    y += bh;
                 }
             }
             if (div2)
@@ -1981,8 +2017,9 @@ namespace Game.Runtime.Core
                 {
                     for (int i = 0; i < card.Context.Length; i++)
                     {
-                        Label(new Rect(ix, y, iw, smallH), card.Context[i], _small);
-                        y += smallH;
+                        float ch = SliceTooltipLayout.BodyLineHeight(card.Context[i]);
+                        Label(new Rect(ix, y, iw, ch), card.Context[i], wrap);
+                        y += ch;
                     }
                 }
             }

@@ -6,8 +6,8 @@ using Game.Runtime.Core;
 namespace Game.Tests.EditMode
 {
     /// <summary>
-    /// 背包面板几何契约（2026-09-10 导演指令：完全贴右边、上下通顶、扩大格子显示量、
-    /// 辅助宝石托盘自底栏迁入）。全部为纯几何断言，与 SliceHud 共用同一组布局函数。
+    /// 背包面板几何契约（2026-09-10 贴右通顶；2026-09-12 导演：宝石与物品共用背包格网，取消托盘分区）。
+    /// 全部为纯几何断言，与 SliceHud 共用同一组布局函数。
     /// </summary>
     public sealed class SliceBagPanelTests
     {
@@ -35,13 +35,11 @@ namespace Game.Tests.EditMode
             var shell = SliceDrawerLayout.Shell(dw, dh);
             var header = SliceDrawerLayout.ShellHeader(dw, dh);
             var equipLabel = SliceDrawerLayout.EquipLabel(dw, dh);
-            var trayLabel = SliceDrawerLayout.TrayLabel(dw, dh);
-            var tray = SliceDrawerLayout.TrayArea(dw, dh);
             var invLabel = SliceDrawerLayout.InvLabel(dw, dh);
             var view = SliceDrawerLayout.ShellInvView(dw, dh);
             var footer = SliceDrawerLayout.ShellFooter(dw, dh);
 
-            var ordered = new[] { header, equipLabel, trayLabel, tray, invLabel, view, footer };
+            var ordered = new[] { header, equipLabel, invLabel, view, footer };
             for (int i = 0; i < ordered.Length; i++)
             {
                 Assert.IsTrue(Encloses(shell, ordered[i]), "区块 " + i + " 必须落在面板内");
@@ -60,8 +58,7 @@ namespace Game.Tests.EditMode
             for (int i = 0; i < rects.Length; i++)
                 for (int k = i + 1; k < rects.Length; k++)
                     Assert.IsFalse(rects[i].Overlaps(rects[k]), "装备卡 " + i + " 与 " + k + " 重叠");
-            Assert.LessOrEqual(rects[5].yMax, trayLabel.y + 0.01f, "装备区不得压到辅助宝石区");
-            Assert.LessOrEqual(tray.yMax, invLabel.y + 0.01f, "托盘不得压到背包区");
+            Assert.LessOrEqual(rects[5].yMax, invLabel.y + 0.01f, "装备区之下直接是背包，不得再插托盘");
         }
 
         static bool Encloses(Rect outer, Rect inner)
@@ -90,10 +87,13 @@ namespace Game.Tests.EditMode
             float innerW = SliceDrawerLayout.PanelW - 2f * SliceDrawerLayout.PadX;
             Assert.LessOrEqual(gridW, innerW + 0.01f, "12 列必须装得进面板内衬宽度");
 
-            // 容量整体可见：内容高 = 行数 × (格高+间距)
             int rows = SliceRules.InventoryCap / perRow;
             Assert.AreEqual(rows * (SliceDrawerLayout.CellH + SliceDrawerLayout.GridGap),
                 SliceDrawerLayout.ShellInvContentHeight(SliceRules.InventoryCap), 0.01f);
+            int shared = SliceDrawerLayout.SharedBagCellCount;
+            int sharedRows = (shared + perRow - 1) / perRow;
+            Assert.AreEqual(sharedRows * (SliceDrawerLayout.CellH + SliceDrawerLayout.GridGap),
+                SliceDrawerLayout.ShellInvContentHeight(shared), 0.01f);
         }
 
         [Test]
@@ -128,15 +128,18 @@ namespace Game.Tests.EditMode
         }
 
         [Test]
-        public void SupportTray_HasRoomForEveryGem()
+        public void SharedGrid_HoldsEverySupportGem()
         {
-            var tray = SliceDrawerLayout.TrayArea(1920f, 1080f);
             int n = SupportCatalog.Count;
             Assert.Greater(n, 0);
-            const float gap = 6f;
-            float gw = (tray.width - gap * (n - 1)) / n;
-            Assert.Greater(gw, 60f, "托盘迁入宽面板后每格必须足够放宝石名，不得再被挤断");
-            Assert.LessOrEqual(gw * n + gap * (n - 1), tray.width + 0.01f, "托盘必须装得下全部辅助宝石");
+            Assert.AreEqual(n, SliceDrawerLayout.GemOccupantCount);
+            for (int i = 0; i < n; i++)
+            {
+                Assert.IsTrue(SliceDrawerLayout.CellIsGem(i));
+                Rect cell = SliceDrawerLayout.ShellInvCell(i);
+                Assert.Greater(cell.width, 0f);
+                Assert.Greater(cell.height, 0f);
+            }
         }
     }
 }
