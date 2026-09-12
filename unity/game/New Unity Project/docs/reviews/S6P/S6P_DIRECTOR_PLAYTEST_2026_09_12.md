@@ -40,7 +40,7 @@ ProdSim 未动。Canonical hash 仍为 `FNV1A64:99f1bfd3f81c4fe6`（V3 `pv|passi
 
 进图唯一走 `TownHub.TryEnterMapFromHub` → `SliceSession.TryEnterMap`（既有灰烬庭院，含词缀/稳定度）。不改 `SpawnMap`、不刷木桩、不加 Atlas / 多城 / 对话树。
 
-测试：`DirectorPlaytestTests.TownHub_IdentityAndNpcBinds_EnterMapFromHub`。
+测试：`DirectorPlaytestTests.TownHub_IdentityAndNpcBinds_EnterMapViaTryEnterMap`。
 
 ## Gate
 
