@@ -32,9 +32,9 @@ Governance / evidence / handoff only. Runtime = 0. Canonical data = 0. Test sema
 | Current PlayMode | 23/23 fail=0 skip=0（披露，本 Refresh 未重跑） |
 | Current ProdSim | `FNV1A64:99f1bfd3f81c4fe6` V3 invalid=0 |
 | no rebaseline | YES |
-| Director Decision Form APPROVE checked | NO |
+| Director Decision Form APPROVE checked | NO（本 Refresh 出口当时；后由导演 2026-09-12 勾选，见 `S5_DIRECTOR_FINAL_GATE.md`） |
 | Director Decision Form HOLD checked | NO |
-| S5 COMPLETE | NO |
+| S5 COMPLETE | NO（本 Refresh 出口当时；后 = YES） |
 | Next Cycle Started | NO |
 | New Product WO Released | NO |
 

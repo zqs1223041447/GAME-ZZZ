@@ -2,7 +2,7 @@
 
 **性质**：BL-002.A1 的唯一权威词缀清单。**Locked N = 4**（1≤4≤6 ✓）；计划目录数 = **17 + 4 = 21**。N 事后变更需新规划 AI 工作令。
 **状态（S5-WO-04）**：**4-entry manifest = IMPLEMENTED**（17→21 落地：`AffixId` 17-20 + `AffixCatalog` 在位 def；候选 20 权威=**坚韧 Strength/Flat**，旧开阔候选保持废弃不恢复；铁骨 Belt 排除=GAME-ZZZ 有界适用性决策，PoEDB 溯源与适用性分离表述保持；count-guard 已按裁定扩展 17→21（S4-P3 上限被 S5 界取代，仍为硬上限）；实现证据=`S5_WO_04_EVIDENCE.md`）。
-**Final evidence link（S5-WO-06 Production Closure，2026-09-09）**：manifest 固定 **4 / 17→21**——收口门全 PASS（Audit fresh failures=0 / dead+unconsumed=0 / stable IDs 0-20 intact / reachability 4/4 / Ironhide+Belt=invalid / 第 5 条 absent / ProdSim×3 hash exact=FNV1A64:9a4c9524d0b3e214）；**S5=COMPLETE 待 Director Final Gate**（`S5_FINAL_GATE_PACKET.md`）。
+**Final evidence link（S5-WO-06 Production Closure，2026-09-09）**：manifest 固定 **4 / 17→21**——收口门全 PASS（Audit fresh failures=0 / dead+unconsumed=0 / stable IDs 0-20 intact / reachability 4/4 / Ironhide+Belt=invalid / 第 5 条 absent / ProdSim×3 hash exact=FNV1A64:9a4c9524d0b3e214）；**S5=COMPLETE（Director Final Gate APPROVED 2026-09-12）**（`S5_FINAL_GATE_PACKET.md` §10；正式记录=`S5_DIRECTOR_FINAL_GATE.md`）。
 **准入规则（S5_PLAN §4.1 逐条满足）**：唯一外部 canonical 源=PoEDB（人工溯源，不触发 BL-024）；复用已支持 runtime stat/modifier 语义；走现有单一 applicability truth（`AffixDef.IsApplicable` + `AllowedSlots` 位掩码）；现有装备槽语义；经现有生成路径可达（随机掉落/洗炼池=IsApplicable 自动过滤；定向制作=目录枚举 + applicability + duplicate guard——已核 `TryDirectedCraft` 按目录枚举，无硬编码清单，新条目自动可达）。禁止：新词缀族/新 ModOp 语义/Prefix-Suffix/Tier/ModGroup/新槽/新资源。
 
 ## 锁定候选（4 条；Stable ID 追加 17-20，旧 ID 零漂移；全部单行词缀）

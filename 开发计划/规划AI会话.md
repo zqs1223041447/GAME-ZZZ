@@ -66,4 +66,5 @@
 | 2026-09-12 | S6P-WO-05 合同下发 | **EXECUTE NOW**，69 AC。LOD 按 NormalProjectedPx=46*zoom*DesignScale 切档（<8 / <18 / >=18）。Chrome 几何对拍仍是 blocking。ProdSim 必须保持 `99f1bfd3f81c4fe6`。原文 `S6P_WO_05_CONTRACT.md`。 |
 | 2026-09-12 | S6P-WO-05 阶段汇报（120 帧/关树/边端点/PlayMode） | **CONTINUE**：补 VRAM 四态、截图、cold ×3 后再 Gate。不 STOP。原文 `S6P_WO_05_STAGE_REVIEW.md`。 |
 | 2026-09-12 | S6P-WO-05 Gate Review | **ACCEPT WITH FOLLOW-UP**。AC-01..68 PASS。Follow-up=2560 截图登记 NOT CAPTURED + ResidentBytes 估算口径。**下一令 NONE / STOP**。原文 `S6P_WO_05_GATE_REVIEW.md`。 |
-| 2026-09-12 | 导演「继续」→ 请求下一周期（S6P 队列耗尽 + 导演实测 CLOSED） | **裁定 B**：S5 Director Final Gate Material Refresh（治理-only）。不实现新产品。不发明 S6P-WO-06。不开启下一周期。Decision Form 等导演本人勾选。原文 `_next_cycle_reply.json`；合同 `S5_DIRECTOR_FINAL_GATE_MATERIAL_REFRESH.md`。 |
+| 2026-09-12 | 导演「继续」→ 请求下一周期（S6P 队列耗尽 + 导演实测 CLOSED） | **裁定 B**：S5 Director Final Gate Material Refresh（治理-only）。不实现新产品。不发明 S6P-WO-06。不开启下一周期。Decision Form 当时等导演本人勾选。原文 `_next_cycle_reply.json`；合同 `S5_DIRECTOR_FINAL_GATE_MATERIAL_REFRESH.md`。 |
+| 2026-09-12 | 导演勾选 Packet §10 `[x] APPROVE S5 FINAL GATE`（Director Notes=`APPROVE S5 FINAL GATE`） | **S5 = COMPLETE**。规划 AI 可以开始下一周期规划。本 APPROVE 不授权 Flask / Jewel / Ascendancy / Timeless / 新 Stat 轴 / 战役扩张。Next Cycle = NOT STARTED。正式记录=`docs/reviews/S5/S5_DIRECTOR_FINAL_GATE.md`。 |

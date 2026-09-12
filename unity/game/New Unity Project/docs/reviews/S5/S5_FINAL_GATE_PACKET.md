@@ -4,7 +4,19 @@
 **会话渠道（原始 Packet，2026-09-09）**：规划 AI 会话 `6aa0dbbf-ee0c-83ea-9f85-5023cf1adc4d`（旧 Channel `game-zzz-planning`，已停用）。
 **会话渠道（本次 Material Refresh，2026-09-12）**：Channel A `game-zzz-planning-2` / `6aa368c5-7478-83ea-a2d3-95003ee4e6ab`。合同=`S5_DIRECTOR_FINAL_GATE_MATERIAL_REFRESH.md`。
 
-**Material Refresh（2026-09-12，治理-only）：** §1–§7 = S5-WO-06 原始 closure 事实，未改写、不倒算后续工作进 S5 scope。§8 起 = 导演决策时的当前仓库背景。`S5 Director Final Gate` 仍是正式 `S5 = COMPLETE` 的**唯一剩余批准门**。Decision Form **未被勾选**。导演「继续」≠ APPROVE。S5 ≠ COMPLETE。Implementation = STOPPED。Next Cycle = NOT STARTED。
+**Material Refresh（2026-09-12，治理-only）：** §1–§7 = S5-WO-06 原始 closure 事实，未改写、不倒算后续工作进 S5 scope。§8 起 = 导演决策时的当前仓库背景。
+
+**Director Decision（2026-09-12）：** Packet §10 Decision Form 已由导演本人勾选 **`[x] APPROVE S5 FINAL GATE`**。Director Notes=`APPROVE S5 FINAL GATE`。HOLD / REWORK 未选。正式记录=`S5_DIRECTOR_FINAL_GATE.md`。
+
+```
+S5 Director Final Gate = APPROVED
+S5 = COMPLETE
+Next Cycle Planning = AUTHORIZED
+Next Cycle = NOT STARTED
+Implementation = STOPPED until Channel A issues the next-cycle plan
+```
+
+本 APPROVE **不**授权 Flask / Jewel / Ascendancy / Timeless / 新 Stat 轴 / 新 Skill-Support 域 / 战役扩张 / Packet §9 清单。
 
 ## 1. 授权与实现
 
@@ -152,11 +164,13 @@ mapping to More would change semantics.
 ### Pending governance
 
 ```
-S5 Director Final Gate = PENDING
-S5 != COMPLETE
+S5 Director Final Gate = APPROVED
+S5 = COMPLETE
+Next Cycle Planning = AUTHORIZED
+Next Cycle = NOT STARTED
 ```
 
-Director Final Gate 是正式 `S5 = COMPLETE` 的唯一剩余批准门。
+Director Final Gate 已由导演勾选 APPROVE。正式记录=`S5_DIRECTOR_FINAL_GATE.md`。规划 AI 可以开始下一周期规划；本勾选本身不授权 §9 排除域。
 
 ### Non-blocking hygiene
 
@@ -169,7 +183,7 @@ No change in this task.
 
 ### Requires explicit future Director gameplay authorization
 
-下列 **NOT AUTHORIZED FOR EXECUTION BY THIS REFRESH**。不得写 NEXT / RELEASED / EXECUTE NOW。
+下列 **NOT AUTHORIZED FOR EXECUTION BY THIS APPROVE**。不得写 NEXT / RELEASED / EXECUTE NOW。规划 AI 可以规划它们，但必须标为需单独导演玩法授权，不得当本回合执行令。
 
 ```
 Flask
@@ -198,12 +212,12 @@ campaign / town expansion beyond already shipped first increment
 
 ---
 
-## 10. Director Decision Form（当前仍待导演本人填写）
+## 10. Director Decision Form（导演 2026-09-12 已填写）
 
-与 §7 同一张表，**未被勾选**。工作 AI、Channel A 不得代勾。导演「继续」不得自动翻译成 APPROVE。
+与 §7 同一张表。§7 保留 2026-09-09 等待态原文。本节是导演本人勾选的正式结果。工作 AI / Channel A 未代勾。导演此前「继续」≠ 本勾选。
 
 ```
-[ ] APPROVE S5 FINAL GATE
+[x] APPROVE S5 FINAL GATE
 
 Effect:
 - S5 may be marked COMPLETE.
@@ -220,7 +234,7 @@ Effect:
 - Director provides bounded concern/evidence request;
   Planning AI may then issue a bounded correction WO if needed.
 
-Director Notes: ______________________
+Director Notes: APPROVE S5 FINAL GATE
 ```
 
 ---
@@ -241,9 +255,11 @@ Director Notes: ______________________
 | Current PlayMode | 23/23 fail=0 skip=0 |
 | Current ProdSim | `FNV1A64:99f1bfd3f81c4fe6` V3 invalid=0 |
 | no rebaseline | YES |
-| Director Decision Form APPROVE checked | NO |
+| Director Decision Form APPROVE checked | **YES（2026-09-12，导演本人勾选）** |
 | Director Decision Form HOLD checked | NO |
-| S5 COMPLETE | NO |
+| S5 COMPLETE | **YES** |
+| Next Cycle Planning Authorized | YES |
 | Next Cycle Started | NO |
 | New Product WO Released | NO |
 | S6P-WO-06 created | NO |
+| Flask / Jewel / Ascendancy / Timeless / new Stat axes authorized | NO |

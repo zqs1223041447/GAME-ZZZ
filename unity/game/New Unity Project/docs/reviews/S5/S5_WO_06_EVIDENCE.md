@@ -116,4 +116,5 @@ EditMode Before: 314/314；PlayMode Before: 11/11；Canonical Skills: 3；Canoni
 - **Display-Mode Environment Ruling：接受，无需重跑**——首跑 ENV_NOT_MET 未被污染为正式结果；模式切换=可逆执行环境准备（非产品代码/资产/阈值修改）；canonical 与 Art 在同一合规环境完成；证据已冻结；「人工切换」仅为未来流程偏好，非合同失败条件。
 - **Scope/Capability/Mechanic/Reference Build/Planning Final Checklist 全 PASS**（24 项 checklist 全 PASS）。
 - **Planning AI 对导演的推荐=APPROVE S5 FINAL GATE**（仅推荐非决定）；Director Decision Form 已随规划回文给出（APPROVE=授权正式同步 S5=COMPLETE 并允许规划 AI 开始下一周期规划；HOLD/REWORK=保持非 COMPLETE+实施停止）。
-- **等待期状态**：S5-WO-06 ACCEPTED / S5 Production Closure PASSED / Director Final Gate READY-PENDING / S5 尚未正式 COMPLETE / Implementation STOPPED / Next Cycle NOT STARTED。允许活动仅限：向 Director 提交现有 Final Gate Packet、回答 Director 对证据的提问、只读呈现类修订、非语义文档纠错。
+- **等待期状态（2026-09-09 原文）**：S5-WO-06 ACCEPTED / S5 Production Closure PASSED / Director Final Gate READY-PENDING / S5 尚未正式 COMPLETE / Implementation STOPPED / Next Cycle NOT STARTED。允许活动仅限：向 Director 提交现有 Final Gate Packet、回答 Director 对证据的提问、只读呈现类修订、非语义文档纠错。
+- **Director Decision（2026-09-12）**：导演勾选 `[x] APPROVE S5 FINAL GATE`。正式 `S5 = COMPLETE`。记录=`S5_DIRECTOR_FINAL_GATE.md`。本 APPROVE 不授权 Flask/Jewel/Ascendancy/Timeless/新 Stat 轴/战役扩张。

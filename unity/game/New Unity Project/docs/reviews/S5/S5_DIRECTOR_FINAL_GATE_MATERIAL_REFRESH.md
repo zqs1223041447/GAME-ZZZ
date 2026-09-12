@@ -21,3 +21,17 @@ Next Cycle = NOT STARTED
 ```
 
 直到导演本人明确勾 `[ ] APPROVE S5 FINAL GATE` 或 `[ ] HOLD / REWORK`。工作 AI / Channel A 不得代勾。「继续」不得自动翻译成 APPROVE。
+
+## Resolution（2026-09-12）
+
+导演本人勾选 `[x] APPROVE S5 FINAL GATE`。Director Notes=`APPROVE S5 FINAL GATE`。HOLD / REWORK 未选。
+
+```
+S5 Director Final Gate = APPROVED
+S5 = COMPLETE
+Next Cycle Planning = AUTHORIZED
+Next Cycle = NOT STARTED
+Implementation = STOPPED until Channel A issues the next-cycle plan
+```
+
+正式记录=`S5_DIRECTOR_FINAL_GATE.md`。本 APPROVE 不授权 Flask / Jewel / Ascendancy / Timeless / 新 Stat 轴 / 战役扩张。

@@ -57,20 +57,20 @@
 
 | 项 | 值 |
 |---|---|
-| 令号 | **S5 Director Final Gate Material Refresh**（治理-only，不是 WO） |
-| 状态 | **COMPLETE**。Channel A 裁定 **B**。**S5 Director Final Gate = READY / PENDING DIRECTOR DECISION**。S5 = NOT COMPLETE。Implementation = **STOPPED**。Next Cycle = **NOT STARTED**。等导演勾 Decision Form。 |
-| 授权来源 | 导演「继续」→ Channel A `game-zzz-planning-2`；合同 `S5_DIRECTOR_FINAL_GATE_MATERIAL_REFRESH.md` |
-| 上一令 | **导演实测 2026-09-12 = CLOSED / ACCEPT**（后继当时 NONE/STOP）；再上一令 **S6P-WO-05 = CLOSED / ACCEPT WITH FOLLOW-UP** |
-| 入口 HEAD | `051f34a`（dirty 已清；InitTestScene 丢弃） |
+| 令号 | **S5 Director Final Gate = APPROVED**（治理-only，不是 WO） |
+| 状态 | **S5 = COMPLETE**。导演勾选 `[x] APPROVE S5 FINAL GATE`。Next Cycle Planning = **AUTHORIZED**。Next Cycle = **NOT STARTED**。Implementation = **STOPPED** until Channel A 下发下一周期计划。Flask / Jewel / Ascendancy / Timeless / 新 Stat 轴 / 战役扩张 = **NOT AUTHORIZED BY THIS APPROVE**。 |
+| 授权来源 | 导演本人勾选 Packet §10；正式记录 `docs/reviews/S5/S5_DIRECTOR_FINAL_GATE.md` |
+| 上一令 | **S5 Director Final Gate Material Refresh = COMPLETE**（Channel A 裁定 B；Decision Form 当时未勾选）。再上一令 **导演实测 2026-09-12 = CLOSED / ACCEPT** |
+| 入口 HEAD | `e8abb6e`（Material Refresh 回填） |
 | 当前门（披露，未重跑） | EditMode **540/540**、PlayMode **23/23** fail=0 skip=0、ProdSim `FNV1A64:99f1bfd3f81c4fe6` V3 invalid=0、**no rebaseline** |
-| 硬约束 | runtime/canonical/parser/LOD/Mastery/TownHub delta=0；禁代勾 Decision Form；禁把「继续」译成 APPROVE；禁 S6P-WO-06；禁新周期；禁采购/换框架 |
+| 硬约束 | 本 APPROVE 不授权 Flask/Jewel/升华/Timeless/新 Stat 轴/战役扩张；禁自行发明 S6P-WO-06；禁采购/换框架；禁把未授权域写成 EXECUTE NOW |
 | 规划渠道 | Channel A = `game-zzz-planning-2` / `6aa368c5-7478-83ea-a2d3-95003ee4e6ab` |
 
 ## 队列（已耗尽）
 
 | 项 | 值 |
 |---|---|
-| 队列 | **S6P 已释放队列耗尽**。S5 Final Gate 材料已刷新。下一步 = **导演 Decision Form**（APPROVE 或 HOLD/REWORK）。 |
+| 队列 | **S6P 已释放队列耗尽**。S5 = COMPLETE。下一步 = **向 Channel A 请求下一周期规划**（APPROVE 已勾选；不得自行发明新产品令；Flask/Jewel/升华/Timeless/新 Stat 轴/战役扩张仍需单独导演玩法授权）。 |
 | 上一令 | **S6P-WO-05 = CLOSED / ACCEPT WITH FOLLOW-UP**；导演实测 2026-09-12 = CLOSED / ACCEPT |
 
 
@@ -346,5 +346,6 @@ unity command capture_game_view --source screen --width 2560 --height 1440 --sav
 | 2026-09-11 | **S6P-WO-04B Gate = ACCEPT WITH FOLLOW-UP**（无产品返工）。Follow-up=Evidence 回填 Implementation commit `22fd6d3`。**S6P-WO-04C = RELEASED / EXECUTE NOW**（条件桶已触发，不跳过）。队列 `WO-04C → WO-05`。原文 `S6P_WO_04B_GATE_REVIEW.md` |
 | 2026-09-11 | **S6P-WO-04C 实现完毕（同进程门全绿，冷进程进行中）**。入口指纹 `7310214b…` @ `8959a60` dirty=NO。parser 只接已有 consumer 的无条件句式；故意不接 `increased Area Damage`。census 367→453 / 1660→1574 / consumed 607→798 / \|D\| 325→411 / 可达 1985 与 42 未动。remaining 桶 = AreaDamageMore×2。门：EditMode **512/512**、PlayMode **21/21**、Content Audit PASS、同进程 ProdSim `FNV1A64:99f1bfd3f81c4fe6` UNCHANGED。Channel A `ask` 两次登录失效，未停工。记录 `S6P_WO_04C.md` + `S6P_WO_04C_EVIDENCE_PACK.md`。WO-05 等 Gate ACCEPT。 |
 | 2026-09-11 | **S6P-WO-04C 入库 `e1d8eea`**。冷进程 ×3 EXACT `FNV1A64:99f1bfd3f81c4fe6`（23:41:14 / 23:41:28 / 23:41:42）。READY_FOR_GATE_REVIEW。WO-05 禁止开工直到 Channel A ACCEPT。 |
-| 2026-09-12 | 导演「继续」。S6P-WO-05 与导演实测均已 CLOSED/STOP。向 Channel A 请求下一周期（禁止自开 S6P-WO-06）。裁定 **B**：S5 Director Final Gate Material Refresh（治理-only）。Packet §8–§11 已写当前背景。Decision Form 未勾选。**STOP，等导演 Decision Form。** |
+| 2026-09-12 | 导演「继续」。S6P-WO-05 与导演实测均已 CLOSED/STOP。向 Channel A 请求下一周期（禁止自开 S6P-WO-06）。裁定 **B**：S5 Director Final Gate Material Refresh（治理-only）。Packet §8–§11 已写当前背景。Decision Form 当时未勾选。**STOP，等导演 Decision Form。** |
+| 2026-09-12 | 导演勾选 **APPROVE S5 FINAL GATE**。正式 **S5 = COMPLETE**。Next Cycle Planning = AUTHORIZED。Next Cycle = NOT STARTED。本 APPROVE 不授权 Flask/Jewel/升华/Timeless/新 Stat 轴/战役扩张。下一步 = 向 Channel A 请求下一周期规划。记录=`docs/reviews/S5/S5_DIRECTOR_FINAL_GATE.md`。 |
 

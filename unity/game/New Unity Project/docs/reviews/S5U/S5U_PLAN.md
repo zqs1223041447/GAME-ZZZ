@@ -16,7 +16,8 @@
 | S5 Scope | **NOT REOPENED**（导演没有否定 BL-002.A1/BL-021.A2/回归/确定性/性能/收口；也尚未填写 APPROVE——不得推定批准） |
 | 新 UI 工作 | **独立插入周期 S5U** |
 | 收尾方式 | S5U 完成后：原 S5 Final Gate Packet + S5U presentation addendum 一并重送 Director Final Review |
-| **禁止书写** | `S5 = COMPLETE`；把 S5U 反写成「S5 scope expanded」 |
+| **禁止书写（S5U 当时）** | `S5 = COMPLETE`；把 S5U 反写成「S5 scope expanded」 |
+| **解除（2026-09-12）** | 导演勾选 APPROVE S5 FINAL GATE 后，`S5 = COMPLETE` 已由 `S5_DIRECTOR_FINAL_GATE.md` 正式书写。S5U 仍不得反写成「S5 scope expanded」。 |
 
 ## §2 技术路线（Route A）
 
@@ -62,7 +63,8 @@ UI Toolkit 迁移 / uGUI 迁移 / inventory Tetris / item footprint / 新 EquipS
 
 ## §10 治理状态表达（本周期内）
 
-- STATUS：S5 Production Closure=PASS；S5 Director Final Gate=PENDING/DEFERRED；**S5≠COMPLETE**；S5U=ACTIVE/DIRECTOR AUTHORIZED；S5U Phase 0=executing。
+- STATUS（S5U 当时）：S5 Production Closure=PASS；S5 Director Final Gate=PENDING/DEFERRED；**S5≠COMPLETE**；S5U=ACTIVE/DIRECTOR AUTHORIZED；S5U Phase 0=executing。
+- STATUS（2026-09-12 起）：S5 Director Final Gate=APPROVED；**S5=COMPLETE**；S5U 为历史插入周期，不倒算进 S5 scope。
 - ROADMAP：插入 S5U；不写 S6 active；不把 UI 工作并入 BL-002.A1/BL-021.A2。
 - Capability Ledger：UI Presentation quality 建立独立 evidence/tracking；不因视觉重做晋升 gameplay capability。
 - Mechanic Matrix / RUNTIME.md / COMBAT_MATH.md：VERIFY ONLY。
